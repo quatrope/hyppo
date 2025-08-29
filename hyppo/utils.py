@@ -1,11 +1,28 @@
-from hyppo.extractor import DummyExtractor
+from hyppo.extractor import (
+    DummyExtractor,
+    MeanExtractor,
+    StdExtractor,
+    MinExtractor,
+    MaxExtractor,
+    MedianExtractor,
+    GaborExtractor,
+)
 
 
 def get_all_extractors():
     """
-    TODO! Probablemente habria que moverlo a un registry o una busqueda de subclases. Por ahora estan hardcodeados a modo de prueba.
+    Returns all available feature extractors.
+    TODO: Could be improved with automatic discovery using metaclasses or inspection.
     """
-
-    extractors = [DummyExtractor]
+    
+    extractors = [
+        DummyExtractor,
+        MeanExtractor,
+        StdExtractor,
+        MinExtractor,
+        MaxExtractor,
+        MedianExtractor,
+        GaborExtractor,
+    ]
 
     return extractors

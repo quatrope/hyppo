@@ -29,7 +29,12 @@ class FeatureSpace:
 
         return cls(tree)
 
-    def extract(self, data, runner):
+    def extract(self, data, runner=None):
+        if runner is None:
+            # Create default ThreadsRunner (uses all available cores by default)
+            from hyppo.runner.threads import ThreadsRunner
+            runner = ThreadsRunner()
+        
         result = runner.resolve(data, self)
         return result
 

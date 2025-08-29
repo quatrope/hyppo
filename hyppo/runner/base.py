@@ -5,7 +5,7 @@ from hyppo.hsi import HSI
 
 
 if TYPE_CHECKING:
-    from feature_space import FeatureSpace
+    from hyppo.feature_space import FeatureSpace
 
 
 class BaseRunner(ABC):

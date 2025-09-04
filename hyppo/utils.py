@@ -14,7 +14,7 @@ def get_all_extractors():
     Returns all available feature extractors.
     TODO: Could be improved with automatic discovery using metaclasses or inspection.
     """
-    
+
     extractors = [
         DummyExtractor,
         MeanExtractor,

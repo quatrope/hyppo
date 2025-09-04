@@ -23,5 +23,3 @@ class Extractor(ABC):
         name = re.split("(?<=.)(?=[A-Z])", name)
 
         return "_".join(name).lower()
-
-

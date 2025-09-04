@@ -14,7 +14,7 @@ __all__ = [
     "Extractor",
     "DummyExtractor",
     "SpectralExtractor",
-    "SpatialExtractor", 
+    "SpatialExtractor",
     "CombinedExtractor",
     "MeanExtractor",
     "StdExtractor",

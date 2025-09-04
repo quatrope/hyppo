@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools", "wheel", "setuptools-scm[toml]"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hyppo"
+version = "0.1.dev0"
+description = "HYPPO (Hyperspectral Processing) - A modular feature extractor for hyperspectral images"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Tomás Ponce Gessi", email = "tomaspgessi@mi.unc.edu.ar"},
+]
+keywords = ["hyperspectral", "image-processing", "feature-extraction", "remote-sensing"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Image Processing",
+]
+
+dependencies = [
+    "dask==2025.4.1",
+    "h5py==3.13.0",
+    "numpy==2.2.5",
+    "scipy==1.14.1",
+]
+
+[project.urls]
+Repository = "https://github.com/quatrope/hyppo"
+Issues = "https://github.com/quatrope/hyppo/issues"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "flake8>=6.0",
+    "tox>=4.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["hyppo*"]
+namespaces = false

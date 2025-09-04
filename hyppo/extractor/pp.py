@@ -154,7 +154,7 @@ class PPExtractor(Extractor):
                     best_pixel_idx = (
                         sample_indices[i] if n_samples > self.sample_size else i
                     )
-            except:
+            except Exception:
                 continue  # Skip if divergence computation fails
 
         if best_projection is None:

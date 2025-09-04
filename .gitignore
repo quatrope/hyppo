@@ -51,6 +51,14 @@ coverage.xml
 .pytest_cache/
 cover/
 
+# Tox and pytest specific
+.tox/
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+.coverage.*
+
 # Translations
 *.mo
 *.pot

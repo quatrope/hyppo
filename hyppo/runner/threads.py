@@ -20,13 +20,13 @@ class ThreadsRunner(BaseRunner):
 
         # Execute tree
         keys = [alias for alias in graph.keys()]
-        
+
         # If num_workers is None, dask will use all available cores
         if self.num_workers is None:
             results_list = dsk.get(graph, keys)
         else:
             results_list = dsk.get(graph, keys, num_workers=self.num_workers)
-        
+
         data = {alias: data for alias, data in zip(keys, results_list, strict=True)}
 
         # Return results for each entry

@@ -33,8 +33,9 @@ class FeatureSpace:
         if runner is None:
             # Create default ThreadsRunner (uses all available cores by default)
             from hyppo.runner.threads import ThreadsRunner
+
             runner = ThreadsRunner()
-        
+
         result = runner.resolve(data, self)
         return result
 

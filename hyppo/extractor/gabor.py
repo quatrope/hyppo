@@ -1,10 +1,12 @@
 import numpy as np
 from scipy import ndimage
-from typing import Optional, List, Tuple
-from .spatial import SpatialExtractor
+from typing import Any, Dict, Optional, List, Tuple
+
+from hyppo.hsi import HSI
+from .base import Extractor
 
 
-class GaborExtractor(SpatialExtractor):
+class GaborExtractor(Extractor):
     """Extractor that applies Gabor filters to extract texture features.
 
     Gabor filters are used to extract texture information at different
@@ -19,7 +21,7 @@ class GaborExtractor(SpatialExtractor):
         band_indices: Optional[List[int]] = None,
         aggregate_bands: bool = True,
     ) -> None:
-        super().__init__(band_indices)
+        super().__init__()
 
         # Default frequencies and orientations if not provided
         if frequencies is None:
@@ -102,7 +104,8 @@ class GaborExtractor(SpatialExtractor):
 
         return magnitude, phase
 
-    def extract_spatial(self, data, band_indices: list) -> np.ndarray:
+    def extract(self, data: HSI) -> Dict[str, Any]:
+        band_indices = data.get_band_indices()
         n_frequencies = len(self.frequencies)
         n_orientations = len(self.thetas)
         n_bands = len(band_indices)
@@ -139,7 +142,9 @@ class GaborExtractor(SpatialExtractor):
         # Apply mask
         features[~data.mask] = np.nan
 
-        return features
+        return {
+            "features": features,
+        }
 
     def _extract_gabor_features_single_band(self, band: np.ndarray) -> np.ndarray:
         """Extract Gabor features from a single band.

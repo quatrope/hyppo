@@ -1,16 +1,23 @@
 import numpy as np
-from .spectral import SpectralExtractor
+from .base import Extractor
+from hyppo.hsi import HSI
 
 
-class MaxExtractor(SpectralExtractor):
+class MaxExtractor(Extractor):
     """Extractor that computes the maximum value across spectral bands for each pixel."""
 
     def __init__(self) -> None:
         super().__init__()
 
-    def extract_spectral(
-        self, pixels: np.ndarray, mask: np.ndarray, wavelengths: np.ndarray
-    ) -> np.ndarray:
+    def extract(self, data: HSI):
+        reflectance = data.reflectance
+        mask = data.mask.reshape(data.height, data.width)
+
+        # Reshape to (n_pixels, n_bands) for easier spectral processing
+        n_pixels = data.height * data.width
+        pixels = reflectance.reshape(n_pixels, data.n_bands)
+        mask = mask.reshape(n_pixels)
+
         # Compute maximum along spectral dimension
         result = np.zeros(pixels.shape[0], dtype=np.float32)
 
@@ -22,4 +29,6 @@ class MaxExtractor(SpectralExtractor):
         # Set invalid pixels to NaN
         result[~mask] = np.nan
 
-        return result
+        return {
+            "max": result,
+        }

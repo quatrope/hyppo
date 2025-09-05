@@ -88,6 +88,9 @@ class HSI:
         masked_reflectance[~self.mask] = np.nan
         return masked_reflectance
 
+    def get_band_indices(self) -> list:
+        return list(range(self.n_bands))
+
     def __repr__(self) -> str:
         return (
             f"HSI(shape={self.shape}, "

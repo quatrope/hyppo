@@ -1,55 +1,54 @@
+from typing import Dict, Tuple, Any
 from hyppo.extractor.base import Extractor
-from hyppo.utils import get_all_extractors
+from hyppo.feature_dependency_graph import FeatureDependencyGraph
+from hyppo.hsi import HSI
 
 
 class FeatureSpace:
-    def __init__(self, extractors: dict) -> None:
-        self.extractors = self.validate_extractors(extractors)
 
-    @classmethod
-    def from_features(cls, features: list, **params):
-        extractors = get_all_extractors()
+    def __init__(self, extractor_configs: Dict[str, Tuple[Extractor, Dict[str, str]]]):
+        """
+        Initialize FeatureSpace with feature extractor configurations.
 
-        extractors_by_name = {
-            extractor.feature_name(): extractor for extractor in extractors
+        Args:
+            extractor_configs: Dict of {name: (extractor, input_mapping)}
+                             where input_mapping is {input_name: source_extractor_name}
+        """
+        self.extractor_configs = extractor_configs
+        self.extractors = {
+            name: config[0] for name, config in extractor_configs.items()
         }
+        self.feature_graph = self._build_feature_dependency_graph()
 
-        for feature in features:
-            extractor_cls = extractors_by_name.get(feature)
-            if extractor_cls is None:
-                raise ValueError(f"Feature desconocida: {feature}")
+    def _build_feature_dependency_graph(self):
+        """Build and validate the feature dependency graph."""
+        graph = FeatureDependencyGraph()
 
-        tree = {}
-        for feature in features:
-            extractor_cls = extractors_by_name[feature]
-            extractor_params = params.get(feature, {})
-            extractor = extractor_cls(**extractor_params)
+        for name, (extractor, input_mapping) in self.extractor_configs.items():
+            graph.add_extractor(name, extractor, input_mapping)
 
-            tree[feature] = extractor
+        graph.validate()
+        return graph
 
-        return cls(tree)
+    def extract(self, data: HSI, runner=None):
+        """
+        Extract features with dependency resolution.
 
-    def extract(self, data, runner=None):
+        Args:
+            data: HSI object to extract features from
+            runner: Runner to execute extraction (defaults to ThreadsRunner)
+        """
         if runner is None:
-            # Create default ThreadsRunner (uses all available cores by default)
-            from hyppo.runner.threads import ThreadsRunner
+            runner = self.get_default_runner()
 
-            runner = ThreadsRunner()
+        return runner.resolve(data, self)
 
-        result = runner.resolve(data, self)
-        return result
-
-    def validate_extractors(self, extractors: dict):
-        if len(extractors) == 0:
-            raise ValueError("No extractors supplied.")
-
-        for alias, extractor in extractors.items():
-            if not isinstance(extractor, Extractor):
-                raise TypeError(f"Extractor for alias {alias} must be an Extractor")
-
-            extractor.validate()
-
-        return extractors
-
-    def get_extractors(self) -> dict[str, Extractor]:
+    def get_extractors(self):
+        """Get all extractors."""
         return self.extractors
+
+    def get_default_runner(self):
+        """Get the default runner."""
+        from hyppo.runner.threads import ThreadsRunner
+
+        return ThreadsRunner()

@@ -121,7 +121,7 @@ class ZernikeMomentExtractor(Extractor):
 
         return np.concatenate(all_scales, axis=-1)
 
-    def extract(self, data: HSI):
+    def extract(self, data: HSI, **inputs):
         """
         Extract Zernike Moment features from a hyperspectral image.
 

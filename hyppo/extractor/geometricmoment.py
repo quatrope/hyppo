@@ -101,7 +101,7 @@ class GeometricMomentExtractor(Extractor):
 
         return all_moments
 
-    def extract(self, data: HSI):
+    def extract(self, data: HSI, **inputs):
         """
         Extract Geometric Moment features from a hyperspectral image.
 

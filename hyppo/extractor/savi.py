@@ -38,7 +38,7 @@ class SAVIExtractor(Extractor):
         self.nir_wavelength = nir_wavelength
         self.L = L
 
-    def extract(self, data: HSI):
+    def extract(self, data: HSI, **inputs):
         """
         Compute the SAVI index from a hyperspectral image.
 

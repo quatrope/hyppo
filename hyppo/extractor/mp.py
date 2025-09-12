@@ -56,7 +56,7 @@ class MPExtractor(Extractor):
         else:
             raise ValueError(f"Unknown structuring element: {self.structuring_element}")
 
-    def extract(self, data: HSI):
+    def extract(self, data: HSI, **inputs):
         """
         Extract morphological profile features from hyperspectral image.
 

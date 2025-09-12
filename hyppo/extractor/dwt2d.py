@@ -42,7 +42,7 @@ class DWT2DExtractor(Extractor):
         self.mode = mode
         self.levels = levels
 
-    def extract(self, data: HSI):
+    def extract(self, data: HSI, **inputs):
         """
         Extract 2D DWT features from a hyperspectral image.
 

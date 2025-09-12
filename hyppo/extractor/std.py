@@ -10,7 +10,7 @@ class StdExtractor(Extractor):
     def __init__(self) -> None:
         super().__init__()
 
-    def extract(self, data: HSI):
+    def extract(self, data: HSI, **inputs):
 
         reflectance = data.reflectance
         # Reshape to (n_pixels, n_bands) for easier spectral processing

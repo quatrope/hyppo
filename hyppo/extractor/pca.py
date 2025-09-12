@@ -30,7 +30,7 @@ class PCAExtractor(Extractor):
         self.random_state = random_state
         self.pca = None
 
-    def extract(self, data: HSI):
+    def extract(self, data: HSI, **inputs):
         """
         Extract PCA features from a hyperspectral image.
 

@@ -89,7 +89,7 @@ class LBPExtractor(Extractor):
         scaled = (normalized * 255).astype(np.uint8)
         return scaled
 
-    def extract(self, data: HSI):
+    def extract(self, data: HSI, **inputs):
         """
         Extract LBP features from a hyperspectral image.
 

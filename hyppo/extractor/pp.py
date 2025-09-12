@@ -171,7 +171,7 @@ class PPExtractor(Extractor):
 
         return best_projection, best_score, best_pixel_idx
 
-    def extract(self, data: HSI):
+    def extract(self, data: HSI, **inputs):
         """
         Extract Projection Pursuit features from hyperspectral data.
 

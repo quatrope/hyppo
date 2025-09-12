@@ -34,7 +34,7 @@ class NDVIExtractor(Extractor):
         self.red_wavelength = red_wavelength
         self.nir_wavelength = nir_wavelength
 
-    def extract(self, data: HSI):
+    def extract(self, data: HSI, **inputs):
         """
         Compute NDVI from a hyperspectral image.
 

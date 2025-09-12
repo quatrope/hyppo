@@ -9,7 +9,7 @@ class MaxExtractor(Extractor):
     def __init__(self) -> None:
         super().__init__()
 
-    def extract(self, data: HSI):
+    def extract(self, data: HSI, **inputs):
         reflectance = data.reflectance
         mask = data.mask.reshape(data.height, data.width)
 

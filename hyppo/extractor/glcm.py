@@ -242,7 +242,7 @@ class GLCMExtractor(Extractor):
         all_features = np.concatenate(all_scales, axis=-1)
         return all_features, levels
 
-    def extract(self, data: HSI):
+    def extract(self, data: HSI, **inputs):
         self.validate()
 
         X = data.reflectance()  # (H, W, B)

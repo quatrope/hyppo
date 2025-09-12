@@ -1,5 +1,5 @@
 import numpy as np
-from hyppo.hsi import HSI
+from hyppo.core import HSI
 from skimage.util.shape import view_as_windows
 from sklearn.decomposition import PCA
 from scipy.special import legendre

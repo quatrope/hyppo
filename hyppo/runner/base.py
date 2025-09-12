@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
-from hyppo.hsi import HSI
+from hyppo.core import HSI
 
 
 if TYPE_CHECKING:
-    from hyppo.feature_space import FeatureSpace
+    from hyppo.core import FeatureSpace
 
 
 class BaseRunner(ABC):

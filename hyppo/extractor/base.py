@@ -1,10 +1,8 @@
 from abc import ABC, abstractmethod
 import re
-from typing import Any, Dict, Optional, Callable, Type, List
+from typing import Any, Dict, Optional, Type
 from dataclasses import dataclass
-import numpy as np
-
-from hyppo.hsi import HSI
+from hyppo.core import HSI
 
 
 @dataclass
@@ -28,10 +26,20 @@ class Extractor(ABC):
     - Helper methods for different extraction patterns
     - Automatic feature naming
     - Result validation
+    - Automatic registration in ExtractorRegistry
     """
 
     # Class-level input dependencies declaration
     input_dependencies: Dict[str, InputDependency] = {}
+
+    def __init_subclass__(cls, **kwargs):
+        """Automatically register subclasses in the ExtractorRegistry."""
+        super().__init_subclass__(**kwargs)
+
+        # Avoid circular import by importing the registry here
+        from .registry import registry
+
+        registry.register(cls)
 
     @abstractmethod
     def extract(self, data: HSI, **inputs) -> Dict[str, Any]:

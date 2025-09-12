@@ -1,5 +1,5 @@
 from .base import Extractor
-from hyppo.hsi import HSI
+from hyppo.core import HSI
 from sklearn.decomposition import PCA
 import numpy as np
 

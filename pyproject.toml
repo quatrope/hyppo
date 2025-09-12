@@ -30,6 +30,10 @@ dependencies = [
     "scipy==1.14.1",
     "networkx>=3.0",
     "scikit-learn",
+    "pyyaml>=6.0",
+    "attrs>=22.0",
+    "scikit-image",
+    "PyWavelets",
 ]
 
 [project.urls]

@@ -4,7 +4,7 @@ HSI fixtures
 
 import pytest
 import numpy as np
-from hyppo.hsi import HSI
+from hyppo.core import HSI
 
 
 @pytest.fixture

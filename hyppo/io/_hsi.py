@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Optional, Tuple
 import h5py
 import numpy as np
-from hyppo.hsi import HSI
+from hyppo.core import HSI
 
 SUPPORTED_LOAD_FORMATS = {".h5"}
 

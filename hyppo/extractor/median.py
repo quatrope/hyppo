@@ -1,6 +1,6 @@
 import numpy as np
 from .base import Extractor
-from hyppo.hsi import HSI
+from hyppo.core import HSI
 
 
 class MedianExtractor(Extractor):

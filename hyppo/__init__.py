@@ -1,7 +1,6 @@
-from hyppo.feature_space import FeatureSpace
-from hyppo import runner
-from hyppo import io
-from hyppo import extractor
+import hyppo.core as core
+import hyppo.runner as runner
+import hyppo.io as io
+import hyppo.extractor as extractor
 
-
-__all__ = ["FeatureSpace", "runner", "io", "extractor"]
+__all__ = ["core", "runner", "io", "extractor"]

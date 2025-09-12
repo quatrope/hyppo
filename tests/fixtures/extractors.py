@@ -2,7 +2,7 @@ from hyppo.extractor.base import Extractor, InputDependency
 
 
 class SimpleExtractor(Extractor):
-    def extract(self, data):
+    def extract(self, data, **inputs):
         return {"simple_value": 1.0}
 
 

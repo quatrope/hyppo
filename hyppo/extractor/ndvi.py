@@ -1,5 +1,5 @@
 from .base import Extractor
-from hyppo.hsi import HSI
+from hyppo.core import HSI
 import numpy as np
 import warnings
 

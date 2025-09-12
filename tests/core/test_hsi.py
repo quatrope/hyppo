@@ -3,7 +3,7 @@ Tests for the HSI (Hyperspectral Image) module.
 """
 
 import numpy as np
-from hyppo.hsi import HSI
+from hyppo.core import HSI
 
 
 def test_hsi_initialization():

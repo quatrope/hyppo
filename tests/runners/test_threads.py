@@ -3,7 +3,7 @@ Tests for ThreadsRunner.
 """
 
 import pytest
-from hyppo.feature_space import FeatureSpace
+from hyppo.core import FeatureSpace
 from hyppo.runner.threads import ThreadsRunner
 from tests.fixtures.extractors import (
     SimpleExtractor,

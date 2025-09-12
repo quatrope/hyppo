@@ -1,5 +1,5 @@
 from .base import Extractor
-from hyppo.hsi import HSI
+from hyppo.core import HSI
 from skimage.util.shape import view_as_windows
 from skimage.feature import graycoprops, graycomatrix
 

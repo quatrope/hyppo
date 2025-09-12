@@ -1,13 +1,11 @@
-"""
-Tests for FeatureDependencyGraph.
-"""
+"""Tests for FeatureDependencyGraph."""
 
 import pytest
 import numpy as np
 from hyppo.extractor.base import Extractor, InputDependency
 from hyppo.extractor.mean import MeanExtractor
 from hyppo.extractor.std import StdExtractor
-from hyppo.feature_dependency_graph import FeatureDependencyGraph
+from hyppo.core._feature_dependency_graph import FeatureDependencyGraph
 from tests.fixtures.extractors import (
     SimpleExtractor,
     MediumExtractor,

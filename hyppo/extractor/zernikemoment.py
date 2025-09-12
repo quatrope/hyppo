@@ -1,6 +1,6 @@
 import numpy as np
 import math
-from hyppo.hsi import HSI
+from hyppo.core import HSI
 from skimage.util.shape import view_as_windows
 from sklearn.decomposition import PCA
 from .base import Extractor

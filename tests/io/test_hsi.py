@@ -8,7 +8,7 @@ import tempfile
 import h5py
 from pathlib import Path
 from hyppo import io
-from hyppo.hsi import HSI
+from hyppo.core import HSI
 
 
 class TestH5Loading:

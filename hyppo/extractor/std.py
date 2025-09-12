@@ -1,6 +1,6 @@
 import numpy as np
 
-from hyppo.hsi import HSI
+from hyppo.core import HSI
 from .base import Extractor
 
 

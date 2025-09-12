@@ -2,7 +2,7 @@ import numpy as np
 from scipy import ndimage
 from typing import Any, Dict, Optional, List, Tuple
 
-from hyppo.hsi import HSI
+from hyppo.core import HSI
 from .base import Extractor
 
 

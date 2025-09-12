@@ -1,8 +1,5 @@
-"""
-Tests for FeatureDependencyGraph.
-"""
-
-from hyppo.extractor.base import InputDependency
+import pytest
+from hyppo.extractor.base import InputDependency, Extractor
 from hyppo.extractor.mean import MeanExtractor
 from hyppo.extractor.mnf import MNFExtractor
 
@@ -33,3 +30,12 @@ class TestInputDependency:
         assert dep.name == "optional_input"
         assert dep.required is False
         assert dep.default_config == {"n_components": 5, "whiten": False}
+
+
+class TestExtractorBase:
+    """Test cases for the base Extractor class."""
+
+    def test_extractor_is_abstract(self):
+        """Test that Extractor base class cannot be instantiated."""
+        with pytest.raises(TypeError):
+            Extractor()

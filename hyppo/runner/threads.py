@@ -2,12 +2,12 @@ import dask
 import dask.threaded as dsk
 from typing import Optional, Dict, List, Any
 from .base import BaseRunner
-from hyppo.hsi import HSI
+from hyppo.core import HSI, FeatureResultCollection
 
 
 class ThreadsRunner(BaseRunner):
     """
-    ThreadsRunner with feature dependency-aware execution using Dask.
+    ThreadsRunner using Dask.
     """
 
     def __init__(self, num_workers: Optional[int] = None) -> None:
@@ -16,11 +16,9 @@ class ThreadsRunner(BaseRunner):
             raise ValueError(f"Invalid number of workers: {num_workers}")
         self.num_workers = num_workers
 
-    def resolve(self, data: HSI, feature_space) -> Dict[str, Any]:
+    def resolve(self, data: HSI, feature_space) -> FeatureResultCollection:
         """
-        Resolve feature extraction with feature dependency system.
-
-        Uses NetworkX-based topological ordering and passes dependencies as kwargs.
+        Resolve feature extraction.
 
         Args:
             data: HSI object to process
@@ -28,11 +26,11 @@ class ThreadsRunner(BaseRunner):
             execution_order: Topologically sorted list of extractor names
 
         Returns:
-            Dictionary with extraction results
+            FeatureResultCollection with extraction results
         """
         feature_graph = feature_space.feature_graph
         execution_order = feature_graph.get_execution_order()
-        results = {}
+        results = FeatureResultCollection()
 
         # Execute extractors in topological order
         for extractor_name in execution_order:
@@ -44,7 +42,7 @@ class ThreadsRunner(BaseRunner):
             for input_name, source_name in input_mapping.items():
                 if source_name in results:
                     # Pass the actual data, not the wrapped result
-                    input_kwargs[input_name] = results[source_name]["data"]
+                    input_kwargs[input_name] = results[source_name].data
 
             # Add defaults for optional inputs not provided
             input_deps = extractor.get_input_dependencies()
@@ -63,19 +61,13 @@ class ThreadsRunner(BaseRunner):
                             input_kwargs[input_name] = default_result
 
             # Execute extractor with input kwargs
-            try:
-                result = extractor.extract(data, **input_kwargs)
-            except TypeError as e:
-                # Fallback for extractors that don't support kwargs
-                if "unexpected keyword argument" in str(e):
-                    result = extractor.extract(data)
-                else:
-                    raise e
+            result = extractor.extract(data, **input_kwargs)
 
-            results[extractor_name] = {
-                "data": result,
-                "extractor": extractor,
-                "inputs_used": list(input_kwargs.keys()),
-            }
+            results.add_result(
+                extractor_name=extractor_name,
+                data=result,
+                extractor=extractor,
+                inputs_used=list(input_kwargs.keys()),
+            )
 
         return results

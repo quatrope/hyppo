@@ -107,4 +107,10 @@ class FeatureResultCollection(AttrDict):
         }
 
 
+# results = FeatureResultCollection()
+
+
+
+
+
 __all__ = ["FeatureResult", "FeatureResultCollection"]

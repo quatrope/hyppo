@@ -7,7 +7,7 @@ from hyppo.core import HSI
 SUPPORTED_LOAD_FORMATS = {".h5"}
 
 
-def load(
+def load_h5(
     path: Path | str,
     reflectance_path: Optional[str] = None,
     wavelength_path: Optional[str] = None,
@@ -150,4 +150,4 @@ def _find_wavelength_dataset(
     return None, ""
 
 
-__all__ = ["load", "Path"]
+__all__ = ["load_h5", "Path"]

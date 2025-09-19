@@ -24,14 +24,14 @@ classifiers = [
 ]
 
 dependencies = [
-    "dask==2025.4.1",
+    "dask[distributed]==2025.4.1",
     "h5py==3.13.0",
     "numpy==2.2.5",
     "scipy==1.14.1",
     "networkx>=3.0",
-    "scikit-learn",
     "pyyaml>=6.0",
     "attrs>=22.0",
+    "scikit-learn",
     "scikit-image",
     "PyWavelets",
 ]

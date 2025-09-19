@@ -1,4 +1,4 @@
-from ._hsi import load, Path
+from ._hsi import load_h5, Path
 from ._config.models import Config, PipelineConfig, ExtractorConfig
 from ._config.parser import parse_config, parse_json, parse_yaml
 from ._config.executor import ConfigExecutor
@@ -13,6 +13,6 @@ __all__ = [
     "parse_yaml",
     "ConfigExecutor",
     "ConfigValidator",
-    "load",
+    "load_h5",
     "Path",
 ]

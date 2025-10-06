@@ -34,7 +34,7 @@ class NDWIExtractor(Extractor):
         self.green_wavelength = green_wavelength
         self.nir_wavelength = nir_wavelength
 
-    def extract(self, data: HSI, **inputs):
+    def _extract(self, data: HSI, **inputs):
         """
         Compute NDWI from a hyperspectral image.
 
@@ -60,8 +60,8 @@ class NDWIExtractor(Extractor):
             - original_shape : tuple of int
                 Shape of the original HSI cube.
         """
-        reflectance = data.reflectance()
-        wavelength = data.wavelength()
+        reflectance = data.reflectance
+        wavelength = data.wavelengths
 
         # Check wavelength availability
         if len(wavelength) == 0:
@@ -96,7 +96,7 @@ class NDWIExtractor(Extractor):
             "original_shape": reflectance.shape,
         }
 
-    def validate(self):
+    def _validate(self, data: HSI, **inputs):
         """Validate extractor parameters."""
         if self.green_wavelength <= 0:
             raise ValueError("green_wavelength must be positive")

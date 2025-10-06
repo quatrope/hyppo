@@ -90,7 +90,7 @@ class LegendreMomentExtractor(Extractor):
 
         return np.concatenate(all_scales, axis=-1)
 
-    def extract(self, data: HSI, **inputs):
+    def _extract(self, data: HSI, **inputs):
         """
         Extract Legendre Moment features from a hyperspectral image.
 
@@ -111,7 +111,7 @@ class LegendreMomentExtractor(Extractor):
                 - "window_sizes": list of int, window sizes used for multiscale computation.
                 - "max_order": int, maximum Legendre polynomial order used.
         """
-        X = data.reflectance()
+        X = data.reflectance
         h, w, b = X.shape
         X_reshaped = X.reshape(-1, b)
 
@@ -136,7 +136,7 @@ class LegendreMomentExtractor(Extractor):
             "max_order": self.max_order,
         }
 
-    def validate(self):
+    def _validate(self, data: HSI, **inputs):
         """Validate extractor parameters."""
         if not isinstance(self.n_components, int) or self.n_components <= 0:
             raise ValueError("n_components must be a positive integer.")

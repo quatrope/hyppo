@@ -9,7 +9,7 @@ class MaxExtractor(Extractor):
     def __init__(self) -> None:
         super().__init__()
 
-    def extract(self, data: HSI, **inputs):
+    def _extract(self, data: HSI, **inputs):
         reflectance = data.reflectance
         mask = data.mask.reshape(data.height, data.width)
 
@@ -30,5 +30,5 @@ class MaxExtractor(Extractor):
         result[~mask] = np.nan
 
         return {
-            "max": result,
+            "features": result,
         }

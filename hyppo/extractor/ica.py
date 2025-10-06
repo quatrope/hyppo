@@ -31,7 +31,7 @@ class ICAExtractor(Extractor):
         self.random_state = random_state
         self.ica = None
 
-    def extract(self, data: HSI, **inputs):
+    def _extract(self, data: HSI, **inputs):
         """
         Extract ICA features from a hyperspectral image.
 
@@ -62,7 +62,7 @@ class ICAExtractor(Extractor):
             - reconstruction_error : float or None
                 Mean squared reconstruction error (if computable).
         """
-        X = data.reflectance()
+        X = data.reflectance
         h, w, bands = X.shape
         X_reshaped = X.reshape(-1, bands)
 
@@ -103,7 +103,7 @@ class ICAExtractor(Extractor):
             "reconstruction_error": reconstruction_error,
         }
 
-    def validate(self):
+    def _validate(self, data: HSI, **inputs):
         """Validate extractor parameters."""
         if self.n_components <= 0:
             raise ValueError("n_components must be positive")

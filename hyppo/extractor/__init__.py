@@ -1,4 +1,4 @@
-from .base import Extractor, InputDependency
+from .base import Extractor
 from .registry import registry
 
 from .dwt1d import DWT1DExtractor
@@ -27,7 +27,6 @@ from .zernikemoment import ZernikeMomentExtractor
 __all__ = [
     "registry",
     "Extractor",
-    "InputDependency",
     "DWT1DExtractor",
     "DWT2DExtractor",
     "DWT3DExtractor",
@@ -51,3 +50,26 @@ __all__ = [
     "StdExtractor",
     "ZernikeMomentExtractor",
 ]
+
+registry.register(DWT1DExtractor)
+registry.register(DWT2DExtractor)
+registry.register(DWT3DExtractor)
+registry.register(GaborExtractor)
+registry.register(GeometricMomentExtractor)
+registry.register(GLCMExtractor)
+registry.register(ICAExtractor)
+registry.register(LBPExtractor)
+registry.register(LegendreMomentExtractor)
+registry.register(MaxExtractor)
+registry.register(MeanExtractor)
+registry.register(MedianExtractor)
+registry.register(MinExtractor)
+registry.register(MNFExtractor)
+registry.register(MPExtractor)
+registry.register(NDVIExtractor)
+registry.register(NDWIExtractor)
+registry.register(PCAExtractor)
+registry.register(PPExtractor)
+registry.register(SAVIExtractor)
+registry.register(StdExtractor)
+registry.register(ZernikeMomentExtractor)

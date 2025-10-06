@@ -101,7 +101,7 @@ class GeometricMomentExtractor(Extractor):
 
         return all_moments
 
-    def extract(self, data: HSI, **inputs):
+    def _extract(self, data: HSI, **inputs):
         """
         Extract Geometric Moment features from a hyperspectral image.
 
@@ -122,7 +122,7 @@ class GeometricMomentExtractor(Extractor):
                 - "window_sizes": list of int, window sizes used for multiscale computation.
                 - "max_order": int, maximum order of geometric moments used.
         """
-        X = data.reflectance()
+        X = data.reflectance
         h, w, b = X.shape
         X_reshaped = X.reshape(-1, b)
 
@@ -150,7 +150,7 @@ class GeometricMomentExtractor(Extractor):
             "max_order": self.max_order,
         }
 
-    def validate(self):
+    def _validate(self, data: HSI, **inputs):
         """Validate extractor parameters."""
         if not isinstance(self.n_components, int) or self.n_components <= 0:
             raise ValueError("n_components must be a positive integer.")

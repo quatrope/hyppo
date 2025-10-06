@@ -89,7 +89,7 @@ class LBPExtractor(Extractor):
         scaled = (normalized * 255).astype(np.uint8)
         return scaled
 
-    def extract(self, data: HSI, **inputs):
+    def _extract(self, data: HSI, **inputs):
         """
         Extract LBP features from a hyperspectral image.
 
@@ -110,8 +110,7 @@ class LBPExtractor(Extractor):
             - "original_shape": Original (H, W) shape of HSI
             - "n_features": Number of LBP features extracted per pixel
         """
-        self.validate()
-        X = data.reflectance()  # Hyperspectral cube: shape (H, W, B)
+        X = data.reflectance  # Hyperspectral cube: shape (H, W, B)
         h, w, B = X.shape
         original_shape = (h, w)
 
@@ -131,7 +130,7 @@ class LBPExtractor(Extractor):
             "n_features": features.shape[-1],
         }
 
-    def validate(self):
+    def _validate(self, data: HSI, **inputs):
         """Validate extractor parameters."""
         if self.bands is not None and (
             not isinstance(self.bands, list) or not self.bands

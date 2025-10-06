@@ -104,7 +104,7 @@ class GaborExtractor(Extractor):
 
         return magnitude, phase
 
-    def extract(self, data: HSI, **inputs) -> Dict[str, Any]:
+    def _extract(self, data: HSI, **inputs) -> Dict[str, Any]:
         band_indices = data.get_band_indices()
         n_frequencies = len(self.frequencies)
         n_orientations = len(self.thetas)

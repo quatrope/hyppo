@@ -211,7 +211,7 @@ class GLCMExtractor(Extractor):
         """
         Extract multiscale GLCM features following paper's methodology
         """
-        H, W = image.shape
+        image_height, image_width = image.shape
         all_scales = []
 
         # Determine quantization levels
@@ -220,32 +220,30 @@ class GLCMExtractor(Extractor):
         # Normalize image
         image_normalized = self._normalize_to_levels(image, levels)
 
-        for w in self.window_sizes:
+        for window_size in self.window_sizes:
             # Use larger windows as recommended by the paper
-            pad = w // 2
+            pad = window_size // 2
 
             # Use reflection padding to maintain texture characteristics at borders
             padded = np.pad(image_normalized, pad, mode="reflect")
 
             # Extract windows
-            windows = view_as_windows(padded, (w, w))
-            patches = windows.reshape(-1, w, w)
+            windows = view_as_windows(padded, (window_size, window_size))
+            patches = windows.reshape(-1, window_size, window_size)
 
             # Compute GLCM features with optimized approach
             glcm_features = self._compute_glcm_features_optimized(patches, levels)
 
             # Reshape to spatial dimensions
-            glcm_features = glcm_features.reshape(H, W, -1)
+            glcm_features = glcm_features.reshape(image_height, image_width, -1)
             all_scales.append(glcm_features)
 
         # Concatenate all scales
         all_features = np.concatenate(all_scales, axis=-1)
         return all_features, levels
 
-    def extract(self, data: HSI, **inputs):
-        self.validate()
-
-        X = data.reflectance()  # (H, W, B)
+    def _extract(self, data: HSI, **inputs):
+        X = data.reflectance  # (H, W, B)
         h, w, b = X.shape
 
         # Determine which bands to process
@@ -291,7 +289,7 @@ class GLCMExtractor(Extractor):
             "original_shape": (h, w),
         }
 
-    def validate(self):
+    def _validate(self, data: HSI, **inputs):
         if self.bands is not None and (
             not isinstance(self.bands, list) or not self.bands
         ):

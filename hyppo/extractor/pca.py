@@ -30,7 +30,7 @@ class PCAExtractor(Extractor):
         self.random_state = random_state
         self.pca = None
 
-    def extract(self, data: HSI, **inputs):
+    def _extract(self, data: HSI, **inputs):
         """
         Extract PCA features from a hyperspectral image.
 
@@ -61,7 +61,7 @@ class PCAExtractor(Extractor):
             - cumulative_variance_ratio : ndarray of shape (n_components,)
                 Cumulative explained variance ratio.
         """
-        X = data.reflectance()
+        X = data.reflectance
 
         # Prepare data
         h, w, bands = X.shape  # (height, width, bands) -> (pixels, bands)
@@ -94,7 +94,7 @@ class PCAExtractor(Extractor):
             "cumulative_variance_ratio": np.cumsum(self.pca.explained_variance_ratio_),
         }
 
-    def validate(self):
+    def _validate(self, data: HSI, **inputs):
         """Validate extractor parameters."""
         if self.n_components <= 0:
             raise ValueError("n_components must be positive")

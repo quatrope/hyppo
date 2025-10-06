@@ -34,7 +34,7 @@ class NDVIExtractor(Extractor):
         self.red_wavelength = red_wavelength
         self.nir_wavelength = nir_wavelength
 
-    def extract(self, data: HSI, **inputs):
+    def _extract(self, data: HSI, **inputs):
         """
         Compute NDVI from a hyperspectral image.
 
@@ -96,7 +96,7 @@ class NDVIExtractor(Extractor):
             "original_shape": reflectance.shape,
         }
 
-    def validate(self):
+    def _validate(self, data: HSI, **inputs):
         """Validate extractor parameters."""
         if self.red_wavelength <= 0:
             raise ValueError("red_wavelength must be positive")

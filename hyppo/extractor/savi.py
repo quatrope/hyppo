@@ -38,7 +38,7 @@ class SAVIExtractor(Extractor):
         self.nir_wavelength = nir_wavelength
         self.L = L
 
-    def extract(self, data: HSI, **inputs):
+    def _extract(self, data: HSI, **inputs):
         """
         Compute the SAVI index from a hyperspectral image.
 
@@ -67,8 +67,8 @@ class SAVIExtractor(Extractor):
                 Shape of the original HSI cube.
         """
 
-        reflectance = data.reflectance()
-        wavelength = data.wavelength()
+        reflectance = data.reflectance
+        wavelength = data.wavelengths
 
         # Check wavelength availability
         if len(wavelength) == 0:
@@ -104,7 +104,7 @@ class SAVIExtractor(Extractor):
             "original_shape": reflectance.shape,
         }
 
-    def validate(self):
+    def _validate(self, data: HSI, **inputs):
         """Validate extractor parameters."""
         if self.red_wavelength <= 0:
             raise ValueError("red_wavelength must be positive")

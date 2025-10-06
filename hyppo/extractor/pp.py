@@ -171,7 +171,7 @@ class PPExtractor(Extractor):
 
         return best_projection, best_score, best_pixel_idx
 
-    def extract(self, data: HSI, **inputs):
+    def _extract(self, data: HSI, **inputs):
         """
         Extract Projection Pursuit features from hyperspectral data.
 
@@ -203,7 +203,7 @@ class PPExtractor(Extractor):
             - valid_pixel_mask : ndarray of bool, shape (H, W)
                 Mask of valid pixels used in extraction.
         """
-        X = data.reflectance()
+        X = data.reflectance
         h, w, b = X.shape
         X_flat = X.reshape(-1, b)
 
@@ -258,7 +258,7 @@ class PPExtractor(Extractor):
             "valid_pixel_mask": valid_mask.reshape(h, w),
         }
 
-    def validate(self):
+    def _validate(self, data: HSI, **inputs):
         """Validate extractor parameters."""
         if self.n_projections <= 0:
             raise ValueError("n_projections must be positive")

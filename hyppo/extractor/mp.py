@@ -56,7 +56,7 @@ class MPExtractor(Extractor):
         else:
             raise ValueError(f"Unknown structuring element: {self.structuring_element}")
 
-    def extract(self, data: HSI, **inputs):
+    def _extract(self, data: HSI, **inputs):
         """
         Extract morphological profile features from hyperspectral image.
 
@@ -82,7 +82,7 @@ class MPExtractor(Extractor):
             - original_shape : tuple of int
                 Original spatial shape of the image (H, W).
         """
-        X = data.reflectance()  # (H, W, B)
+        X = data.reflectance  # (H, W, B)
         h, w, b = X.shape
 
         bands_to_use = self.bands if self.bands is not None else range(b)
@@ -117,7 +117,7 @@ class MPExtractor(Extractor):
             "original_shape": (h, w),
         }
 
-    def validate(self):
+    def _validate(self, data: HSI, **inputs):
         """Validate extractor parameters."""
         if self.bands is not None and (
             not isinstance(self.bands, (list, tuple)) or not self.bands

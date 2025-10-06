@@ -10,7 +10,7 @@ class StdExtractor(Extractor):
     def __init__(self) -> None:
         super().__init__()
 
-    def extract(self, data: HSI, **inputs):
+    def _extract(self, data: HSI, **inputs):
 
         reflectance = data.reflectance
         # Reshape to (n_pixels, n_bands) for easier spectral processing
@@ -30,5 +30,5 @@ class StdExtractor(Extractor):
         result[~mask] = np.nan
 
         return {
-            "std": result,
+            "features": result,
         }

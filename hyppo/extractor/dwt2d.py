@@ -42,7 +42,7 @@ class DWT2DExtractor(Extractor):
         self.mode = mode
         self.levels = levels
 
-    def extract(self, data: HSI, **inputs):
+    def _extract(self, data: HSI, **inputs):
         """
         Extract 2D DWT features from a hyperspectral image.
 
@@ -61,7 +61,7 @@ class DWT2DExtractor(Extractor):
             - "n_features": Total number of features per pixel
             - "original_shape": Original HSI shape (H, W, bands)
         """
-        X = data.reflectance()  # shape (h, w, bands)
+        X = data.reflectance  # shape (h, w, bands)
         h, w, bands = X.shape
         original_shape = X.shape
 
@@ -109,7 +109,7 @@ class DWT2DExtractor(Extractor):
             "original_shape": original_shape,
         }
 
-    def validate(self):
+    def _validate(self, data: HSI, **inputs):
         """Validate extractor parameters."""
         if self.wavelet not in pywt.wavelist():
             raise ValueError(f"Wavelet '{self.wavelet}' not available")

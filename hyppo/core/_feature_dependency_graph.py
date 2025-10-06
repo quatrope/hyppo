@@ -1,4 +1,3 @@
-from typing import Dict, List, Set, Optional, Any
 import networkx as nx
 
 from hyppo.extractor.base import Extractor
@@ -8,22 +7,19 @@ class FeatureDependencyGraph:
 
     def __init__(self):
         self.graph = nx.DiGraph()
-        self.extractors: Dict[str, Extractor] = {}
-        self.input_mappings: Dict[str, Dict[str, str]] = {}
+        self.extractors = {}
+        self.input_mappings = {}
 
     def add_extractor(
-        self,
-        name: str,
-        extractor: Extractor,
-        input_mapping: Optional[Dict[str, str]] = None,
-    ) -> None:
+        self, name: str, extractor: Extractor, input_mapping: dict | None = None
+    ):
         """
         Add an extractor with its input mapping to the dependency graph.
 
         Args:
             name: Unique name for this extractor instance
             extractor: The extractor instance
-            input_mapping: Dict mapping {input_name: source_extractor_name}
+            input_mapping: dict mapping {input_name: source_extractor_name}
                           If None, no inputs are mapped (extractor has no dependencies)
         """
         if input_mapping is None:
@@ -65,14 +61,6 @@ class FeatureDependencyGraph:
 
             # Check each declared input dependency
             for input_name, dep_spec in input_deps.items():
-                if dep_spec.required and input_name not in input_mapping:
-                    # Check if it has a default configuration
-                    if dep_spec.default_config is None:
-                        raise ValueError(
-                            f"Extractor '{node_name}' requires input '{input_name}' "
-                            f"but no source is mapped and no default is available"
-                        )
-
                 # If input is mapped, validate the source extractor type
                 if input_name in input_mapping:
                     source_name = input_mapping[input_name]
@@ -82,33 +70,33 @@ class FeatureDependencyGraph:
                         )
 
                     source_extractor = self.extractors[source_name]
-                    if not isinstance(source_extractor, dep_spec.extractor_type):
+                    if not isinstance(source_extractor, dep_spec["extractor"]):
                         raise TypeError(
                             f"Type mismatch for input '{input_name}' of '{node_name}': "
-                            f"expected {dep_spec.extractor_type.__name__}, "
+                            f"expected {dep_spec['extractor'].__name__}, "
                             f"got {type(source_extractor).__name__}"
                         )
 
-    def get_execution_order(self) -> List[str]:
+    def get_execution_order(self) -> list[str]:
         """
         Get the execution order for the provided dependencies.
 
         Returns:
-            List of extractor names in execution order
+            list of extractor names in execution order
         """
         try:
             return list(nx.topological_sort(self.graph))
         except nx.NetworkXError as e:
             raise ValueError(f"Cannot determine execution order: {e}")
 
-    def get_execution_layers(self) -> List[List[str]]:
+    def get_execution_layers(self) -> list[list[str]]:
         """
         Get extractors organized in execution layers for parallel execution.
 
         Each layer has dependencies on the previous layer. Except for the first layer.
 
         Returns:
-            List of layers, where each layer contains extractors that can run in parallel
+            list of layers, where each layer contains extractors that can run in parallel
         """
         layers = []
         remaining_nodes = set(self.graph.nodes())
@@ -133,18 +121,18 @@ class FeatureDependencyGraph:
 
         return layers
 
-    def get_dependencies_for(self, extractor_name: str) -> Set[str]:
+    def get_dependencies_for(self, extractor_name: str) -> set[str]:
         """Get all transitive dependencies for an extractor."""
         if extractor_name not in self.graph:
             return set()
         return set(nx.ancestors(self.graph, extractor_name))
 
-    def get_dependents_of(self, extractor_name: str) -> Set[str]:
+    def get_dependents_of(self, extractor_name: str) -> set[str]:
         """Get all extractors that depend on this one."""
         if extractor_name not in self.graph:
             return set()
         return set(nx.descendants(self.graph, extractor_name))
 
-    def get_input_mapping_for(self, extractor_name: str) -> Dict[str, str]:
+    def get_input_mapping_for(self, extractor_name: str) -> dict[str, str]:
         """Get the input mapping for a specific extractor."""
         return self.input_mappings.get(extractor_name, {}).copy()

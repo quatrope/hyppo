@@ -1,13 +1,28 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
-
-from hyppo.core import HSI
-
-
-if TYPE_CHECKING:
-    from hyppo.core import FeatureSpace
+from hyppo.core import HSI, FeatureSpace
 
 
 class BaseRunner(ABC):
     @abstractmethod
-    def resolve(self, data: HSI, feature_space: "FeatureSpace") -> dict: ...
+    def resolve(self, data: HSI, feature_space: FeatureSpace) -> dict: ...
+
+    def _get_defaults_for_extractor(self, extractor) -> dict:
+        """
+        Get default extractors for optional inputs.
+
+        Args:
+            extractor: The extractor to get defaults for
+
+        Returns:
+            Dictionary mapping input names to default extractors
+        """
+        defaults = {}
+        input_deps = extractor.get_input_dependencies()
+
+        for input_name, dep_spec in input_deps.items():
+            if not dep_spec["required"]:
+                default_extractor = extractor.get_default_for_input(input_name)
+                if default_extractor is not None:
+                    defaults[input_name] = default_extractor
+
+        return defaults

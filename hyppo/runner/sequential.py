@@ -22,7 +22,7 @@ class SequentialRunner(BaseRunner):
             FeatureResultCollection with extraction results
         """
         feature_graph = feature_space.feature_graph
-        results = FeatureResultCollection()
+        results = FeatureResultCollection({})
         extracted_results = {}
 
         for extractor_name in feature_graph.get_execution_order():

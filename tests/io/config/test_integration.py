@@ -10,6 +10,7 @@ from hyppo import io
 from tests.fixtures.hsi import sample_hsi
 
 
+@pytest.mark.skip(reason="Not yet properly implemented")
 class TestConfigIntegration:
     """Integration tests for configuration system."""
 

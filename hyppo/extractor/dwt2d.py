@@ -42,6 +42,11 @@ class DWT2DExtractor(Extractor):
         self.mode = mode
         self.levels = levels
 
+    @classmethod
+    def feature_name(cls) -> str:
+        """Return the feature name."""
+        return "dwt2d"
+
     def _extract(self, data: HSI, **inputs):
         """
         Extract 2D DWT features from a hyperspectral image.
@@ -61,43 +66,49 @@ class DWT2DExtractor(Extractor):
             - "n_features": Total number of features per pixel
             - "original_shape": Original HSI shape (H, W, bands)
         """
-        X = data.reflectance  # shape (h, w, bands)
-        h, w, bands = X.shape
-        original_shape = X.shape
+        reflectance = data.reflectance
+        height, width, bands = reflectance.shape
+        original_shape = reflectance.shape
 
         features_per_band = []
 
         for b in range(bands):
-            band_img = X[:, :, b]
+            band_img = reflectance[:, :, b]
 
             # Perform 2D wavelet decomposition on the band image
-            coeffs = pywt.wavedec2(
+            coefficients = pywt.wavedec2(
                 band_img, wavelet=self.wavelet, mode=self.mode, level=self.levels
             )
 
             upsampled_maps = []
 
             # Approximation coefficients at the coarsest level
-            cA = coeffs[0]
+            coefficients_approximation = coefficients[0]
             # Resize to original spatial resolution
-            cA_up = resize(cA, (h, w), order=1, mode="reflect", anti_aliasing=False)
-            upsampled_maps.append(cA_up)
+            coefficients_approximation_up = resize(
+                coefficients_approximation,
+                (height, width),
+                order=1,
+                mode="reflect",
+                anti_aliasing=False,
+            )
+            upsampled_maps.append(coefficients_approximation_up)
 
             # Detail coefficients (horizontal, vertical, diagonal) at each level
-            for details in coeffs[1:]:
+            for details in coefficients[1:]:
                 for c in details:
                     c_up = resize(
-                        c, (h, w), order=1, mode="reflect", anti_aliasing=False
+                        c, (height, width), order=1, mode="reflect", anti_aliasing=False
                     )
                     upsampled_maps.append(c_up)
 
             # Stack all upsampled coefficient maps for this band along the feature axis
-            band_features = np.stack(
-                upsampled_maps, axis=-1
-            )  # shape (h, w, n_coeffs_per_band)
+            # Shape (height, width, n_coeffs_per_band)
+            band_features = np.stack(upsampled_maps, axis=-1)
+
             features_per_band.append(band_features)
 
-        # Concatenate all bands' features along the feature dimension
+        # Concatenate all bands features along the feature dimension
         features = np.concatenate(features_per_band, axis=-1)
 
         return {
@@ -113,7 +124,9 @@ class DWT2DExtractor(Extractor):
         """Validate extractor parameters."""
         if self.wavelet not in pywt.wavelist():
             raise ValueError(f"Wavelet '{self.wavelet}' not available")
+
         if self.mode not in pywt.Modes.modes:
             raise ValueError(f"Mode '{self.mode}' not available")
+
         if not isinstance(self.levels, int) or self.levels <= 0:
             raise ValueError("levels must be a positive integer")

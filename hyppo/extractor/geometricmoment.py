@@ -34,70 +34,75 @@ class GeometricMomentExtractor(Extractor):
     def __init__(self, n_components=3, max_order=3, window_sizes=[3, 9, 15]):
         super().__init__()
         self.n_components = n_components
-        self.max_order = max_order  # max_order = 6 por el paper pero es lentisimo
+        # Max order = 6 by the paper but it is slow # TODO! Check
+        self.max_order = max_order  
         self.window_sizes = window_sizes
 
     def _geometric_moments(self, patches):
         """Compute geometric moments for a set of patches."""
-        N, h, w = patches.shape
+        N, height, width = patches.shape
 
-        # Precomputar X^p * Y^q
-        x = np.arange(w)
-        y = np.arange(h)
-        X, Y = np.meshgrid(
-            x, y
-        )  # (h, w)  # matrices con las coord de cada pixel dentro de la ventana
+        # Precompute X^p * Y^q
+        x = np.arange(width)
+        y = np.arange(height)
+        # Matrices with the coordinates of each pixel within the window
+        # Shape: (height, width)
+        X, Y = np.meshgrid(x, y)
 
-        # lista de kernels que son los monomios X^p·Y^q para los (p,q) tq p+q <= max_order
-        # o sea es la base polinomica espacial -> de aca saco la sumatoria desp
+        # Kernels list with the monomials X^p * Y^q for p + q <= max_order
+        # It is the spatial polynomial basis
         kernels = [
             (X**p) * (Y**q)
             for p in range(self.max_order + 1)
             for q in range(self.max_order + 1 - p)
         ]
-        kernels = np.stack(kernels, axis=0)  # (M, h, w)    # apila en una unica matriz
-        M = kernels.shape[0]  # cant de momentos
+        # Stack the kernels in a single matrix
+        # Shape: (moments_count, height, width)
+        kernels = np.stack(kernels, axis=0)  
 
-        moments = np.zeros((N, M))
+        moments_count = kernels.shape[0]
+
+        moments = np.zeros((N, moments_count))
         block_size = 50000
 
         for i in range(0, N, block_size):
-            batch = patches[i : i + block_size]  # extrae el bloque actual
-            product = (
-                batch[:, None, :, :] * kernels[None, :, :, :]
-            )  # multiplica cada patch por el kernel => la sumatoria
-            moments[i : i + block_size] = product.sum(
-                axis=(-2, -1)
-            )  # suma para obtener momento escalar
+            # Extract the current batch
+            batch = patches[i : i + block_size]
+
+            # Multiply each patch by the kernel
+            product = batch[:, None, :, :] * kernels[None, :, :, :]
+
+            # Sum the product to get the scalar moment
+            moments[i : i + block_size] = product.sum(axis=(-2, -1))
 
         return moments
 
     def _extract_moments_multiscale(self, image):
         """Compute multiscale geometric moments for a single component."""
-        H, W = image.shape
+        height, width = image.shape
         all_scales = []
 
         for w in self.window_sizes:
-            pad = w // 2  # pixeles a agregar por lado
-            padded = np.pad(
-                image, pad, mode="reflect"
-            )  # completa la imagen por reflexion
-            windows = view_as_windows(
-                padded, (w, w)
-            )  # (H, W, w, w)   # extrae todas las ventanas
+            # Adds padding to the image
+            pad = w // 2
+            padded = np.pad(image, pad, mode="reflect")
+            # Extract all windows
+            # (height, width, w, w)
+            windows = view_as_windows(padded, (w, w))
+            # Reshape windows to patches
+            # (height * width, w, w)
+            patches = windows.reshape(-1, w, w)
 
-            # Aplicar kernels por broadcasting
-            patches = windows.reshape(
-                -1, w, w
-            )  # (H*W, w, w)      # convierte las ventanas en patches
+            # Compute geometric moments
+            # (height * width, M)
+            moments = self._geometric_moments(patches)
 
-            moments = self._geometric_moments(patches)  # (H*W, M)
+            # Reshape moments to original shape
+            moments = moments.reshape(height, width, -1)
+            all_scales.append(moments)
 
-            moments = moments.reshape(H, W, -1)  # forma original
-            all_scales.append(moments)  # agrega los momentos de esta escala a la lista
-        all_moments = np.concatenate(
-            all_scales, axis=-1
-        )  # concatena todas las salidad a lo largo del eje de features
+        # Concatenate all scales along the feature axis
+        all_moments = np.concatenate(all_scales, axis=-1)
 
         return all_moments
 
@@ -122,25 +127,25 @@ class GeometricMomentExtractor(Extractor):
                 - "window_sizes": list of int, window sizes used for multiscale computation.
                 - "max_order": int, maximum order of geometric moments used.
         """
-        X = data.reflectance
-        h, w, b = X.shape
-        X_reshaped = X.reshape(-1, b)
+        reflectance = data.reflectance
+        height, width, bands = reflectance.shape
+        reflectance_reshaped = reflectance.reshape(-1, bands)
 
         # PCA para reducción espectral
         self.pca = PCA(n_components=self.n_components)
-        pcs = self.pca.fit_transform(X_reshaped)
-        pcs = pcs.reshape(h, w, self.n_components)
+        pcs = self.pca.fit_transform(reflectance_reshaped)
+        pcs = pcs.reshape(height, width, self.n_components)
 
         # Extraer momentos para cada PC y escala
         all_features = []
         for i in range(self.n_components):
-            pc_img = pcs[..., i]  # img 2d corresp al i-PC => (h, w)
-            feats = self._extract_moments_multiscale(
-                pc_img
-            )  # calcula los momentos geom sobre esa img
+            pc_img = pcs[..., i]
+            # Calculates the geometric moments over that img
+            feats = self._extract_moments_multiscale(pc_img)
             all_features.append(feats)
 
-        features = np.concatenate(all_features, axis=-1)  # (h, w, features)
+        # Shape: (height, width, features)
+        features = np.concatenate(all_features, axis=-1)
 
         return {
             "features": features,
@@ -154,6 +159,7 @@ class GeometricMomentExtractor(Extractor):
         """Validate extractor parameters."""
         if not isinstance(self.n_components, int) or self.n_components <= 0:
             raise ValueError("n_components must be a positive integer.")
+
         if not isinstance(self.max_order, int) or self.max_order < 0:
             raise ValueError("max_order must be a non-negative integer.")
         if (
@@ -161,6 +167,7 @@ class GeometricMomentExtractor(Extractor):
             or len(self.window_sizes) == 0
         ):
             raise ValueError("window_sizes must be a non-empty list or tuple.")
+
         for w in self.window_sizes:
             if not isinstance(w, int) or w < 3 or w % 2 == 0:
                 raise ValueError(

@@ -63,7 +63,7 @@ class TestFeatureSpace:
             hyppo.extractor.MinExtractor(),
         ]
 
-        fs = FeatureSpace(extractors)
+        fs = FeatureSpace.from_list(extractors)
         results = fs.extract(sample_hsi)
 
         # Check that all extractors ran
@@ -81,7 +81,7 @@ class TestFeatureSpace:
             MediumExtractor(),
         ]
 
-        fs = FeatureSpace(extractors)
+        fs = FeatureSpace.from_list(extractors)
         results = fs.extract(sample_hsi)
 
         # Check that both extractors ran with proper dependency resolution
@@ -97,7 +97,7 @@ class TestFeatureSpace:
         ]
 
         with pytest.raises(ValueError, match="Duplicate extractor name"):
-            FeatureSpace(extractors)
+            FeatureSpace.from_list(extractors)
 
     def test_from_list_missing_dependency_error(self):
         """Test error when required dependency is missing."""
@@ -108,7 +108,7 @@ class TestFeatureSpace:
         ]
 
         with pytest.raises(ValueError, match="Missing required dependency"):
-            FeatureSpace(extractors)
+            FeatureSpace.from_list(extractors)
 
     def test_from_list_complex_chain(self, sample_hsi):
         """Test complex dependency chain resolution."""
@@ -124,7 +124,7 @@ class TestFeatureSpace:
             AdvancedExtractor(),  # deps: medium, simple1, simple2 (but simple2 is optional)
         ]
 
-        fs = FeatureSpace(extractors)
+        fs = FeatureSpace.from_list(extractors)
         results = fs.extract(sample_hsi)
 
         # All should work, advanced should resolve its dependencies
@@ -135,7 +135,7 @@ class TestFeatureSpace:
 
     def test_from_list_empty_list(self):
         """Test creating FeatureSpace from empty list."""
-        fs = FeatureSpace([])
+        fs = FeatureSpace.from_list([])
         assert len(fs.extractors) == 0
 
     def test_from_list_required_dependency_missing_fails(self):
@@ -150,4 +150,4 @@ class TestFeatureSpace:
 
         # This should fail because MediumExtractor (medium_input) is required
         with pytest.raises(ValueError, match="Missing required dependency"):
-            FeatureSpace(extractors)
+            FeatureSpace.from_list(extractors)

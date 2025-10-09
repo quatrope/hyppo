@@ -39,6 +39,11 @@ class DWT3DExtractor(Extractor):
         self.mode = mode
         self.levels = levels
 
+    @classmethod
+    def feature_name(cls) -> str:
+        """Return the feature name."""
+        return "dwt3d"
+
     def _extract(self, data: HSI, **inputs):
         """
         Extract 3D DWT features from a hyperspectral image.
@@ -60,36 +65,45 @@ class DWT3DExtractor(Extractor):
                 - "n_features": int, total number of features per pixel
                 - "original_shape": tuple, original shape of the HSI cube (H, W, B)
         """
-        X = data.reflectance
-        h, w, b = X.shape
-        original_shape = X.shape
+        reflectance = data.reflectance
+        height, width, bands = reflectance.shape
+        original_shape = reflectance.shape
 
         # Apply 3D DWT
-        coeffs = pywt.wavedecn(
-            X, wavelet=self.wavelet, mode=self.mode, level=self.levels
+        coefficients = pywt.wavedecn(
+            reflectance, wavelet=self.wavelet, mode=self.mode, level=self.levels
         )
 
-        # coeffs[0] is the LLL approximation
-        # coeffs[1:] are dictionaries with subbands like 'aad', 'ada', ..., 'ddd'
+        # coefficients[0] is the LLL approximation
+        # coefficients[1:] are dictionaries with subbands like 'aad', 'ada', ..., 'ddd'
         all_subbands = []
 
         # Upsample LLL
-        cA = coeffs[0]
-        cA_up = resize(cA, (h, w, b), order=1, mode="reflect", anti_aliasing=False)
-        all_subbands.append(cA_up)
+        coefficients_approximation = coefficients[0]
+        coefficients_approximation_up = resize(
+            coefficients_approximation,
+            (height, width, bands),
+            order=1,
+            mode="reflect",
+            anti_aliasing=False,
+        )
+        all_subbands.append(coefficients_approximation_up)
 
         # Process detail coefficients
-        for detail_level in coeffs[1:]:
-            for key, c in detail_level.items():
-                c_up = resize(
-                    c, (h, w, b), order=1, mode="reflect", anti_aliasing=False
+        for detail_level in coefficients[1:]:
+            for coefficient in detail_level.values():
+                coefficient_up = resize(
+                    coefficient,
+                    (height, width, bands),
+                    order=1,
+                    mode="reflect",
+                    anti_aliasing=False,
                 )
-                all_subbands.append(c_up)
+                all_subbands.append(coefficient_up)
 
         # Stack all coefficients along the feature axis (last dimension)
-        features = np.concatenate(
-            all_subbands, axis=-1
-        )  # shape: (h, w, b * n_subbands)
+        # Shape: (height, width, bands * n_subbands)
+        features = np.concatenate(all_subbands, axis=-1)
 
         return {
             "features": features,
@@ -104,7 +118,9 @@ class DWT3DExtractor(Extractor):
         """Validate extractor parameters."""
         if self.wavelet not in pywt.wavelist():
             raise ValueError(f"Wavelet '{self.wavelet}' not available")
+
         if self.mode not in pywt.Modes.modes:
             raise ValueError(f"Mode '{self.mode}' not available")
+
         if not isinstance(self.levels, int) or self.levels <= 0:
             raise ValueError("levels must be a positive integer")

@@ -104,7 +104,7 @@ class DaskRunner(BaseRunner):
         computed_results: Iterable = self._client.get(dask_graph, result_keys)  # type: ignore
 
         # Build FeatureResultCollection from results
-        results = FeatureResultCollection()
+        results = FeatureResultCollection({})
         for extractor_name, result_data in zip(result_keys, computed_results):
             if result_data is not None:
                 extractor = feature_graph.extractors[extractor_name]
@@ -158,6 +158,8 @@ class DaskRunner(BaseRunner):
             # Add metadata about input names and defaults
             task_args.append(list(input_mapping.keys()))  # input names
             task_args.append(self._get_defaults_for_extractor(extractor))  # defaults
+
+            print(task_args)
 
             # Create the task tuple for this extractor
             graph[extractor_name] = tuple(task_args)

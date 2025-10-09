@@ -1,10 +1,13 @@
 from abc import ABC, abstractmethod
 from hyppo.core import HSI, FeatureSpace
+from hyppo.core import FeatureResultCollection
 
 
 class BaseRunner(ABC):
     @abstractmethod
-    def resolve(self, data: HSI, feature_space: FeatureSpace) -> dict: ...
+    def resolve(
+        self, data: HSI, feature_space: FeatureSpace
+    ) -> FeatureResultCollection: ...
 
     def _get_defaults_for_extractor(self, extractor) -> dict:
         """
@@ -21,7 +24,7 @@ class BaseRunner(ABC):
 
         for input_name, dep_spec in input_deps.items():
             if not dep_spec["required"]:
-                default_extractor = extractor.get_default_for_input(input_name)
+                default_extractor = extractor.get_input_default(input_name)
                 if default_extractor is not None:
                     defaults[input_name] = default_extractor
 

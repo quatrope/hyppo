@@ -2,10 +2,10 @@
 
 import pytest
 import numpy as np
-from hyppo.extractor.base import Extractor, InputDependency
+from hyppo.extractor.base import Extractor
 from hyppo.extractor.mean import MeanExtractor
 from hyppo.extractor.std import StdExtractor
-from hyppo.core._feature_dependency_graph import FeatureDependencyGraph
+from hyppo.core import FeatureDependencyGraph
 from tests.fixtures.extractors import (
     SimpleExtractor,
     MediumExtractor,
@@ -86,15 +86,19 @@ class TestFeatureDependencyGraph:
 
         # Create two extractors that depend on each other
         class CircularA(Extractor):
-            input_dependencies = {"b": InputDependency("b", Extractor, required=True)}
+            @classmethod
+            def get_input_dependencies(cls) -> dict:
+                return {"b": {"extractor": Extractor, "required": True}}
 
-            def extract(self, data, **inputs):
+            def _extract(self, data, **inputs):
                 return {"features": np.ones((data.height, data.width))}
 
         class CircularB(Extractor):
-            input_dependencies = {"a": InputDependency("a", Extractor, required=True)}
+            @classmethod
+            def get_input_dependencies(cls) -> dict:
+                return {"a": {"extractor": Extractor, "required": True}}
 
-            def extract(self, data, **inputs):
+            def _extract(self, data, **inputs):
                 return {"features": np.ones((data.height, data.width))}
 
         a = CircularA()

@@ -33,6 +33,10 @@ class DWT1DExtractor(Extractor):
         self.mode = mode
         self.levels = levels
 
+    @classmethod
+    def feature_name(cls):
+        return "dwt1d"
+
     def _extract(self, data: HSI, **inputs):
         """
         Extract 1D DWT features from a hyperspectral image.
@@ -62,53 +66,54 @@ class DWT1DExtractor(Extractor):
                     Shape of the original HSI (H, W, bands).
         """
         # Prepare data
-        X = data.reflectance
-        h, w, bands = X.shape
-        X_reshaped = X.reshape(-1, bands)
+        reflectance = data.reflectance
+        height, width, bands = reflectance.shape
+        reflectance_reshaped = reflectance.reshape(-1, bands)
 
         # Apply DWT to each pixel's spectral signature
         features_list = []
 
-        for i in range(X_reshaped.shape[0]):
-            pixel_spectrum = X_reshaped[i, :]
+        for i in range(reflectance_reshaped.shape[0]):
+            pixel_spectrum = reflectance_reshaped[i, :]
 
             # Apply 1D DWT to the spectral signature
-            coeffs = pywt.wavedec(
+            coefficients = pywt.wavedec(
                 pixel_spectrum, self.wavelet, mode=self.mode, level=self.levels
             )
 
             # Concatenate all coefficients as features
-            pixel_features = np.concatenate(coeffs)
+            pixel_features = np.concatenate(coefficients)
             features_list.append(pixel_features)
 
         features_2d = np.array(features_list)
-        features = features_2d.reshape(h, w, -1)
+        features = features_2d.reshape(height, width, -1)
 
         # Get coefficient lengths from first pixel for reference
-        sample_coeffs = pywt.wavedec(
-            X_reshaped[0, :], self.wavelet, mode=self.mode, level=self.levels
+        sample_coefficients = pywt.wavedec(
+            reflectance_reshaped[0, :], self.wavelet, mode=self.mode, level=self.levels
         )
-        coeffs_lengths = [len(c) for c in sample_coeffs]
+        coefficients_lengths = [len(c) for c in sample_coefficients]
 
-        # ver si poner una validacion o algo con esto
-        # max_level = pywt.dwt_max_level(data_len=107, filter_len=pywt.Wavelet('db4').dec_len)
+        # TODO: Consider validating max_level using pywt.dwt_max_level()
 
         return {
             "features": features,
             "wavelet": self.wavelet,
             "mode": self.mode,
             "levels": self.levels,
-            "coeffs_lengths": coeffs_lengths,
+            "coeffs_lengths": coefficients_lengths,
             "n_features": features.shape[1],
-            "original_shape": (h, w, bands),
+            "original_shape": (height, width, bands),
         }
 
     def _validate(self, data: HSI, **inputs):
         """Validate extractor parameters."""
         if self.wavelet not in pywt.wavelist():
             raise ValueError(f"Wavelet '{self.wavelet}' not available")
+            
         if self.mode not in pywt.Modes.modes:
             raise ValueError(f"Mode '{self.mode}' not available")
+
         if not isinstance(self.levels, int) or self.levels <= 0:
             raise ValueError("levels must be a positive integer")
 

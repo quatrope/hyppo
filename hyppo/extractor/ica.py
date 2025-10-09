@@ -62,12 +62,12 @@ class ICAExtractor(Extractor):
             - reconstruction_error : float or None
                 Mean squared reconstruction error (if computable).
         """
-        X = data.reflectance
-        h, w, bands = X.shape
-        X_reshaped = X.reshape(-1, bands)
+        reflectance = data.reflectance
+        height, width, bands = reflectance.shape
+        reflectance_reshaped = reflectance.reshape(-1, bands)
 
         # Verify that n_components is valid
-        n_samples, n_features = X_reshaped.shape
+        n_samples, n_features = reflectance_reshaped.shape
         max_components = min(n_samples, n_features)
         actual_n_components = min(self.n_components, max_components)
 
@@ -79,8 +79,9 @@ class ICAExtractor(Extractor):
         )
 
         # Transform data
-        features_2d = self.ica.fit_transform(X_reshaped)
-        features = features_2d.reshape(h, w, actual_n_components)
+        features_2d = self.ica.fit_transform(reflectance_reshaped)
+
+        features = features_2d.reshape(height, width, actual_n_components)
 
         # Calculate mixing matrix
         mixing_matrix = self.ica.mixing_
@@ -88,8 +89,10 @@ class ICAExtractor(Extractor):
         # Calculate reconstruction error if possible
         try:
             X_reconstructed = self.ica.inverse_transform(features_2d)
-            reconstruction_error = np.mean((X_reshaped - X_reconstructed) ** 2)
-        except Exception:
+            reconstruction_error = np.mean(
+                (reflectance_reshaped - X_reconstructed) ** 2
+            )
+        except Exception:  # TODO! Specifiy proper exception
             reconstruction_error = None
 
         return {
@@ -98,7 +101,7 @@ class ICAExtractor(Extractor):
             "mixing_matrix": mixing_matrix,
             "mean": self.ica.mean_ if hasattr(self.ica, "mean_") else None,
             "n_components": actual_n_components,
-            "original_shape": (h, w, bands),
+            "original_shape": (height, width, bands),
             "n_iter": self.ica.n_iter_,
             "reconstruction_error": reconstruction_error,
         }
@@ -107,6 +110,7 @@ class ICAExtractor(Extractor):
         """Validate extractor parameters."""
         if self.n_components <= 0:
             raise ValueError("n_components must be positive")
+
         valid_whiten = ["unit-variance", "arbitrary-variance", False]
         if self.whiten not in valid_whiten:
             raise ValueError(f"whiten must be one of {valid_whiten}")

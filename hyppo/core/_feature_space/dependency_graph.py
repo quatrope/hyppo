@@ -61,6 +61,12 @@ class FeatureDependencyGraph:
 
             # Check each declared input dependency
             for input_name, dep_spec in input_deps.items():
+                # Check if required input is missing
+                if dep_spec.get("required", True) and input_name not in input_mapping:
+                    raise ValueError(
+                        f"Extractor '{node_name}' requires input '{input_name}' but it was not provided"
+                    )
+
                 # If input is mapped, validate the source extractor type
                 if input_name in input_mapping:
                     source_name = input_mapping[input_name]

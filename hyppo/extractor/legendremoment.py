@@ -46,12 +46,11 @@ class LegendreMomentExtractor(Extractor):
 
     def _legendre_moments(self, patches):
         """Compute Legendre moments for a set of patches."""
-        N, h, w = patches.shape
+        N, height, width = patches.shape
 
         # Crear coordenadas normalizadas en [-1, 1]
-        x = np.linspace(-1, 1, w)
-        y = np.linspace(-1, 1, h)
-        X, Y = np.meshgrid(x, y)  # (h, w)
+        x = np.linspace(-1, 1, width)
+        y = np.linspace(-1, 1, height)
 
         # Construir base de polinomios de Legendre
         kernels = [
@@ -75,17 +74,17 @@ class LegendreMomentExtractor(Extractor):
 
     def _extract_moments_multiscale(self, image):
         """Compute multiscale Legendre moments for a single component."""
-        H, W = image.shape
+        height, width = image.shape
         all_scales = []
 
-        for w in self.window_sizes:
-            pad = w // 2
+        for window_size in self.window_sizes:
+            pad = window_size // 2
             padded = np.pad(image, pad, mode="reflect")
-            windows = view_as_windows(padded, (w, w))
-            patches = windows.reshape(-1, w, w)
+            windows = view_as_windows(padded, (window_size, window_size))
+            patches = windows.reshape(-1, window_size, window_size)
 
             moments = self._legendre_moments(patches)
-            moments = moments.reshape(H, W, -1)
+            moments = moments.reshape(height, width, -1)
             all_scales.append(moments)
 
         return np.concatenate(all_scales, axis=-1)
@@ -111,14 +110,14 @@ class LegendreMomentExtractor(Extractor):
                 - "window_sizes": list of int, window sizes used for multiscale computation.
                 - "max_order": int, maximum Legendre polynomial order used.
         """
-        X = data.reflectance
-        h, w, b = X.shape
-        X_reshaped = X.reshape(-1, b)
+        reflectance = data.reflectance
+        height, width, bands = reflectance.shape
+        reflectance_reshaped = reflectance.reshape(-1, bands)
 
         # Reducción espectral con PCA
         self.pca = PCA(n_components=self.n_components)
-        pcs = self.pca.fit_transform(X_reshaped)
-        pcs = pcs.reshape(h, w, self.n_components)
+        pcs = self.pca.fit_transform(reflectance_reshaped)
+        pcs = pcs.reshape(height, width, self.n_components)
 
         # Extraer momentos para cada componente principal
         all_features = []
@@ -140,13 +139,16 @@ class LegendreMomentExtractor(Extractor):
         """Validate extractor parameters."""
         if not isinstance(self.n_components, int) or self.n_components <= 0:
             raise ValueError("n_components must be a positive integer.")
+
         if not isinstance(self.max_order, int) or self.max_order < 0:
             raise ValueError("max_order must be a non-negative integer.")
+
         if (
             not isinstance(self.window_sizes, (list, tuple))
             or len(self.window_sizes) == 0
         ):
             raise ValueError("window_sizes must be a non-empty list or tuple.")
+
         for w in self.window_sizes:
             if not isinstance(w, int) or w < 3 or w % 2 == 0:
                 raise ValueError(

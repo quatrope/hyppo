@@ -2,6 +2,7 @@ import pytest
 import numpy as np
 
 from hyppo.core import HSI, FeatureSpace, FeatureResultCollection
+from hyppo.core import FeatureResult
 from hyppo.runner import SequentialRunner
 from hyppo.extractor.base import Extractor
 
@@ -16,13 +17,9 @@ class SimpleExtractor(Extractor):
 class DependentExtractor(Extractor):
     """Extractor with dependencies for testing."""
 
-    def get_input_dependencies(self) -> dict:
-        return {
-            "input_data": {
-                "extractor": SimpleExtractor,
-                "required": True
-            }
-        }
+    @classmethod
+    def get_input_dependencies(cls):
+        return {"input_data": {"extractor": SimpleExtractor, "required": True}}
 
     def _extract(self, data: HSI, **inputs) -> dict:
         input_value = inputs["input_data"]["value"]
@@ -32,15 +29,12 @@ class DependentExtractor(Extractor):
 class OptionalDependencyExtractor(Extractor):
     """Extractor with optional dependency."""
 
-    def get_input_dependencies(self) -> dict:
-        return {
-            "optional_input": {
-                "extractor": SimpleExtractor,
-                "required": False
-            }
-        }
+    @classmethod
+    def get_input_dependencies(cls) -> dict:
+        return {"optional_input": {"extractor": SimpleExtractor, "required": False}}
 
-    def get_default_for_input(self, input_name: str):
+    @classmethod
+    def get_input_default(cls, input_name: str):
         if input_name == "optional_input":
             return SimpleExtractor()
         return None
@@ -118,7 +112,10 @@ class TestSequentialRunner:
         assert "simple" in results
         assert "dependent" in results
         assert "result" in results["dependent"]["data"]
-        assert results["dependent"]["data"]["result"] == results["simple"]["data"]["value"] * 2
+        assert (
+            results["dependent"]["data"]["result"]
+            == results["simple"]["data"]["value"] * 2
+        )
 
     def test_resolve_execution_order(self, small_hsi):
         """Test that extractors execute in correct topological order."""
@@ -129,13 +126,9 @@ class TestSequentialRunner:
             pass
 
         class SecondCounter(CounterExtractor):
-            def get_input_dependencies(self) -> dict:
-                return {
-                    "input": {
-                        "extractor": FirstCounter,
-                        "required": True
-                    }
-                }
+            @classmethod
+            def get_input_dependencies(cls) -> dict:
+                return {"input": {"extractor": FirstCounter, "required": True}}
 
         runner = SequentialRunner()
         fs = FeatureSpace.from_list([SecondCounter(), FirstCounter()])
@@ -241,5 +234,5 @@ class TestSequentialRunner:
         assert len(results) == 2
         assert "mean" in results
         assert "std" in results
-        assert isinstance(results["mean"], dict)
-        assert isinstance(results["std"], dict)
+        assert isinstance(results["mean"], FeatureResult)
+        assert isinstance(results["std"], FeatureResult)

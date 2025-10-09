@@ -5,6 +5,7 @@ from hyppo.extractor.base import Extractor
 from hyppo.extractor import registry
 
 
+
 class ConfigExecutor:
     """Executor that builds FeatureSpace from configuration."""
 

@@ -7,16 +7,76 @@ import numpy as np
 
 
 class GLCMExtractor(Extractor):
+    """Gray Level Co-occurrence Matrix (GLCM) texture feature extractor.
+
+    # TODO! Check docstring
+
+    Computes texture features from hyperspectral images using GLCM analysis
+    at multiple scales and orientations. GLCM captures spatial relationships
+    between pixel intensities to characterize texture properties.
+
+    Parameters
+    ----------
+    bands : list[int] | None, default=None
+        Specific band indices to process. If None, processes all bands.
+    distances : list[int] | None, default=[1]
+        Pixel distances for GLCM computation. Default [1] analyzes nearest neighbors.
+    angles : list[float] | None, default=[0, π/4, π/2, 3π/4]
+        Angles in radians for directional texture analysis.
+        Default analyzes 0°, 45°, 90°, and 135° orientations.
+    symmetric : bool, default=True
+        Whether to compute symmetric GLCM matrices.
+    properties : list[str] | None, default=['contrast', 'entropy', 'correlation', 'dissimilarity']
+        Texture properties to extract from GLCM.
+        Available: 'contrast', 'dissimilarity', 'homogeneity', 'energy',
+        'correlation', 'ASM', 'entropy'.
+    levels : int | None, default=None
+        Number of gray levels for quantization. If None, automatically determined
+        based on image dynamic range (typically 32-64 as recommended in literature).
+    window_sizes : list[int], default=[7]
+        Window sizes for multiscale texture analysis. Must be odd integers ≥ 3.
+    orientation_mode : str, default='separate'
+        How to combine directional information:
+        - 'separate': Keep all orientations as separate features (recommended)
+        - 'look_direction': Use 0°, 90°, and average of 45°/135° (3 directions)
+        - 'average': Average all orientations into single value per property
+
+    Notes
+    -----
+    GLCM quantifies how frequently pairs of pixels with specific values occur
+    at a given spatial relationship. This captures texture patterns that are
+    crucial for hyperspectral image classification.
+
+    The extractor follows recommendations from hyperspectral GLCM literature:
+    - Gray levels G > 24, typically 32-64
+    - Multiple orientations for rotation invariance
+    - Nearest neighbor distance (δ=1) for fine texture detail
+    - Multiple window sizes for multiscale analysis
+
+    Examples
+    --------
+    >>> # Basic usage with defaults
+    >>> extractor = GLCMExtractor()
+    >>> features = extractor.extract(hsi)
+
+    >>> # Custom configuration for specific bands and scales
+    >>> extractor = GLCMExtractor(
+    ...     bands=[10, 20, 30],
+    ...     window_sizes=[5, 9, 13],
+    ...     properties=['contrast', 'correlation']
+    ... )
+    """
+
     def __init__(
         self,
-        bands=None,  # Bandas específicas a procesar (None = todas)
-        distances=None,  # Pixel distances for GLCM computation
-        angles=None,  # Angles in radians for GLCM computation
-        symmetric=True,  # Whether to compute symmetric GLCM matrices
-        properties=None,  # Properties to calculate
-        levels=None,  # Number of levels for quantization (auto-determined if None)
-        window_sizes=[7],  # Window sizes for multiscale analysis
-        orientation_mode="separate",  # 'separate', 'look_direction', or 'average'
+        bands=None,
+        distances=None,
+        angles=None,
+        symmetric=True,
+        properties=None,
+        levels=None,
+        window_sizes=[7],
+        orientation_mode="separate",
     ):
         super().__init__()
 
@@ -83,7 +143,7 @@ class GLCMExtractor(Extractor):
         """
         Optimized GLCM computation based on paper's recommendations
         """
-        N, h, w = patches.shape
+        N, height, width = patches.shape
 
         if self.orientation_mode == "separate":
             # Use all orientations separately (paper's recommendation)
@@ -91,7 +151,7 @@ class GLCMExtractor(Extractor):
         elif self.orientation_mode == "look_direction":
             # Use look direction approach: 0°, 90°, and average of 45°/135°
             n_features = len(self.distances) * 3 * len(self.properties)
-        else:  # average
+        else: 
             # Average all orientations
             n_features = len(self.distances) * len(self.properties)
 
@@ -100,6 +160,8 @@ class GLCMExtractor(Extractor):
         # Process in blocks to manage memory
         block_size = 500
 
+        # TODO! Check for parallelization opportunities
+        # TODO! Improve code
         for i in range(0, N, block_size):
             batch = patches[i : i + block_size]
             batch_size = batch.shape[0]
@@ -243,18 +305,18 @@ class GLCMExtractor(Extractor):
         return all_features, levels
 
     def _extract(self, data: HSI, **inputs):
-        X = data.reflectance  # (H, W, B)
-        h, w, b = X.shape
+        reflectance = data.reflectance  # (H, W, B)
+        height, width, bands = reflectance.shape
 
         # Determine which bands to process
-        bands_to_process = self.bands if self.bands is not None else list(range(b))
+        bands_to_process = self.bands if self.bands is not None else list(range(bands))
 
         # Extract GLCM features for each spectral band
         all_features = []
         used_levels = []
 
         for band_idx in bands_to_process:
-            band_img = X[..., band_idx]
+            band_img = reflectance[..., band_idx]
             feats, levels = self._extract_glcm_multiscale(band_img)
             all_features.append(feats)
             used_levels.append(levels)
@@ -286,7 +348,7 @@ class GLCMExtractor(Extractor):
             "n_features_per_scale": n_features_per_scale,
             "n_features_per_band": n_features_per_band,
             "total_features": total_features,
-            "original_shape": (h, w),
+            "original_shape": (height, width),
         }
 
     def _validate(self, data: HSI, **inputs):
@@ -294,26 +356,33 @@ class GLCMExtractor(Extractor):
             not isinstance(self.bands, list) or not self.bands
         ):
             raise ValueError("bands must be None or a non-empty list of integers.")
+
         if not self.distances or not isinstance(self.distances, list):
             raise ValueError("distances must be a non-empty list of integers.")
+
         if not self.angles or not isinstance(self.angles, list):
             raise ValueError("angles must be a non-empty list of floats (radians).")
+
         if (
             not isinstance(self.window_sizes, (list, tuple))
             or len(self.window_sizes) == 0
         ):
             raise ValueError("window_sizes must be a non-empty list or tuple.")
+
         for w in self.window_sizes:
             if not isinstance(w, int) or w < 3 or w % 2 == 0:
                 raise ValueError(
                     f"Each window size must be an odd integer ≥ 3. Got: {w}"
                 )
+
         if self.levels is not None and self.levels <= 1:
             raise ValueError(
                 "levels must be greater than 1 or None for auto-determination."
             )
+
         if not isinstance(self.properties, list) or len(self.properties) == 0:
             raise ValueError("properties must be a non-empty list.")
+
         if self.orientation_mode not in ["separate", "look_direction", "average"]:
             raise ValueError(
                 "orientation_mode must be 'separate', 'look_direction', or 'average'."

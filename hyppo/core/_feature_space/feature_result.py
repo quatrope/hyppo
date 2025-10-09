@@ -1,10 +1,10 @@
-from typing import Any, Dict, Optional
 import numpy as np
+import pandas as pd
 
-from hyppo.utils.attr_dict import AttrDict
+from hyppo.utils.bunch import Bunch
 
 
-class FeatureResult(AttrDict):
+class FeatureResult(Bunch):
     """
     Dictionary for feature extraction results.
 
@@ -16,9 +16,12 @@ class FeatureResult(AttrDict):
         [1, 2, 3]
     """
 
-    def to_numpy(self) -> Dict[str, np.ndarray]:
+    def __init__(self, data):
+        super().__init__("FeatureResult", data)
+
+    def to_numpy(self):
         """Convert all values to numpy arrays where possible."""
-        result = {}
+        result: dict[str, np.ndarray] = {}
         for key, value in self.items():
             try:
                 result[key] = np.array(value)
@@ -26,8 +29,36 @@ class FeatureResult(AttrDict):
                 result[key] = value
         return result
 
+    def describe(self):
+        """
+        Get summary information about this feature result.
 
-class FeatureResultCollection(AttrDict):
+        Returns:
+            Dictionary with:
+                - dimensions: Shape of the 'features' array if present
+                - extra_data: Comma-separated list of extra data keys (excluding 'features')
+        """
+        data = self.get("data", {})
+
+        features_shape = None
+        if isinstance(data, dict) and "features" in data:
+            features = data["features"]
+            if isinstance(features, np.ndarray):
+                features_shape = features.shape
+            elif hasattr(features, "shape"):
+                features_shape = features.shape
+
+        extra_keys = []
+        if isinstance(data, dict):
+            extra_keys = [k for k in data.keys() if k != "features"]
+
+        return {
+            "dimensions": features_shape,
+            "extra_data": ", ".join(extra_keys) if extra_keys else "",
+        }
+
+
+class FeatureResultCollection(Bunch):
     """
     Collection of FeatureResult objects.
 
@@ -42,12 +73,15 @@ class FeatureResultCollection(AttrDict):
         [1, 2, 3]
     """
 
+    def __init__(self, data):
+        super().__init__("FeatureResultCollection", data)
+
     def add_result(
         self,
         extractor_name: str,
-        data: Dict[str, Any],
-        extractor: Any = None,
-        inputs_used: Optional[list] = None,
+        data: dict,
+        extractor=None,
+        inputs_used: list | None = None,
     ) -> None:
         """
         Add a feature extraction result.
@@ -59,11 +93,11 @@ class FeatureResultCollection(AttrDict):
             inputs_used: List of input names used by the extractor
         """
         result = FeatureResult(
-            {"data": data, "extractor": extractor, "inputs_used": inputs_used or []}
+            {"data": data, "extractor": extractor, "inputs_used": inputs_used or []},
         )
         self[extractor_name] = result
 
-    def get_all_features(self) -> Dict[str, Any]:
+    def get_all_features(self):
         """Get all extracted feature data (without metadata)."""
         features = {}
         for extractor_name, result in self.items():
@@ -75,9 +109,9 @@ class FeatureResultCollection(AttrDict):
                 )
         return features
 
-    def get_metadata(self) -> Dict[str, Dict[str, Any]]:
+    def get_metadata(self):
         """Get metadata about extractors and their usage."""
-        metadata = {}
+        metadata: dict[str, dict] = {}
         for extractor_name, result in self.items():
             if isinstance(result, FeatureResult):
                 metadata[extractor_name] = {
@@ -97,7 +131,7 @@ class FeatureResultCollection(AttrDict):
         """Get list of all extractor names."""
         return list(self.keys())
 
-    def to_dict(self) -> Dict[str, Dict[str, Any]]:
+    def to_dict(self):
         """Convert to a regular nested dictionary."""
         return {
             name: (
@@ -106,11 +140,24 @@ class FeatureResultCollection(AttrDict):
             for name, result in self.items()
         }
 
+    def describe(self) -> pd.DataFrame:
+        """
+        Get summary information for all feature results.
 
-# results = FeatureResultCollection()
+        Returns:
+            DataFrame with columns:
+                - feature_name: Name of each feature
+                - dimensions: Shape of the 'features' array
+                - extra_data: Comma-separated list of extra data keys
+        """
+        rows = []
+        for feature_name, result in self.items():
+            if isinstance(result, FeatureResult):
+                info = result.describe()
+                info["feature_name"] = feature_name
+                rows.append(info)
 
-
-
+        return pd.DataFrame(rows, columns=["feature_name", "dimensions", "extra_data"])
 
 
 __all__ = ["FeatureResult", "FeatureResultCollection"]

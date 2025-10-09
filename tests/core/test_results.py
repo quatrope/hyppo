@@ -1,5 +1,6 @@
 import pytest
 import numpy as np
+import pandas as pd
 from hyppo.core import FeatureResult, FeatureResultCollection
 from hyppo.extractor.mean import MeanExtractor
 
@@ -13,63 +14,93 @@ class TestFeatureResult:
         result = FeatureResult(data)
 
         assert result == data
-        assert isinstance(result, dict)
-
-    def test_dot_notation_access(self):
-        """Test accessing values via dot notation."""
-        data = {"mean": [1, 2, 3], "std": [0.1, 0.2, 0.3]}
-        result = FeatureResult(data)
-
-        # Test getting values
-        assert result.mean == [1, 2, 3]
-        assert result.std == [0.1, 0.2, 0.3]
-
-        # Test setting values
-        result.new_feature = [4, 5, 6]
-        assert result.new_feature == [4, 5, 6]
-        assert result["new_feature"] == [4, 5, 6]
-
-    def test_dictionary_access(self):
-        """Test accessing values via dictionary access."""
-        data = {"mean": [1, 2, 3], "std": [0.1, 0.2, 0.3]}
-        result = FeatureResult(data)
-
-        assert result["mean"] == [1, 2, 3]
-        assert result["std"] == [0.1, 0.2, 0.3]
-
-    def test_attribute_error(self):
-        """Test AttributeError for non-existent attributes."""
-        result = FeatureResult({"mean": [1, 2, 3]})
-
-        with pytest.raises(AttributeError):
-            _ = result.nonexistent
-
-    def test_delete_attribute(self):
-        """Test deleting attributes via dot notation."""
-        result = FeatureResult({"mean": [1, 2, 3], "std": [0.1, 0.2, 0.3]})
-
-        del result.std
-        assert "std" not in result
-        assert "mean" in result
-
-    def test_to_dict(self):
-        """Test converting to regular dictionary."""
-        data = {"mean": [1, 2, 3], "std": [0.1, 0.2, 0.3]}
-        result = FeatureResult(data)
-        converted = result.to_dict()
-
-        assert converted == data
-        assert type(converted) == dict
 
     def test_to_numpy(self):
         """Test converting values to numpy arrays."""
-        data = {"mean": [1, 2, 3], "std": [0.1, 0.2, 0.3], "label": "test"}
+        # Arrange: Create result with mixed types including non-convertible
+        class BadArray:
+            """Object that raises on array conversion."""
+            def __array__(self):
+                raise ValueError("Cannot convert")
+
+        bad_obj = BadArray()
+        data = {
+            "mean": [1, 2, 3],
+            "std": [0.1, 0.2, 0.3],
+            "label": "test",
+            "obj": bad_obj
+        }
         result = FeatureResult(data)
+
+        # Act: Convert to numpy
         numpy_result = result.to_numpy()
 
+        # Assert: Verify conversions
         assert isinstance(numpy_result["mean"], np.ndarray)
         assert isinstance(numpy_result["std"], np.ndarray)
-        assert numpy_result["label"] == "test"  # Non-convertible values stay as-is
+        assert numpy_result["label"] == "test"
+        assert numpy_result["obj"] is bad_obj
+
+    def test_describe_with_features(self):
+        """Test describe method with features array."""
+        # Arrange: Create result with features array
+        data = {
+            "data": {
+                "features": np.array([[1, 2, 3], [4, 5, 6]]),
+                "extra1": "value1",
+                "extra2": "value2"
+            }
+        }
+        result = FeatureResult(data)
+
+        # Act: Get description
+        desc = result.describe()
+
+        # Assert: Verify description
+        assert desc["dimensions"] == (2, 3)
+        assert desc["extra_data"] == "extra1, extra2"
+
+    def test_describe_without_features(self):
+        """Test describe method without features array."""
+        # Arrange: Create result without features
+        data = {"data": {"key1": "value1", "key2": "value2"}}
+        result = FeatureResult(data)
+
+        # Act: Get description
+        desc = result.describe()
+
+        # Assert: Verify description
+        assert desc["dimensions"] is None
+        assert desc["extra_data"] == "key1, key2"
+
+    def test_describe_empty_data(self):
+        """Test describe method with empty data."""
+        # Arrange: Create result with empty data
+        result = FeatureResult({})
+
+        # Act: Get description
+        desc = result.describe()
+
+        # Assert: Verify description
+        assert desc["dimensions"] is None
+        assert desc["extra_data"] == ""
+
+    def test_describe_with_shape_attribute(self):
+        """Test describe method with non-ndarray object that has shape."""
+        # Arrange: Create mock object with shape attribute
+        class ShapeObject:
+            """Mock object with shape attribute."""
+            shape = (5, 10)
+
+        data = {"data": {"features": ShapeObject()}}
+        result = FeatureResult(data)
+
+        # Act: Get description
+        desc = result.describe()
+
+        # Assert: Verify description uses shape attribute
+        assert desc["dimensions"] == (5, 10)
+        assert desc["extra_data"] == ""
 
 
 class TestFeatureResultCollection:
@@ -77,13 +108,12 @@ class TestFeatureResultCollection:
 
     def test_feature_result_collection_creation(self):
         """Test creating FeatureResultCollection."""
-        collection = FeatureResultCollection()
-        assert isinstance(collection, dict)
+        collection = FeatureResultCollection({})
         assert len(collection) == 0
 
     def test_add_result(self):
         """Test adding results to collection."""
-        collection = FeatureResultCollection()
+        collection = FeatureResultCollection({})
         extractor = MeanExtractor()
         data = {"mean": np.array([1, 2, 3])}
 
@@ -94,25 +124,9 @@ class TestFeatureResultCollection:
         assert collection.mean_extractor.extractor == extractor
         assert collection.mean_extractor.inputs_used == ["input1"]
 
-    def test_dot_notation_access_collection(self):
-        """Test accessing extractor results via dot notation."""
-        collection = FeatureResultCollection()
-        extractor = MeanExtractor()
-        data = {"mean": np.array([1, 2, 3])}
-
-        collection.add_result("mean_extractor", data, extractor)
-
-        # Dot notation access
-        assert collection.mean_extractor.data == data
-        assert collection.mean_extractor.extractor == extractor
-
-        # Dictionary access
-        assert collection["mean_extractor"]["data"] == data
-        assert collection["mean_extractor"]["extractor"] == extractor
-
     def test_get_all_features(self):
         """Test extracting all feature data."""
-        collection = FeatureResultCollection()
+        collection = FeatureResultCollection({})
 
         collection.add_result("mean_ext", {"mean": [1, 2, 3]})
         collection.add_result("std_ext", {"std": [0.1, 0.2, 0.3]})
@@ -121,9 +135,27 @@ class TestFeatureResultCollection:
         expected = {"mean": [1, 2, 3], "std": [0.1, 0.2, 0.3]}
         assert features == expected
 
+    def test_get_all_features_with_non_dict_data(self):
+        """Test get_all_features with non-dict result data."""
+        # Arrange: Create collection with mixed result types
+        collection = FeatureResultCollection({})
+        collection.add_result("normal", {"feature1": [1, 2, 3]})
+
+        # Add result with non-dict data
+        non_dict_result = FeatureResult({"data": [1, 2, 3]})
+        collection["non_dict"] = non_dict_result
+
+        # Act: Get all features
+        features = collection.get_all_features()
+
+        # Assert: Verify non-dict handled correctly
+        assert "feature1" in features
+        assert "non_dict" in features
+        assert features["non_dict"] == [1, 2, 3]
+
     def test_get_metadata(self):
         """Test extracting metadata."""
-        collection = FeatureResultCollection()
+        collection = FeatureResultCollection({})
         extractor = MeanExtractor()
 
         collection.add_result("mean_ext", {"mean": [1, 2, 3]}, extractor, ["input1"])
@@ -136,7 +168,7 @@ class TestFeatureResultCollection:
 
     def test_get_extractor_names(self):
         """Test getting list of extractor names."""
-        collection = FeatureResultCollection()
+        collection = FeatureResultCollection({})
 
         collection.add_result("mean_ext", {"mean": [1, 2, 3]})
         collection.add_result("std_ext", {"std": [0.1, 0.2, 0.3]})
@@ -145,45 +177,58 @@ class TestFeatureResultCollection:
         assert set(names) == {"mean_ext", "std_ext"}
 
     def test_to_dict(self):
-        """Test converting collection to regular dictionary."""
-        collection = FeatureResultCollection()
-        extractor = MeanExtractor()
-
-        collection.add_result("mean_ext", {"mean": [1, 2, 3]}, extractor)
-
-        dict_result = collection.to_dict()
-        assert isinstance(dict_result, dict)
-        assert "mean_ext" in dict_result
-        assert dict_result["mean_ext"]["data"] == {"mean": [1, 2, 3]}
-        assert dict_result["mean_ext"]["extractor"] == extractor
-
-    def test_mixed_access_patterns(self):
-        """Test mixing dot notation and dictionary access."""
-        collection = FeatureResultCollection()
-
-        collection.add_result("mean_ext", {"mean": [1, 2, 3]})
-        collection["std_ext"] = FeatureResult(
-            {"data": {"std": [0.1, 0.2, 0.3]}, "extractor": None, "inputs_used": []}
-        )
-
-        # Mixed access should work
-        assert collection.mean_ext.data == {"mean": [1, 2, 3]}
-        assert collection["std_ext"]["data"] == {"std": [0.1, 0.2, 0.3]}
-        assert collection.std_ext.data == {"std": [0.1, 0.2, 0.3]}
-        assert collection["mean_ext"]["data"] == {"mean": [1, 2, 3]}
-
-    def test_iteration(self):
-        """Test iterating over collection."""
-        collection = FeatureResultCollection()
-
+        """Test converting collection to dictionary."""
+        # Arrange: Create collection with results
+        collection = FeatureResultCollection({})
         collection.add_result("mean_ext", {"mean": [1, 2, 3]})
         collection.add_result("std_ext", {"std": [0.1, 0.2, 0.3]})
 
-        # Test iteration preserves order and functionality
-        names = []
-        for name, result in collection.items():
-            names.append(name)
-            assert isinstance(result, FeatureResult)
-            assert "data" in result
+        # Act: Convert to dict
+        result_dict = collection.to_dict()
 
-        assert set(names) == {"mean_ext", "std_ext"}
+        # Assert: Verify structure
+        assert "mean_ext" in result_dict
+        assert "std_ext" in result_dict
+        assert isinstance(result_dict, dict)
+
+    def test_describe_basic(self):
+        """Test describe method with multiple feature results."""
+        # Arrange: Create collection with results
+        collection = FeatureResultCollection({})
+        collection.add_result("mean_ext", {
+            "features": np.array([[1, 2, 3], [4, 5, 6]]),
+            "extra": "value"
+        })
+        collection.add_result("std_ext", {
+            "features": np.array([1, 2, 3, 4])
+        })
+
+        # Act: Get description
+        df = collection.describe()
+
+        # Assert: Verify DataFrame structure
+        assert isinstance(df, pd.DataFrame)
+        assert len(df) == 2
+        assert list(df.columns) == ["feature_name", "dimensions", "extra_data"]
+
+        # Assert: Verify content
+        mean_row = df[df["feature_name"] == "mean_ext"].iloc[0]
+        assert mean_row["dimensions"] == (2, 3)
+        assert mean_row["extra_data"] == "extra"
+
+        std_row = df[df["feature_name"] == "std_ext"].iloc[0]
+        assert std_row["dimensions"] == (4,)
+        assert std_row["extra_data"] == ""
+
+    def test_describe_empty_collection(self):
+        """Test describe method with empty collection."""
+        # Arrange: Create empty collection
+        collection = FeatureResultCollection({})
+
+        # Act: Get description
+        df = collection.describe()
+
+        # Assert: Verify empty DataFrame
+        assert isinstance(df, pd.DataFrame)
+        assert len(df) == 0
+        assert list(df.columns) == ["feature_name", "dimensions", "extra_data"]

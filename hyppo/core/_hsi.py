@@ -1,5 +1,4 @@
 import numpy as np
-from typing import Optional, Tuple, Dict, Any
 
 
 class HSI:
@@ -7,8 +6,8 @@ class HSI:
         self,
         reflectance: np.ndarray,
         wavelengths: np.ndarray,
-        mask: Optional[np.ndarray] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        mask: np.ndarray | None = None,
+        metadata: dict | None = None,
     ):
         self.reflectance = self._validate_reflectance(reflectance)
         self.wavelengths = self._validate_wavelengths(wavelengths)
@@ -58,7 +57,7 @@ class HSI:
             )
 
     @property
-    def shape(self) -> Tuple[int, int, int]:
+    def shape(self) -> tuple[int, int, int]:
         return self.reflectance.shape
 
     @property

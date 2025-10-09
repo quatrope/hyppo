@@ -43,7 +43,7 @@ class OptionalDependencyExtractor(Extractor):
         }
 
     @classmethod
-    def get_default_for_input(cls, input_name: str):
+    def get_input_default(cls, input_name: str):
         if input_name == "optional_input":
             return SimpleTestExtractor()
         return None

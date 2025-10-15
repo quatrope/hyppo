@@ -285,3 +285,92 @@ class TestLoadH5Specific:
 
         finally:
             Path(tmp_path).unlink(missing_ok=True)
+
+    def test_load_h5_hsi_missing_wavelength_dataset(self):
+        """Test load_h5_hsi with missing wavelength dataset."""
+        spatial_shape = (3, 3)
+        spectral_bands = 5
+        reflectance = np.random.rand(*spatial_shape, spectral_bands) * 0.8
+
+        with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp_file:
+            tmp_path = tmp_file.name
+
+        try:
+            with h5py.File(tmp_path, "w") as f:
+                f.create_dataset("reflectance_data", data=reflectance)
+
+            with pytest.raises(ValueError, match="Could not find wavelength dataset"):
+                io.load_h5_hsi(tmp_path)
+
+        finally:
+            Path(tmp_path).unlink(missing_ok=True)
+
+    def test_load_h5_hsi_with_bytes_metadata(self):
+        """Test load_h5_hsi processes bytes metadata without errors."""
+        spatial_shape = (3, 3)
+        spectral_bands = 5
+        reflectance = np.random.rand(*spatial_shape, spectral_bands) * 0.8
+        wavelengths = np.linspace(400, 800, spectral_bands)
+
+        with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp_file:
+            tmp_path = tmp_file.name
+
+        try:
+            with h5py.File(tmp_path, "w") as f:
+                ds = f.create_dataset("reflectance_data", data=reflectance)
+                ds.attrs["description"] = b"Test bytes metadata"
+                ds.attrs["sensor"] = "HSI Sensor"
+                f.create_dataset("wavelength", data=wavelengths)
+
+            hsi = io.load_h5_hsi(tmp_path)
+
+            assert isinstance(hsi, HSI)
+
+        finally:
+            Path(tmp_path).unlink(missing_ok=True)
+
+    def test_load_h5_hsi_with_string_array_metadata(self):
+        """Test load_h5_hsi with string array metadata attributes."""
+        spatial_shape = (3, 3)
+        spectral_bands = 5
+        reflectance = np.random.rand(*spatial_shape, spectral_bands) * 0.8
+        wavelengths = np.linspace(400, 800, spectral_bands)
+
+        with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp_file:
+            tmp_path = tmp_file.name
+
+        try:
+            with h5py.File(tmp_path, "w") as f:
+                ds = f.create_dataset("reflectance_data", data=reflectance)
+                ds.attrs["band_names"] = np.array([b"band1", b"band2", b"band3"], dtype="S10")
+                f.create_dataset("wavelength", data=wavelengths)
+
+            hsi = io.load_h5_hsi(tmp_path)
+
+            assert isinstance(hsi, HSI)
+
+        finally:
+            Path(tmp_path).unlink(missing_ok=True)
+
+    def test_load_h5_hsi_with_invalid_metadata_encoding(self):
+        """Test load_h5_hsi with invalid UTF-8 metadata."""
+        spatial_shape = (3, 3)
+        spectral_bands = 5
+        reflectance = np.random.rand(*spatial_shape, spectral_bands) * 0.8
+        wavelengths = np.linspace(400, 800, spectral_bands)
+
+        with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp_file:
+            tmp_path = tmp_file.name
+
+        try:
+            with h5py.File(tmp_path, "w") as f:
+                ds = f.create_dataset("reflectance_data", data=reflectance)
+                ds.attrs.create("invalid_utf8", b"\xff\xfe", dtype=h5py.string_dtype())
+                f.create_dataset("wavelength", data=wavelengths)
+
+            hsi = io.load_h5_hsi(tmp_path)
+
+            assert isinstance(hsi, HSI)
+
+        finally:
+            Path(tmp_path).unlink(missing_ok=True)

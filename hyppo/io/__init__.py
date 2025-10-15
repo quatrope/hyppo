@@ -1,19 +1,10 @@
 from pathlib import Path
 from ._hsi.h5 import load_h5_hsi
-from ._config.models import Config, PipelineConfig, ExtractorConfig
-from ._config.parser import parse_config, parse_json, parse_yaml
-from ._config.executor import ConfigExecutor
-from ._config.validator import ConfigValidator
+from ._config import load_config_yaml, load_config_json
 
 __all__ = [
-    "Config",
-    "PipelineConfig",
-    "ExtractorConfig",
-    "parse_config",
-    "parse_json",
-    "parse_yaml",
-    "ConfigExecutor",
-    "ConfigValidator",
+    "load_config_yaml",
+    "load_config_json",
     "load_h5_hsi",
     "Path",
 ]

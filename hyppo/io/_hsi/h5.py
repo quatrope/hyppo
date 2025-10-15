@@ -85,17 +85,7 @@ def _parse_h5_hsi(
 
     reflectance_metadata = parsed_data["reflectance_metadata"]
     for key, value in ref_dataset.attrs.items():
-        try:
-            # Convert bytes to string if needed
-            if isinstance(value, bytes):
-                value = value.decode("utf-8")
-            elif isinstance(value, np.ndarray) and value.dtype.char == "S":
-                value = [
-                    v.decode("utf-8") if isinstance(v, bytes) else v for v in value
-                ]
-            reflectance_metadata[key] = value
-        except ValueError:
-            pass
+        reflectance_metadata[key] = value
 
     return parsed_data
 

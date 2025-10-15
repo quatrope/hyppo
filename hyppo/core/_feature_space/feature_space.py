@@ -80,19 +80,11 @@ class FeatureSpace:
             extractor_name = extractor.feature_name()
             extractor_type = type(extractor)
 
-            # Check for duplicate names
+            # Check for duplicate names (which also catches duplicate types since they generate the same name)
             if extractor_name in extractor_mapping:
                 raise ValueError(
                     f"Duplicate extractor name '{extractor_name}'. "
                     f"Cannot have multiple extractors of the same type in list."
-                )
-
-            # Check for duplicate types (which would lead to same name)
-            if extractor_type in type_to_name:
-                raise ValueError(
-                    f"Duplicate extractor type '{extractor_type.__name__}' found. "
-                    f"Both would generate the same name '{extractor_name}'. "
-                    f"Cannot disambiguate dependencies."
                 )
 
             extractor_mapping[extractor_name] = extractor

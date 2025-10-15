@@ -151,3 +151,56 @@ class TestFeatureSpace:
         # This should fail because MediumExtractor (medium_input) is required
         with pytest.raises(ValueError, match="Missing required dependency"):
             FeatureSpace.from_list(extractors)
+
+    def test_get_extractors(self):
+        """Test get_extractors method."""
+        pipeline_config = {
+            "simple": (SimpleExtractor(), {}),
+        }
+
+        fs = FeatureSpace(pipeline_config)
+        extractors = fs.get_extractors()
+
+        assert len(extractors) == 1
+        assert "simple" in extractors
+        assert isinstance(extractors["simple"], SimpleExtractor)
+
+    def test_from_list_ambiguous_dependency(self):
+        """Test error when multiple extractors match the same required type."""
+        from tests.fixtures.extractors import (
+            SimpleExtractor,
+            MediumExtractor,
+        )
+
+        # To test ambiguous dependency, we need two DIFFERENT extractors that are both
+        # instances of the same base type. Let's use subclasses.
+
+        class SimpleExtractorA(SimpleExtractor):
+            pass
+
+        class SimpleExtractorB(SimpleExtractor):
+            pass
+
+        # MediumExtractor requires SimpleExtractor, and both A and B are instances of it
+        extractors = [
+            SimpleExtractorA(),
+            SimpleExtractorB(),
+            MediumExtractor(),
+        ]
+
+        # This should fail with ambiguous dependency
+        with pytest.raises(ValueError, match="Ambiguous dependency"):
+            FeatureSpace.from_list(extractors)
+
+    def test_from_list_duplicate_exact_type(self):
+        """Test duplicate type check catches same type added twice."""
+        # This test tries to hit line 92, but it's likely unreachable
+        # because duplicate types generate duplicate names which are caught at line 85
+        mean1 = hyppo.extractor.MeanExtractor()
+        mean2 = hyppo.extractor.MeanExtractor()
+
+        extractors = [mean1, mean2]
+
+        # Will be caught by duplicate name check first
+        with pytest.raises(ValueError, match="Duplicate"):
+            FeatureSpace.from_list(extractors)

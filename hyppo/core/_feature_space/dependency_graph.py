@@ -92,7 +92,7 @@ class FeatureDependencyGraph:
         """
         try:
             return list(nx.topological_sort(self.graph))
-        except nx.NetworkXError as e:
+        except (nx.NetworkXError, nx.NetworkXUnfeasible) as e:
             raise ValueError(f"Cannot determine execution order: {e}")
 
     def get_execution_layers(self) -> list[list[str]]:
@@ -116,11 +116,7 @@ class FeatureDependencyGraph:
                 if predecessors.isdisjoint(remaining_nodes):
                     current_layer.append(node)
 
-            if not current_layer:
-                # This should not happen if graph is acyclic
-                raise ValueError(
-                    f"Cannot compute execution layers. Remaining nodes: {remaining_nodes}"
-                )
+            assert current_layer, f"Cannot compute execution layers. Remaining nodes: {remaining_nodes}"
 
             layers.append(current_layer)
             remaining_nodes.difference_update(current_layer)

@@ -153,3 +153,110 @@ class TestFeatureDependencyGraph:
         assert set(execution_layers[0]) == {"simple", "simple2"}
         assert execution_layers[1] == ["medium"]
         assert execution_layers[2] == ["advanced"]
+
+    def test_add_extractor_with_none_input_mapping(self):
+        """Test adding extractor with input_mapping=None."""
+        graph = FeatureDependencyGraph()
+        extractor = SimpleExtractor()
+
+        graph.add_extractor("simple", extractor, None)
+        graph.validate()
+
+        assert "simple" in graph.extractors
+        assert graph.input_mappings["simple"] == {}
+
+    def test_validation_source_extractor_not_found(self):
+        """Test validation when source extractor doesn't exist."""
+        graph = FeatureDependencyGraph()
+
+        medium = MediumExtractor()
+        graph.add_extractor("medium", medium, {"simple_input": "nonexistent"})
+
+        with pytest.raises(ValueError, match="Source extractor .* not found"):
+            graph.validate()
+
+    def test_get_dependencies_for_nonexistent(self):
+        """Test get_dependencies_for with nonexistent extractor."""
+        graph = FeatureDependencyGraph()
+        simple = SimpleExtractor()
+        graph.add_extractor("simple", simple, {})
+
+        deps = graph.get_dependencies_for("nonexistent")
+        assert deps == set()
+
+    def test_get_dependencies_for_existing(self):
+        """Test get_dependencies_for with existing extractor."""
+        graph = FeatureDependencyGraph()
+        simple = SimpleExtractor()
+        medium = MediumExtractor()
+
+        graph.add_extractor("simple", simple, {})
+        graph.add_extractor("medium", medium, {"simple_input": "simple"})
+
+        deps = graph.get_dependencies_for("medium")
+        assert deps == {"simple"}
+
+    def test_get_dependents_of_nonexistent(self):
+        """Test get_dependents_of with nonexistent extractor."""
+        graph = FeatureDependencyGraph()
+        simple = SimpleExtractor()
+        graph.add_extractor("simple", simple, {})
+
+        dependents = graph.get_dependents_of("nonexistent")
+        assert dependents == set()
+
+    def test_get_dependents_of_existing(self):
+        """Test get_dependents_of with existing extractor."""
+        graph = FeatureDependencyGraph()
+        simple = SimpleExtractor()
+        medium = MediumExtractor()
+
+        graph.add_extractor("simple", simple, {})
+        graph.add_extractor("medium", medium, {"simple_input": "simple"})
+
+        dependents = graph.get_dependents_of("simple")
+        assert dependents == {"medium"}
+
+    def test_get_input_mapping_for(self):
+        """Test get_input_mapping_for method."""
+        graph = FeatureDependencyGraph()
+        simple = SimpleExtractor()
+        medium = MediumExtractor()
+
+        graph.add_extractor("simple", simple, {})
+        graph.add_extractor("medium", medium, {"simple_input": "simple"})
+
+        mapping = graph.get_input_mapping_for("medium")
+        assert mapping == {"simple_input": "simple"}
+
+        empty_mapping = graph.get_input_mapping_for("simple")
+        assert empty_mapping == {}
+
+    def test_get_execution_order_with_cycle(self):
+        """Test get_execution_order with cyclic graph raises ValueError."""
+        graph = FeatureDependencyGraph()
+
+        class CircularA(Extractor):
+            @classmethod
+            def get_input_dependencies(cls) -> dict:
+                return {}
+
+            def _extract(self, data, **inputs):
+                return {"features": np.ones((data.height, data.width))}
+
+        class CircularB(Extractor):
+            @classmethod
+            def get_input_dependencies(cls) -> dict:
+                return {}
+
+            def _extract(self, data, **inputs):
+                return {"features": np.ones((data.height, data.width))}
+
+        a = CircularA()
+        b = CircularB()
+
+        graph.add_extractor("a", a, {"b": "b"})
+        graph.add_extractor("b", b, {"a": "a"})
+
+        with pytest.raises(ValueError, match="Cannot determine execution order"):
+            graph.get_execution_order()

@@ -2,7 +2,7 @@ import multiprocessing as mp
 from multiprocessing.shared_memory import SharedMemory
 import numpy as np
 from .base import BaseRunner
-from hyppo.core import HSI, FeatureResultCollection
+from hyppo.core import HSI, Feature, FeatureCollection
 
 
 class LocalProcessRunner(BaseRunner):
@@ -35,7 +35,7 @@ class LocalProcessRunner(BaseRunner):
         self._num_workers = num_workers
         self._pool = mp.Pool(processes=num_workers)
 
-    def resolve(self, data: HSI, feature_space) -> FeatureResultCollection:
+    def resolve(self, data: HSI, feature_space) -> FeatureCollection:
         """
         Resolve feature extraction using process pool with shared memory.
 
@@ -47,7 +47,7 @@ class LocalProcessRunner(BaseRunner):
             feature_space: FeatureSpace instance with feature graph
 
         Returns:
-            FeatureResultCollection with extraction results
+            FeatureCollection with extraction results
         """
         feature_graph = feature_space.feature_graph
 
@@ -55,7 +55,7 @@ class LocalProcessRunner(BaseRunner):
         shm_metadata = self._create_shared_hsi(data)
 
         try:
-            results = FeatureResultCollection({})
+            results = {}
             extracted_results = {}
 
             # Group extractors by dependency level for parallel execution
@@ -88,25 +88,29 @@ class LocalProcessRunner(BaseRunner):
                         _execute_extractor_with_shared_hsi,
                         (extractor, shm_metadata, input_kwargs),
                     )
-                    async_results.append((extractor_name, extractor, input_mapping, async_result))
+                    async_results.append(
+                        (extractor_name, extractor, input_mapping, async_result)
+                    )
 
                 # Wait for all extractors at this level to complete
-                for extractor_name, extractor, input_mapping, async_result in async_results:
+                for (
+                    extractor_name,
+                    extractor,
+                    input_mapping,
+                    async_result,
+                ) in async_results:
                     result = async_result.get()
                     extracted_results[extractor_name] = result
 
-                    results.add_result(
-                        extractor_name=extractor_name,
-                        data=result,
-                        extractor=extractor,
-                        inputs_used=list(input_mapping.keys()),
+                    results[extractor_name] = Feature(
+                        result, extractor, list(input_mapping.keys())
                     )
 
         finally:
             # Cleanup shared memory
             self._cleanup_shared_hsi(shm_metadata)
 
-        return results
+        return FeatureCollection.from_features(results)
 
     def _compute_dependency_levels(self, feature_graph) -> dict[int, list[str]]:
         """

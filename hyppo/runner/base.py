@@ -1,13 +1,11 @@
 from abc import ABC, abstractmethod
 from hyppo.core import HSI, FeatureSpace
-from hyppo.core import FeatureResultCollection
+from hyppo.core import FeatureCollection
 
 
 class BaseRunner(ABC):
     @abstractmethod
-    def resolve(
-        self, data: HSI, feature_space: FeatureSpace
-    ) -> FeatureResultCollection: ...
+    def resolve(self, data: HSI, feature_space: FeatureSpace) -> FeatureCollection: ...
 
     def _get_defaults_for_extractor(self, extractor) -> dict:
         """

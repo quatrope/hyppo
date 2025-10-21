@@ -1,6 +1,6 @@
 from typing import Iterable
 from .base import BaseRunner
-from hyppo.core import HSI, FeatureResultCollection
+from hyppo.core import HSI, Feature, FeatureCollection
 from dask.distributed import Client, LocalCluster
 
 
@@ -80,7 +80,7 @@ class DaskRunner(BaseRunner):
         client = Client(cluster)
         return cls(client)
 
-    def resolve(self, data: HSI, feature_space) -> FeatureResultCollection:
+    def resolve(self, data: HSI, feature_space) -> FeatureCollection:
         """
         Resolve feature extraction using a complete Dask graph with distributed execution.
 
@@ -89,7 +89,7 @@ class DaskRunner(BaseRunner):
             feature_space: FeatureSpace instance with feature graph
 
         Returns:
-            FeatureResultCollection with extraction results
+            FeatureCollection with extraction results
         """
 
         feature_graph = feature_space.feature_graph
@@ -103,21 +103,18 @@ class DaskRunner(BaseRunner):
         # Execute the entire graph with distributed scheduler
         computed_results: Iterable = self._client.get(dask_graph, result_keys)  # type: ignore
 
-        # Build FeatureResultCollection from results
-        results = FeatureResultCollection({})
+        # Build FeatureCollection from results
+        results = {}
         for extractor_name, result_data in zip(result_keys, computed_results):
             if result_data is not None:
                 extractor = feature_graph.extractors[extractor_name]
                 input_mapping = feature_graph.get_input_mapping_for(extractor_name)
 
-                results.add_result(
-                    extractor_name=extractor_name,
-                    data=result_data,
-                    extractor=extractor,
-                    inputs_used=list(input_mapping.keys()),
+                results[extractor_name] = Feature(
+                    result_data, extractor, list(input_mapping.keys())
                 )
 
-        return results
+        return FeatureCollection.from_features(results)
 
     def _build_dask_graph(self, data: HSI, feature_graph) -> dict:
         """
@@ -158,8 +155,6 @@ class DaskRunner(BaseRunner):
             # Add metadata about input names and defaults
             task_args.append(list(input_mapping.keys()))  # input names
             task_args.append(self._get_defaults_for_extractor(extractor))  # defaults
-
-            print(task_args)
 
             # Create the task tuple for this extractor
             graph[extractor_name] = tuple(task_args)

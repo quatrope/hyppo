@@ -1,8 +1,8 @@
 import pytest
 import numpy as np
 
-from hyppo.core import HSI, FeatureSpace, FeatureResultCollection
-from hyppo.core import FeatureResult
+from hyppo.core import HSI, FeatureSpace, FeatureCollection
+from hyppo.core import Feature
 from hyppo.runner import SequentialRunner
 from hyppo.extractor.base import Extractor
 
@@ -85,7 +85,7 @@ class TestSequentialRunner:
         results = runner.resolve(small_hsi, fs)
 
         # Assert: Verify results
-        assert isinstance(results, FeatureResultCollection)
+        assert isinstance(results, FeatureCollection)
         assert len(results) == 1
         assert "simple" in results
         assert "value" in results["simple"]["data"]
@@ -234,5 +234,5 @@ class TestSequentialRunner:
         assert len(results) == 2
         assert "mean" in results
         assert "std" in results
-        assert isinstance(results["mean"], FeatureResult)
-        assert isinstance(results["std"], FeatureResult)
+        assert isinstance(results["mean"], Feature)
+        assert isinstance(results["std"], Feature)

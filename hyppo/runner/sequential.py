@@ -1,4 +1,4 @@
-from hyppo.core import HSI, FeatureResultCollection
+from hyppo.core import HSI, Feature, FeatureCollection
 from .base import BaseRunner
 
 
@@ -10,7 +10,7 @@ class SequentialRunner(BaseRunner):
     sequentially in the same process without any parallelization.
     """
 
-    def resolve(self, data: HSI, feature_space) -> FeatureResultCollection:
+    def resolve(self, data: HSI, feature_space) -> FeatureCollection:
         """
         Resolve feature extraction sequentially.
 
@@ -19,10 +19,10 @@ class SequentialRunner(BaseRunner):
             feature_space: FeatureSpace instance with feature graph
 
         Returns:
-            FeatureResultCollection with extraction results
+            FeatureCollection with extraction results
         """
         feature_graph = feature_space.feature_graph
-        results = FeatureResultCollection({})
+        results = {}
         extracted_results = {}
 
         for extractor_name in feature_graph.get_execution_order():
@@ -43,11 +43,8 @@ class SequentialRunner(BaseRunner):
 
             extracted_results[extractor_name] = result
 
-            results.add_result(
-                extractor_name=extractor_name,
-                data=result,
-                extractor=extractor,
-                inputs_used=list(input_mapping.keys()),
+            results[extractor_name] = Feature(
+                result, extractor, list(input_mapping.keys())
             )
 
-        return results
+        return FeatureCollection.from_features(results)

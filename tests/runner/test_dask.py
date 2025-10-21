@@ -1,7 +1,7 @@
 import pytest
 from dask.distributed import Client, LocalCluster
 
-from hyppo.core import FeatureSpace, FeatureResultCollection
+from hyppo.core import FeatureSpace, FeatureCollection
 from hyppo.runner import DaskRunner
 from hyppo.extractor.base import Extractor
 from hyppo.core import HSI
@@ -19,12 +19,7 @@ class DependentTestExtractor(Extractor):
 
     @classmethod
     def get_input_dependencies(cls) -> dict:
-        return {
-            "simple_input": {
-                "extractor": SimpleTestExtractor,
-                "required": True
-            }
-        }
+        return {"simple_input": {"extractor": SimpleTestExtractor, "required": True}}
 
     def _extract(self, data: HSI, **inputs) -> dict:
         return {"dependent_value": 2.0}
@@ -35,12 +30,7 @@ class OptionalDependencyExtractor(Extractor):
 
     @classmethod
     def get_input_dependencies(cls) -> dict:
-        return {
-            "optional_input": {
-                "extractor": SimpleTestExtractor,
-                "required": False
-            }
-        }
+        return {"optional_input": {"extractor": SimpleTestExtractor, "required": False}}
 
     @classmethod
     def get_input_default(cls, input_name: str):
@@ -50,7 +40,10 @@ class OptionalDependencyExtractor(Extractor):
 
     def _extract(self, data: HSI, **inputs) -> dict:
         if "optional_input" in inputs:
-            return {"has_input": True, "value": inputs["optional_input"]["simple_value"]}
+            return {
+                "has_input": True,
+                "value": inputs["optional_input"]["simple_value"],
+            }
         return {"has_input": False}
 
 
@@ -60,7 +53,9 @@ class TestDaskRunner:
     def test_can_instantiate_with_client(self):
         """Test that DaskRunner can be instantiated with a client."""
         # Arrange: Create cluster and client
-        cluster = LocalCluster(n_workers=1, threads_per_worker=1, processes=False, silence_logs=True)
+        cluster = LocalCluster(
+            n_workers=1, threads_per_worker=1, processes=False, silence_logs=True
+        )
         client = Client(cluster)
 
         # Act: Create runner
@@ -155,7 +150,7 @@ class TestDaskRunner:
         results = runner.resolve(small_hsi, fs)
 
         # Assert: Verify results
-        assert isinstance(results, FeatureResultCollection)
+        assert isinstance(results, FeatureCollection)
         assert len(results) == 1
         assert "simple_test" in results
         assert "simple_value" in results["simple_test"]["data"]

@@ -10,6 +10,7 @@
 import copy
 from collections.abc import Mapping
 
+
 class Bunch(Mapping):
     """Container object exposing keys as attributes.
 
@@ -46,7 +47,11 @@ class Bunch(Mapping):
 
     def __setitem__(self, k, v):
         """x.__setitem__(y) = z <==> x[y] = z."""
-        self._data[k] = v
+        raise AttributeError(f"Bunch {self._name!r} is read-only")
+
+    def __delitem__(self, k):
+        """x.__delitem__(y) <==> del x[y]."""
+        raise AttributeError(f"Bunch {self._name!r} is read-only")
 
     def __getattr__(self, a):
         """x.__getattr__(y) <==> x.y."""

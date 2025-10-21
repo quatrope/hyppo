@@ -42,17 +42,6 @@ class TestBunch:
         # Assert: Verify correct value
         assert result == "value"
 
-    def test_setitem_access(self):
-        """Test dictionary-style item assignment."""
-        # Arrange: Create Bunch
-        bunch = Bunch("test", {})
-
-        # Act: Set value via setitem
-        bunch["new_key"] = "new_value"
-
-        # Assert: Verify value set
-        assert bunch["new_key"] == "new_value"
-
     def test_getattr_access(self):
         """Test attribute-style access."""
         # Arrange: Create Bunch

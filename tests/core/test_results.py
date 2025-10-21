@@ -1,57 +1,34 @@
 import pytest
 import numpy as np
 import pandas as pd
-from hyppo.core import FeatureResult, FeatureResultCollection
+from hyppo.core import Feature, FeatureCollection
 from hyppo.extractor.mean import MeanExtractor
 
 
-class TestFeatureResult:
-    """Tests for FeatureResult class."""
+class TestFeature:
+    """Tests for Feature class."""
 
     def test_feature_result_creation(self):
-        """Test creating FeatureResult from dictionary."""
+        """Test creating Feature from dictionary."""
         data = {"mean": [1, 2, 3], "std": [0.1, 0.2, 0.3]}
-        result = FeatureResult(data)
+        result = Feature(data, extractor=None, inputs_used=[])
 
-        assert result == data
-
-    def test_to_numpy(self):
-        """Test converting values to numpy arrays."""
-        # Arrange: Create result with mixed types including non-convertible
-        class BadArray:
-            """Object that raises on array conversion."""
-            def __array__(self):
-                raise ValueError("Cannot convert")
-
-        bad_obj = BadArray()
-        data = {
-            "mean": [1, 2, 3],
-            "std": [0.1, 0.2, 0.3],
-            "label": "test",
-            "obj": bad_obj
+        assert result.to_dict() == {
+            "result": None,
+            "data": data,
+            "extractor": None,
+            "inputs_used": [],
         }
-        result = FeatureResult(data)
-
-        # Act: Convert to numpy
-        numpy_result = result.to_numpy()
-
-        # Assert: Verify conversions
-        assert isinstance(numpy_result["mean"], np.ndarray)
-        assert isinstance(numpy_result["std"], np.ndarray)
-        assert numpy_result["label"] == "test"
-        assert numpy_result["obj"] is bad_obj
 
     def test_describe_with_features(self):
         """Test describe method with features array."""
         # Arrange: Create result with features array
         data = {
-            "data": {
-                "features": np.array([[1, 2, 3], [4, 5, 6]]),
-                "extra1": "value1",
-                "extra2": "value2"
-            }
+            "features": np.array([[1, 2, 3], [4, 5, 6]]),
+            "extra1": "value1",
+            "extra2": "value2",
         }
-        result = FeatureResult(data)
+        result = Feature(data, extractor=None, inputs_used=[])
 
         # Act: Get description
         desc = result.describe()
@@ -63,8 +40,8 @@ class TestFeatureResult:
     def test_describe_without_features(self):
         """Test describe method without features array."""
         # Arrange: Create result without features
-        data = {"data": {"key1": "value1", "key2": "value2"}}
-        result = FeatureResult(data)
+        data = {"key1": "value1", "key2": "value2"}
+        result = Feature(data, extractor=None, inputs_used=[])
 
         # Act: Get description
         desc = result.describe()
@@ -76,7 +53,7 @@ class TestFeatureResult:
     def test_describe_empty_data(self):
         """Test describe method with empty data."""
         # Arrange: Create result with empty data
-        result = FeatureResult({})
+        result = Feature({}, extractor=None, inputs_used=[])
 
         # Act: Get description
         desc = result.describe()
@@ -87,13 +64,15 @@ class TestFeatureResult:
 
     def test_describe_with_shape_attribute(self):
         """Test describe method with non-ndarray object that has shape."""
+
         # Arrange: Create mock object with shape attribute
         class ShapeObject:
             """Mock object with shape attribute."""
+
             shape = (5, 10)
 
-        data = {"data": {"features": ShapeObject()}}
-        result = FeatureResult(data)
+        data = {"features": ShapeObject()}
+        result = Feature(data, extractor=None, inputs_used=[])
 
         # Act: Get description
         desc = result.describe()
@@ -103,21 +82,22 @@ class TestFeatureResult:
         assert desc["extra_data"] == ""
 
 
-class TestFeatureResultCollection:
-    """Tests for FeatureResultCollection class."""
+class TestFeatureCollection:
+    """Tests for FeatureCollection class."""
 
     def test_feature_result_collection_creation(self):
-        """Test creating FeatureResultCollection."""
-        collection = FeatureResultCollection({})
+        """Test creating FeatureCollection."""
+        collection = FeatureCollection.from_features({})
         assert len(collection) == 0
 
     def test_add_result(self):
         """Test adding results to collection."""
-        collection = FeatureResultCollection({})
         extractor = MeanExtractor()
         data = {"mean": np.array([1, 2, 3])}
 
-        collection.add_result("mean_extractor", data, extractor, ["input1"])
+        collection = FeatureCollection.from_features(
+            {"mean_extractor": Feature(data, extractor, ["input1"])}
+        )
 
         assert "mean_extractor" in collection
         assert collection.mean_extractor.data == data
@@ -126,39 +106,24 @@ class TestFeatureResultCollection:
 
     def test_get_all_features(self):
         """Test extracting all feature data."""
-        collection = FeatureResultCollection({})
-
-        collection.add_result("mean_ext", {"mean": [1, 2, 3]})
-        collection.add_result("std_ext", {"std": [0.1, 0.2, 0.3]})
+        collection = FeatureCollection.from_features(
+            {
+                "mean_ext": Feature({"mean": [1, 2, 3]}, None, []),
+                "std_ext": Feature({"std": [0.1, 0.2, 0.3]}, None, []),
+            }
+        )
 
         features = collection.get_all_features()
         expected = {"mean": [1, 2, 3], "std": [0.1, 0.2, 0.3]}
         assert features == expected
 
-    def test_get_all_features_with_non_dict_data(self):
-        """Test get_all_features with non-dict result data."""
-        # Arrange: Create collection with mixed result types
-        collection = FeatureResultCollection({})
-        collection.add_result("normal", {"feature1": [1, 2, 3]})
-
-        # Add result with non-dict data
-        non_dict_result = FeatureResult({"data": [1, 2, 3]})
-        collection["non_dict"] = non_dict_result
-
-        # Act: Get all features
-        features = collection.get_all_features()
-
-        # Assert: Verify non-dict handled correctly
-        assert "feature1" in features
-        assert "non_dict" in features
-        assert features["non_dict"] == [1, 2, 3]
-
     def test_get_metadata(self):
         """Test extracting metadata."""
-        collection = FeatureResultCollection({})
         extractor = MeanExtractor()
 
-        collection.add_result("mean_ext", {"mean": [1, 2, 3]}, extractor, ["input1"])
+        collection = FeatureCollection.from_features(
+            {"mean_ext": Feature({"mean": [1, 2, 3]}, extractor, ["input1"])}
+        )
 
         metadata = collection.get_metadata()
         assert "mean_ext" in metadata
@@ -168,10 +133,12 @@ class TestFeatureResultCollection:
 
     def test_get_extractor_names(self):
         """Test getting list of extractor names."""
-        collection = FeatureResultCollection({})
-
-        collection.add_result("mean_ext", {"mean": [1, 2, 3]})
-        collection.add_result("std_ext", {"std": [0.1, 0.2, 0.3]})
+        collection = FeatureCollection.from_features(
+            {
+                "mean_ext": Feature({"mean": [1, 2, 3]}, None, []),
+                "std_ext": Feature({"std": [0.1, 0.2, 0.3]}, None, []),
+            }
+        )
 
         names = collection.get_extractor_names()
         assert set(names) == {"mean_ext", "std_ext"}
@@ -179,9 +146,12 @@ class TestFeatureResultCollection:
     def test_to_dict(self):
         """Test converting collection to dictionary."""
         # Arrange: Create collection with results
-        collection = FeatureResultCollection({})
-        collection.add_result("mean_ext", {"mean": [1, 2, 3]})
-        collection.add_result("std_ext", {"std": [0.1, 0.2, 0.3]})
+        collection = FeatureCollection.from_features(
+            {
+                "mean_ext": Feature({"mean": [1, 2, 3]}, None, []),
+                "std_ext": Feature({"std": [0.1, 0.2, 0.3]}, None, []),
+            }
+        )
 
         # Act: Convert to dict
         result_dict = collection.to_dict()
@@ -194,14 +164,16 @@ class TestFeatureResultCollection:
     def test_describe_basic(self):
         """Test describe method with multiple feature results."""
         # Arrange: Create collection with results
-        collection = FeatureResultCollection({})
-        collection.add_result("mean_ext", {
-            "features": np.array([[1, 2, 3], [4, 5, 6]]),
-            "extra": "value"
-        })
-        collection.add_result("std_ext", {
-            "features": np.array([1, 2, 3, 4])
-        })
+        collection = FeatureCollection.from_features(
+            {
+                "mean_ext": Feature(
+                    {"features": np.array([[1, 2, 3], [4, 5, 6]]), "extra": "value"},
+                    None,
+                    [],
+                ),
+                "std_ext": Feature({"features": np.array([1, 2, 3, 4])}, None, []),
+            }
+        )
 
         # Act: Get description
         df = collection.describe()
@@ -223,7 +195,7 @@ class TestFeatureResultCollection:
     def test_describe_empty_collection(self):
         """Test describe method with empty collection."""
         # Arrange: Create empty collection
-        collection = FeatureResultCollection({})
+        collection = FeatureCollection({})
 
         # Act: Get description
         df = collection.describe()

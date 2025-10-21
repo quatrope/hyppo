@@ -126,3 +126,33 @@ class FeatureSpace:
             config_dict[extractor_name] = (extractor, input_mapping)
 
         return cls(config_dict)
+
+    def save_config(self, path) -> None:
+        """
+        Save this FeatureSpace configuration to file.
+
+        Args:
+            path: Output file path (.yaml, .yml, or .json extension)
+
+        Raises:
+            ValueError: If path doesn't have .yaml, .yml, or .json extension
+
+        Example:
+            >>> fs = FeatureSpace.from_list([MeanExtractor(), StdExtractor()])
+            >>> fs.save_config("pipeline.yaml")
+            >>> fs.save_config("pipeline.json")
+        """
+        from pathlib import Path
+        from hyppo import io
+
+        if not isinstance(path, Path):
+            path = Path(path)
+
+        if path.suffix in [".yaml", ".yml"]:
+            io.save_config_yaml(self, path)
+        elif path.suffix == ".json":
+            io.save_config_json(self, path)
+        else:
+            raise ValueError(
+                f"Path must have .yaml, .yml, or .json extension, got {path.suffix}"
+            )

@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 
-from hyppo.core import FeatureSpace, FeatureResultCollection, HSI
+from hyppo.core import FeatureSpace, FeatureCollection, HSI
 from hyppo.runner import LocalProcessRunner
 from hyppo.extractor.base import Extractor
 
@@ -40,7 +40,10 @@ class OptionalDependencyExtractor(Extractor):
 
     def _extract(self, data: HSI, **inputs) -> dict:
         if "optional_input" in inputs:
-            return {"has_input": True, "value": inputs["optional_input"]["simple_value"]}
+            return {
+                "has_input": True,
+                "value": inputs["optional_input"]["simple_value"],
+            }
         return {"has_input": False}
 
 
@@ -53,14 +56,19 @@ class DataAccessExtractor(Extractor):
             "mean": float(np.mean(data.reflectance)),
             "std": float(np.std(data.reflectance)),
             "n_bands": data.n_bands,
-            "wavelength_range": (float(data.wavelengths.min()), float(data.wavelengths.max())),
+            "wavelength_range": (
+                float(data.wavelengths.min()),
+                float(data.wavelengths.max()),
+            ),
         }
 
 
 class PixelModifierExtractor(Extractor):
     """Extractor that modifies a specific pixel and reads all positions to verify shared memory."""
 
-    def __init__(self, row: int, col: int, marker_value: float, expected_positions: list):
+    def __init__(
+        self, row: int, col: int, marker_value: float, expected_positions: list
+    ):
         super().__init__()
         self.row = row
         self.col = col
@@ -82,7 +90,7 @@ class PixelModifierExtractor(Extractor):
             "marker": self.marker_value,
             "row": self.row,
             "col": self.col,
-            "observed_values": observed_values
+            "observed_values": observed_values,
         }
 
 
@@ -95,6 +103,7 @@ class TimedExtractor(Extractor):
 
     def _extract(self, data: HSI, **inputs) -> dict:
         import time
+
         start = time.time()
         time.sleep(self.sleep_time)
         end = time.time()
@@ -166,7 +175,7 @@ class TestLocalProcessRunner:
         results = runner.resolve(small_hsi, fs)
 
         # Assert: Verify results
-        assert isinstance(results, FeatureResultCollection)
+        assert isinstance(results, FeatureCollection)
         assert len(results) == 1
         assert "simple_test" in results
         assert "simple_value" in results["simple_test"]["data"]
@@ -399,7 +408,7 @@ class TestLocalProcessRunner:
                 row=positions[i][0],
                 col=positions[i][1],
                 marker_value=marker_values[i],
-                expected_positions=positions
+                expected_positions=positions,
             )
             ext._feature_name_override = f"modifier_{i}"
             extractors.append(ext)
@@ -427,18 +436,30 @@ class TestLocalProcessRunner:
 
         # Check extractor 0 (first to run)
         obs_0 = results["modifier_0"]["data"]["observed_values"]
-        assert obs_0["pos_0"] == marker_values[0], "Extractor 0 should see its own modification"
+        assert (
+            obs_0["pos_0"] == marker_values[0]
+        ), "Extractor 0 should see its own modification"
 
         # Check extractor 1 (second to run)
         obs_1 = results["modifier_1"]["data"]["observed_values"]
-        assert obs_1["pos_0"] == marker_values[0], "Extractor 1 should see extractor 0's modification"
-        assert obs_1["pos_1"] == marker_values[1], "Extractor 1 should see its own modification"
+        assert (
+            obs_1["pos_0"] == marker_values[0]
+        ), "Extractor 1 should see extractor 0's modification"
+        assert (
+            obs_1["pos_1"] == marker_values[1]
+        ), "Extractor 1 should see its own modification"
 
         # Check extractor 2 (third to run) - this is the key test
         obs_2 = results["modifier_2"]["data"]["observed_values"]
-        assert obs_2["pos_0"] == marker_values[0], "Extractor 2 should see extractor 0's modification"
-        assert obs_2["pos_1"] == marker_values[1], "Extractor 2 should see extractor 1's modification"
-        assert obs_2["pos_2"] == marker_values[2], "Extractor 2 should see its own modification"
+        assert (
+            obs_2["pos_0"] == marker_values[0]
+        ), "Extractor 2 should see extractor 0's modification"
+        assert (
+            obs_2["pos_1"] == marker_values[1]
+        ), "Extractor 2 should see extractor 1's modification"
+        assert (
+            obs_2["pos_2"] == marker_values[2]
+        ), "Extractor 2 should see its own modification"
 
         # Cleanup
         runner._pool.close()
@@ -475,10 +496,13 @@ class TestLocalProcessRunner:
 
         # With parallel execution, total time should be close to sleep_time, not num_extractors * sleep_time
         # Allow 100% overhead for process management
-        min_sequential_time = sleep_time * num_extractors * 0.8  # 1.2 seconds if sequential
+        min_sequential_time = (
+            sleep_time * num_extractors * 0.8
+        )  # 1.2 seconds if sequential
 
-        assert total_time < min_sequential_time, \
-            f"Execution took {total_time:.3f}s, expected < {min_sequential_time:.3f}s for parallel execution"
+        assert (
+            total_time < min_sequential_time
+        ), f"Execution took {total_time:.3f}s, expected < {min_sequential_time:.3f}s for parallel execution"
 
         # Cleanup
         runner._pool.close()
@@ -498,7 +522,7 @@ class TestLocalProcessRunner:
 
         # Save pool reference and remove _pool attribute
         pool = runner._pool
-        delattr(runner, '_pool')
+        delattr(runner, "_pool")
 
         # Should not raise
         del runner
@@ -548,7 +572,9 @@ class TestLocalProcessRunner:
             input_kwargs = {"simple_input": {"simple_value": 42.0}}
 
             # Call the worker function directly
-            result = _execute_extractor_with_shared_hsi(extractor, shm_metadata, input_kwargs)
+            result = _execute_extractor_with_shared_hsi(
+                extractor, shm_metadata, input_kwargs
+            )
 
             # Assert: Result should use the input
             assert "dependent_value" in result

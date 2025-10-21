@@ -4,30 +4,26 @@ import pandas as pd
 from hyppo.utils.bunch import Bunch
 
 
-class FeatureResult(Bunch):
+class Feature(Bunch):
     """
     Dictionary for feature extraction results.
 
     Examples:
-        >>> result = FeatureResult({'mean': [1, 2, 3], 'std': [0.1, 0.2, 0.3]})
+        >>> result = Feature({'mean': [1, 2, 3], 'std': [0.1, 0.2, 0.3]})
         >>> result.mean
         [1, 2, 3]
         >>> result['mean']
         [1, 2, 3]
     """
 
-    def __init__(self, data):
-        super().__init__("FeatureResult", data)
-
-    def to_numpy(self):
-        """Convert all values to numpy arrays where possible."""
-        result: dict[str, np.ndarray] = {}
-        for key, value in self.items():
-            try:
-                result[key] = np.array(value)
-            except (ValueError, TypeError):
-                result[key] = value
-        return result
+    def __init__(self, data, extractor, inputs_used):
+        mapping = {
+            "result": data.get("features", None),
+            "data": data,
+            "extractor": extractor,
+            "inputs_used": inputs_used,
+        }
+        super().__init__("Feature", mapping)
 
     def describe(self):
         """
@@ -58,44 +54,35 @@ class FeatureResult(Bunch):
         }
 
 
-class FeatureResultCollection(Bunch):
+class FeatureCollection(Bunch):
     """
-    Collection of FeatureResult objects.
+    Collection of Feature objects.
 
     This class manages results from multiple feature extractors
 
     Examples:
-        >>> results = FeatureResultCollection()
-        >>> results['mean'] = FeatureResult({'data': [1, 2, 3]})
+        >>> results = FeatureCollection()
+        >>> results['mean'] = Feature({'data': [1, 2, 3]})
         >>> results.mean.data
         [1, 2, 3]
         >>> results['mean']['data']
         [1, 2, 3]
     """
 
-    def __init__(self, data):
-        super().__init__("FeatureResultCollection", data)
+    def __init__(self, data: dict[str, Feature]):
+        super().__init__("FeatureCollection", data)
 
-    def add_result(
-        self,
-        extractor_name: str,
-        data: dict,
-        extractor=None,
-        inputs_used: list | None = None,
-    ) -> None:
-        """
-        Add a feature extraction result.
+    @classmethod
+    def from_features(cls, features: dict[str, Feature]) -> "FeatureCollection":
+        """Create a FeatureCollection from a dictionary of features.
 
         Args:
-            extractor_name: Name of the extractor
-            data: Extracted feature data
-            extractor: The extractor instance used
-            inputs_used: List of input names used by the extractor
+            features: Dictionary of features (extractor_name -> Feature)
+
+        Returns:
+            FeatureCollection
         """
-        result = FeatureResult(
-            {"data": data, "extractor": extractor, "inputs_used": inputs_used or []},
-        )
-        self[extractor_name] = result
+        return cls(features)
 
     def get_all_features(self):
         """Get all extracted feature data (without metadata)."""
@@ -113,7 +100,7 @@ class FeatureResultCollection(Bunch):
         """Get metadata about extractors and their usage."""
         metadata: dict[str, dict] = {}
         for extractor_name, result in self.items():
-            if isinstance(result, FeatureResult):
+            if isinstance(result, Feature):
                 metadata[extractor_name] = {
                     "extractor_type": (
                         type(result.extractor).__name__ if result.extractor else None
@@ -134,9 +121,7 @@ class FeatureResultCollection(Bunch):
     def to_dict(self):
         """Convert to a regular nested dictionary."""
         return {
-            name: (
-                result.to_dict() if isinstance(result, FeatureResult) else dict(result)
-            )
+            name: (result.to_dict() if isinstance(result, Feature) else dict(result))
             for name, result in self.items()
         }
 
@@ -152,12 +137,25 @@ class FeatureResultCollection(Bunch):
         """
         rows = []
         for feature_name, result in self.items():
-            if isinstance(result, FeatureResult):
-                info = result.describe()
-                info["feature_name"] = feature_name
-                rows.append(info)
+            info = result.describe()
+            info["feature_name"] = feature_name
+            rows.append(info)
 
         return pd.DataFrame(rows, columns=["feature_name", "dimensions", "extra_data"])
 
+    def save(self, path) -> None:
+        """
+        Save this FeatureCollection to HDF5 file.
 
-__all__ = ["FeatureResult", "FeatureResultCollection"]
+        Args:
+            path: Output file path (must have .h5 extension)
+
+        Example:
+            >>> results = fs.extract(hsi)
+            >>> results.save("output.h5")
+        """
+        from hyppo import io
+        io.save_feature_collection(self, path)
+
+
+__all__ = ["Feature", "FeatureCollection"]

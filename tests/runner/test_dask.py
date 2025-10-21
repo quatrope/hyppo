@@ -1,10 +1,8 @@
-import pytest
 from dask.distributed import Client, LocalCluster
-
-from hyppo.core import FeatureSpace, FeatureCollection
-from hyppo.runner import DaskRunner
+from hyppo.core import FeatureCollection, FeatureSpace, HSI
 from hyppo.extractor.base import Extractor
-from hyppo.core import HSI
+from hyppo.runner import DaskRunner
+import pytest
 
 
 class SimpleTestExtractor(Extractor):
@@ -183,7 +181,7 @@ class TestDaskRunner:
     def test_resolve_complex_pipeline(self, small_hsi):
         """Test complex pipeline with multiple extractors."""
         # Arrange: Import real extractors and create pipeline
-        from hyppo.extractor import MeanExtractor, StdExtractor, PCAExtractor
+        from hyppo.extractor import MeanExtractor, PCAExtractor, StdExtractor
 
         runner = DaskRunner.threads(num_threads=2)
         fs = FeatureSpace.from_list([MeanExtractor(), StdExtractor(), PCAExtractor()])

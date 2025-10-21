@@ -1,3 +1,5 @@
+"""Discrete Wavelet Transform 1D feature extractor."""
+
 from .base import Extractor
 from hyppo.core import HSI
 import numpy as np
@@ -22,12 +24,17 @@ class DWT1DExtractor(Extractor):
 
     References
     ----------
-    Bruce, K., Koger, C., & Li, J. (2002). Dimensionality reduction of hyperspectral data using discrete wavelet transform feature extraction. *IEEE Transactions on Geoscience and Remote Sensing*, 40(10), 2331–2338. https://doi.org/10.1109/TGRS.2002.804721
+    Bruce, K., Koger, C., & Li, J. (2002). Dimensionality reduction of
+    hyperspectral data using discrete wavelet transform feature extraction.
+    *IEEE Transactions on Geoscience and Remote Sensing*, 40(10),
+    2331–2338. https://doi.org/10.1109/TGRS.2002.804721
 
-    Mallat, S. (1999). A Wavelet Tour of Signal Processing. Academic Press.
+    Mallat, S. (1999). A Wavelet Tour of Signal Processing.
+    Academic Press.
     """
 
     def __init__(self, wavelet="db4", mode="symmetric", levels=3):
+        """Initialize DWT1D extractor with wavelet parameters."""
         super().__init__()
         self.wavelet = wavelet
         self.mode = mode
@@ -35,6 +42,7 @@ class DWT1DExtractor(Extractor):
 
     @classmethod
     def feature_name(cls):
+        """Return feature name for this extractor."""
         return "dwt1d"
 
     def _extract(self, data: HSI, **inputs):
@@ -90,7 +98,10 @@ class DWT1DExtractor(Extractor):
 
         # Get coefficient lengths from first pixel for reference
         sample_coefficients = pywt.wavedec(
-            reflectance_reshaped[0, :], self.wavelet, mode=self.mode, level=self.levels
+            reflectance_reshaped[0, :],
+            self.wavelet,
+            mode=self.mode,
+            level=self.levels,
         )
         coefficients_lengths = [len(c) for c in sample_coefficients]
 
@@ -110,7 +121,7 @@ class DWT1DExtractor(Extractor):
         """Validate extractor parameters."""
         if self.wavelet not in pywt.wavelist():
             raise ValueError(f"Wavelet '{self.wavelet}' not available")
-            
+
         if self.mode not in pywt.Modes.modes:
             raise ValueError(f"Mode '{self.mode}' not available")
 
@@ -118,14 +129,14 @@ class DWT1DExtractor(Extractor):
             raise ValueError("levels must be a positive integer")
 
 
-# La elección de la wavelet afecta la sensibilidad y la forma de la descomposición:
-# - 'haar': detecta muy bien cambios abruptos y saltos en el espectro (ideal para bordes nítidos).
-# - 'db4': captura variaciones suaves entre bandas de absorción, balanceando resolución y suavidad.
-# - 'sym5': ofrece un buen balance entre suavidad y simetría, minimizando artefactos en los bordes.
-# - 'coif2': modela formas suaves y complejas, pero genera más coeficientes y es más costosa computacionalmente.
+# Wavelet selection affects sensitivity and decomposition:
+# - 'haar': detects abrupt changes and jumps in spectrum (ideal for edges).
+# - 'db4': captures smooth variations between absorption bands.
+# - 'sym5': good balance between smoothness and symmetry.
+# - 'coif2': models smooth complex shapes (more computationally costly).
 #
-# Además, el nivel de descomposición determina la profundidad con la que se analiza la señal:
-# el máximo nivel posible depende de la longitud de la señal y del filtro wavelet,
-# y puede obtenerse con pywt.dwt_max_level().
-# En nuestro caso, con señal de longitud 107 y wavelet 'db4' (filtro de longitud 8),
-# el nivel máximo permitido es 3, que es justamente el que usamos.
+# Decomposition level determines signal analysis depth:
+# Max level depends on signal length and wavelet filter.
+# Can be obtained with pywt.dwt_max_level().
+# For signal length 107 and 'db4' (filter length 8),
+# max level is 3, which we use.

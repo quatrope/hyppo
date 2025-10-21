@@ -1,7 +1,7 @@
 """Tests for DWT2DExtractor."""
 
-import pytest
 from hyppo.extractor.dwt2d import DWT2DExtractor
+import pytest
 
 
 class TestDWT2DExtractor:
@@ -87,20 +87,23 @@ class TestDWT2DExtractor:
     def test_validate_invalid_levels(self, small_hsi, levels):
         """Test validation fails with invalid decomposition levels."""
         # Arrange: Create extractor with invalid levels
-        extractor = DWT2DExtractor(levels=levels) # type: ignore
+        extractor = DWT2DExtractor(levels=levels)  # type: ignore
 
         # Act & Assert: Verify validation raises ValueError
         with pytest.raises(ValueError, match="levels must be a positive integer"):
             extractor.extract(small_hsi)
 
-    @pytest.mark.parametrize("wavelet,mode", [
-        ("haar", "symmetric"),
-        ("haar", "periodic"),
-        ("db4", "symmetric"),
-        ("db4", "zero"),
-        ("sym5", "constant"),
-        ("coif2", "periodic"),
-    ])
+    @pytest.mark.parametrize(
+        "wavelet,mode",
+        [
+            ("haar", "symmetric"),
+            ("haar", "periodic"),
+            ("db4", "symmetric"),
+            ("db4", "zero"),
+            ("sym5", "constant"),
+            ("coif2", "periodic"),
+        ],
+    )
     def test_extract_wavelet_mode_combinations(self, small_hsi, wavelet, mode):
         """Test extraction with cross-product of wavelets and modes."""
         # Arrange: Create extractor with specific wavelet and mode

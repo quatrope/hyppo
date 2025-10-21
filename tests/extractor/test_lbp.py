@@ -1,8 +1,8 @@
 """Tests for LBPExtractor."""
 
-import pytest
-import numpy as np
 from hyppo.extractor.lbp import LBPExtractor
+import numpy as np
+import pytest
 
 
 class TestLBPExtractor:
@@ -141,7 +141,7 @@ class TestLBPExtractor:
     def test_validate_invalid_bands(self, small_hsi):
         """Test validation fails with invalid bands."""
         # Arrange: Create extractor with invalid bands
-        extractor = LBPExtractor(bands="invalid") # type: ignore
+        extractor = LBPExtractor(bands="invalid")  # type: ignore
 
         # Act & Assert: Verify validation raises ValueError
         with pytest.raises(ValueError, match="bands must be None or a non-empty list"):
@@ -192,7 +192,9 @@ class TestLBPExtractor:
         with pytest.raises(ValueError, match="n_points must be at least 3"):
             extractor.extract(small_hsi)
 
-    @pytest.mark.parametrize("method", ["default", "ror", "uniform", "nri_uniform", "var"])
+    @pytest.mark.parametrize(
+        "method", ["default", "ror", "uniform", "nri_uniform", "var"]
+    )
     def test_different_methods(self, small_hsi, method):
         """Test extraction with different LBP methods."""
         # Arrange: Create extractor with specific method

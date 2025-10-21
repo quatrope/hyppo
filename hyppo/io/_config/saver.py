@@ -1,11 +1,10 @@
 """Configuration savers for YAML and JSON formats."""
 
-import json
-import yaml
-import inspect
-from pathlib import Path
-
 from hyppo.core import FeatureSpace
+import inspect
+import json
+from pathlib import Path
+import yaml
 
 
 def save_config_yaml(feature_space: FeatureSpace, path: Path | str) -> None:
@@ -23,9 +22,7 @@ def save_config_yaml(feature_space: FeatureSpace, path: Path | str) -> None:
         path = Path(path)
 
     if path.suffix not in [".yaml", ".yml"]:
-        raise ValueError(
-            f"Path must have .yaml or .yml extension, got {path.suffix}"
-        )
+        raise ValueError(f"Path must have .yaml or .yml extension, got {path.suffix}")
 
     config_dict = _build_config_dict(feature_space)
 

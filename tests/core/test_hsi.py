@@ -2,9 +2,9 @@
 Tests for the HSI (Hyperspectral Image) module.
 """
 
+from hyppo.core import HSI
 import numpy as np
 import pytest
-from hyppo.core import HSI
 
 
 class TestHSI:
@@ -52,7 +52,10 @@ class TestHSI:
     def test_reflectance_wrong_dimensions(self):
         """Test error when reflectance is not 3D."""
         with pytest.raises(ValueError, match="Reflectance must be 3D"):
-            HSI(reflectance=np.random.rand(10, 50), wavelengths=np.linspace(400, 1000, 50))
+            HSI(
+                reflectance=np.random.rand(10, 50),
+                wavelengths=np.linspace(400, 1000, 50),
+            )
 
     def test_wavelengths_not_array(self):
         """Test error when wavelengths is not numpy array."""
@@ -62,7 +65,10 @@ class TestHSI:
     def test_wavelengths_wrong_dimensions(self):
         """Test error when wavelengths is not 1D."""
         with pytest.raises(ValueError, match="Wavelengths must be 1D"):
-            HSI(reflectance=np.random.rand(10, 10, 50), wavelengths=np.random.rand(50, 1))
+            HSI(
+                reflectance=np.random.rand(10, 10, 50),
+                wavelengths=np.random.rand(50, 1),
+            )
 
     def test_mask_not_array(self):
         """Test error when mask is not numpy array."""
@@ -84,12 +90,19 @@ class TestHSI:
 
     def test_wavelength_band_mismatch(self):
         """Test error when wavelengths don't match bands."""
-        with pytest.raises(ValueError, match="Number of wavelengths .* must match number of bands"):
-            HSI(reflectance=np.random.rand(10, 10, 50), wavelengths=np.linspace(400, 1000, 30))
+        with pytest.raises(
+            ValueError, match="Number of wavelengths .* must match number of bands"
+        ):
+            HSI(
+                reflectance=np.random.rand(10, 10, 50),
+                wavelengths=np.linspace(400, 1000, 30),
+            )
 
     def test_mask_shape_mismatch(self):
         """Test error when mask shape doesn't match spatial dimensions."""
-        with pytest.raises(ValueError, match="Mask shape .* must match spatial dimensions"):
+        with pytest.raises(
+            ValueError, match="Mask shape .* must match spatial dimensions"
+        ):
             HSI(
                 reflectance=np.random.rand(10, 10, 50),
                 wavelengths=np.linspace(400, 1000, 50),

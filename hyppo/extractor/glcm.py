@@ -1,9 +1,8 @@
 from .base import Extractor
 from hyppo.core import HSI
-from skimage.util.shape import view_as_windows
-from skimage.feature import graycoprops, graycomatrix
-
 import numpy as np
+from skimage.feature import graycomatrix, graycoprops
+from skimage.util.shape import view_as_windows
 
 
 class GLCMExtractor(Extractor):
@@ -20,19 +19,22 @@ class GLCMExtractor(Extractor):
     bands : list[int] | None, default=None
         Specific band indices to process. If None, processes all bands.
     distances : list[int] | None, default=[1]
-        Pixel distances for GLCM computation. Default [1] analyzes nearest neighbors.
+        Pixel distances for GLCM computation. Default [1] analyzes
+        nearest neighbors.
     angles : list[float] | None, default=[0, π/4, π/2, 3π/4]
         Angles in radians for directional texture analysis.
         Default analyzes 0°, 45°, 90°, and 135° orientations.
     symmetric : bool, default=True
         Whether to compute symmetric GLCM matrices.
-    properties : list[str] | None, default=['contrast', 'entropy', 'correlation', 'dissimilarity']
+    properties : list[str] | None, default=['contrast', 'entropy',
+        'correlation', 'dissimilarity']
         Texture properties to extract from GLCM.
         Available: 'contrast', 'dissimilarity', 'homogeneity', 'energy',
         'correlation', 'ASM', 'entropy'.
     levels : int | None, default=None
-        Number of gray levels for quantization. If None, automatically determined
-        based on image dynamic range (typically 32-64 as recommended in literature).
+        Number of gray levels for quantization. If None, automatically
+        determined based on image dynamic range (typically 32-64 as
+        recommended in literature).
     window_sizes : list[int], default=[7]
         Window sizes for multiscale texture analysis. Must be odd integers ≥ 3.
     orientation_mode : str, default='separate'
@@ -92,10 +94,12 @@ class GLCMExtractor(Extractor):
 
         self.symmetric = symmetric
 
-        # Auto-determine levels based on paper's findings (G > 24, typically 32-64)
+        # Auto-determine levels based on paper's findings
+        # (G > 24, typically 32-64)
         self.levels = levels
 
-        # Paper's recommended statistics: Contrast (CON), Entropy (ENT), Correlation (COR)
+        # Paper's recommended statistics: Contrast (CON), Entropy (ENT),
+        # Correlation (COR)
         # Plus Dissimilarity (DIS) as alternative to Contrast
         self.properties = (
             properties
@@ -151,7 +155,7 @@ class GLCMExtractor(Extractor):
         elif self.orientation_mode == "look_direction":
             # Use look direction approach: 0°, 90°, and average of 45°/135°
             n_features = len(self.distances) * 3 * len(self.properties)
-        else: 
+        else:
             # Average all orientations
             n_features = len(self.distances) * len(self.properties)
 
@@ -190,24 +194,26 @@ class GLCMExtractor(Extractor):
                             # Extract properties for each angle
                             for prop in self.properties:
                                 try:
-                                    vals = graycoprops(glcm, prop)[
-                                        0, :
-                                    ]  # All angles for this distance
-                                    features[
-                                        i + j, feature_idx : feature_idx + len(vals)
-                                    ] = vals
+                                    # All angles for this distance
+                                    vals = graycoprops(glcm, prop)[0, :]
+                                    end_idx = feature_idx + len(vals)
+                                    features[i + j, feature_idx:end_idx] = vals
                                     feature_idx += len(vals)
                                 except Exception:
                                     # Fill with zeros if computation fails
-                                    features[
-                                        i + j,
-                                        feature_idx : feature_idx + len(self.angles),
-                                    ] = 0.0
+                                    end_idx = feature_idx + len(self.angles)
+                                    features[i + j, feature_idx:end_idx] = 0.0
                                     feature_idx += len(self.angles)
 
                         elif self.orientation_mode == "look_direction":
-                            # Paper's look direction approach: 0°, 90°, avg(45°,135°)
-                            angles_look = [0, np.pi / 2, np.pi / 4, 3 * np.pi / 4]
+                            # Paper's look direction approach:
+                            # 0°, 90°, avg(45°,135°)
+                            angles_look = [
+                                0,
+                                np.pi / 2,
+                                np.pi / 4,
+                                3 * np.pi / 4,
+                            ]
                             glcm = graycomatrix(
                                 patch,
                                 distances=[distance],
@@ -227,12 +233,12 @@ class GLCMExtractor(Extractor):
                                         vals[1],
                                         (vals[2] + vals[3]) / 2,
                                     ]
-                                    features[i + j, feature_idx : feature_idx + 3] = (
-                                        look_vals
-                                    )
+                                    end_idx = feature_idx + 3
+                                    features[i + j, feature_idx:end_idx] = look_vals
                                     feature_idx += 3
                                 except Exception:
-                                    features[i + j, feature_idx : feature_idx + 3] = 0.0
+                                    end_idx = feature_idx + 3
+                                    features[i + j, feature_idx:end_idx] = 0.0
                                     feature_idx += 3
 
                         else:  # average mode
@@ -264,7 +270,8 @@ class GLCMExtractor(Extractor):
                         else:
                             skip_features = len(self.properties)
 
-                        features[i + j, feature_idx : feature_idx + skip_features] = 0.0
+                        end_idx = feature_idx + skip_features
+                        features[i + j, feature_idx:end_idx] = 0.0
                         feature_idx += skip_features
 
         return features
@@ -286,7 +293,8 @@ class GLCMExtractor(Extractor):
             # Use larger windows as recommended by the paper
             pad = window_size // 2
 
-            # Use reflection padding to maintain texture characteristics at borders
+            # Use reflection padding to maintain texture characteristics
+            # at borders
             padded = np.pad(image_normalized, pad, mode="reflect")
 
             # Extract windows
@@ -383,7 +391,9 @@ class GLCMExtractor(Extractor):
         if not isinstance(self.properties, list) or len(self.properties) == 0:
             raise ValueError("properties must be a non-empty list.")
 
-        if self.orientation_mode not in ["separate", "look_direction", "average"]:
+        valid_modes = ["separate", "look_direction", "average"]
+        if self.orientation_mode not in valid_modes:
             raise ValueError(
-                "orientation_mode must be 'separate', 'look_direction', or 'average'."
+                "orientation_mode must be 'separate', 'look_direction', "
+                "or 'average'."
             )

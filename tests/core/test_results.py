@@ -1,8 +1,8 @@
-import pytest
-import numpy as np
-import pandas as pd
 from hyppo.core import Feature, FeatureCollection
 from hyppo.extractor.mean import MeanExtractor
+import numpy as np
+import pandas as pd
+import pytest
 
 
 class TestFeature:

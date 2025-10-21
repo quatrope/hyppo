@@ -1,16 +1,13 @@
 """Command-line interface for hyppo feature extraction using Typer."""
 
-import sys
-from pathlib import Path
-from typing import Optional, Annotated
-
-import typer
-from typing_extensions import Literal
-
-from hyppo.io import load_h5_hsi
-from hyppo.io._config import load_config_yaml, load_config_json
 from hyppo.core import FeatureSpace
+from hyppo.io import load_h5_hsi
+from hyppo.io._config import load_config_json, load_config_yaml
 from hyppo.runner import BaseRunner
+from pathlib import Path
+import typer
+from typing import Annotated, Optional
+from typing_extensions import Literal
 
 app = typer.Typer(
     name="hyppo",
@@ -36,17 +33,20 @@ class CLI:
         self._setup_commands()
 
     def _setup_commands(self):
-        """Setup CLI commands."""
+        """Set up CLI commands."""
 
         @self.app.command()
         def extract(
-            input: Annotated[str, typer.Argument(help="Path to input HSI file (.h5)")],
+            input_file: Annotated[
+                str, typer.Argument(help="Path to input HSI file (.h5)")
+            ],
             output: Annotated[
-                Optional[str], typer.Option("-o", "--output", help="Path to output file")
+                Optional[str],
+                typer.Option("-o", "--output", help="Path to output file"),
             ] = None,
         ):
             """Extract features from HSI data."""
-            self._handle_extract(input, output)
+            self._handle_extract(input_file, output)
 
         @self.app.command()
         def info():
@@ -62,15 +62,15 @@ class CLI:
         """
         self.app(argv)
 
-    def _handle_extract(self, input: str, output: Optional[str]):
+    def _handle_extract(self, input_file: str, output: Optional[str]):
         """
         Handle extract command.
 
         Args:
-            input: Path to input HSI file
+            input_file: Path to input HSI file
             output: Optional path to output file
         """
-        input_path = Path(input)
+        input_path = Path(input_file)
 
         if not input_path.exists():
             typer.secho(
@@ -82,14 +82,17 @@ class CLI:
 
         if input_path.suffix != ".h5":
             typer.secho(
-                "Error: Input file must be .h5 format", fg=typer.colors.RED, err=True
+                "Error: Input file must be .h5 format",
+                fg=typer.colors.RED,
+                err=True,
             )
             raise typer.Exit(1)
 
         typer.echo(f"Loading HSI data from {input_path}...")
         hsi = load_h5_hsi(str(input_path))
 
-        typer.echo(f"Extracting features using {type(self.runner).__name__}...")
+        runner_name = type(self.runner).__name__
+        typer.echo(f"Extracting features using {runner_name}...")
         result = self.feature_space.extract(hsi, runner=self.runner)
 
         typer.secho("Extraction complete!", fg=typer.colors.GREEN)
@@ -114,19 +117,26 @@ class CLI:
 
 @app.command()
 def extract(
-    input: Annotated[str, typer.Argument(help="Path to input HSI file (.h5)")],
+    input_file: Annotated[str, typer.Argument(help="Path to input HSI file (.h5)")],
     config: Annotated[
-        str, typer.Option("-c", "--config", help="Path to configuration file (.yaml or .json)")
+        str,
+        typer.Option(
+            "-c",
+            "--config",
+            help="Path to configuration file (.yaml or .json)",
+        ),
     ],
     output: Annotated[
-        Optional[str], typer.Option("-o", "--output", help="Path to output file")
+        Optional[str],
+        typer.Option("-o", "--output", help="Path to output file"),
     ] = None,
     runner: Annotated[
         Literal["sequential", "local", "dask-thread", "dask-process"],
         typer.Option("-r", "--runner", help="Runner type"),
     ] = "sequential",
     workers: Annotated[
-        Optional[int], typer.Option("-w", "--workers", help="Number of workers for parallel runners")
+        Optional[int],
+        typer.Option("-w", "--workers", help="Number of workers for parallel runners"),
     ] = None,
 ):
     """Extract features from HSI data."""
@@ -159,13 +169,18 @@ def extract(
 
     # Create CLI and execute
     cli = CLI(feature_space=feature_space, runner=runner_instance)
-    cli._handle_extract(input, output)
+    cli._handle_extract(input_file, output)
 
 
 @app.command()
 def info(
     config: Annotated[
-        str, typer.Option("-c", "--config", help="Path to configuration file (.yaml or .json)")
+        str,
+        typer.Option(
+            "-c",
+            "--config",
+            help="Path to configuration file (.yaml or .json)",
+        ),
     ],
 ):
     """Display information about configuration."""

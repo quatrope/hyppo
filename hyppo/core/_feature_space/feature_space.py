@@ -1,20 +1,21 @@
-from typing import TYPE_CHECKING
-from .dependency_graph import FeatureDependencyGraph
 from .._hsi import HSI
+from .dependency_graph import FeatureDependencyGraph
 from hyppo.extractor import Extractor
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from hyppo.runner import BaseRunner
 
 
 class FeatureSpace:
+    """Orchestrates feature extraction with dependency management."""
 
     def __init__(self, extractor_configs):
         """
         Initialize FeatureSpace with feature extractor configurations.
 
         Args:
-            extractor_configs: Dict of {name: (extractor, input_mapping)} where input_mapping is {input_name: source_extractor_name}
+            extractor_configs: Dict of {name: (extractor, input_mapping)}
         """
         self.extractor_configs = extractor_configs
         self.extractors = {
@@ -58,7 +59,9 @@ class FeatureSpace:
     @classmethod
     def from_list(cls, extractors: list[Extractor]):
         """
-        Convert list of extractors to configuration dict with automatic dependency resolution.
+        Convert list of extractors to configuration dict.
+
+        Performs automatic dependency resolution.
 
         Args:
             extractors: List of extractor instances
@@ -67,7 +70,7 @@ class FeatureSpace:
             Dict configuration with automatic dependency mappings
 
         Raises:
-            ValueError: If duplicate extractor types are found or required dependencies are missing
+            ValueError: If duplicates or missing dependencies found
         """
         if not extractors:
             return cls({})
@@ -80,12 +83,13 @@ class FeatureSpace:
             extractor_name = extractor.feature_name()
             extractor_type = type(extractor)
 
-            # Check for duplicate names (which also catches duplicate types since they generate the same name)
+            # Check for duplicate names
             if extractor_name in extractor_mapping:
-                raise ValueError(
+                msg = (
                     f"Duplicate extractor name '{extractor_name}'. "
-                    f"Cannot have multiple extractors of the same type in list."
+                    f"Cannot have multiple extractors of same type."
                 )
+                raise ValueError(msg)
 
             extractor_mapping[extractor_name] = extractor
             type_to_name[extractor_type] = extractor_name
@@ -103,25 +107,33 @@ class FeatureSpace:
 
                 # Look for an extractor of the required type
                 matching_extractor_name = None
-                for candidate_name, candidate_extractor in extractor_mapping.items():
-                    if isinstance(candidate_extractor, required_type):
+                for candidate_name, cand in extractor_mapping.items():
+                    if isinstance(cand, required_type):
                         if matching_extractor_name is not None:
                             # Multiple matches - ambiguous
-                            raise ValueError(
-                                f"Ambiguous dependency: extractor '{extractor_name}' requires "
-                                f"input '{input_name}' of type '{required_type.__name__}', "
-                                f"but found multiple candidates: '{matching_extractor_name}' and '{candidate_name}'"
+                            msg = (
+                                f"Ambiguous dependency: extractor "
+                                f"'{extractor_name}' requires input "
+                                f"'{input_name}' of type "
+                                f"'{required_type.__name__}', but found "
+                                f"multiple candidates: "
+                                f"'{matching_extractor_name}' and "
+                                f"'{candidate_name}'"
                             )
+                            raise ValueError(msg)
                         matching_extractor_name = candidate_name
 
                 if matching_extractor_name is not None:
                     input_mapping[input_name] = matching_extractor_name
                 elif dep_spec["required"]:
-                    raise ValueError(
-                        f"Missing required dependency: extractor '{extractor_name}' requires "
-                        f"input '{input_name}' of type '{required_type.__name__}', "
-                        f"but no such extractor found in the list"
+                    msg = (
+                        f"Missing required dependency: extractor "
+                        f"'{extractor_name}' requires input "
+                        f"'{input_name}' of type "
+                        f"'{required_type.__name__}', but no such "
+                        f"extractor found in the list"
                     )
+                    raise ValueError(msg)
 
             config_dict[extractor_name] = (extractor, input_mapping)
 
@@ -142,8 +154,8 @@ class FeatureSpace:
             >>> fs.save_config("pipeline.yaml")
             >>> fs.save_config("pipeline.json")
         """
-        from pathlib import Path
         from hyppo import io
+        from pathlib import Path
 
         if not isinstance(path, Path):
             path = Path(path)
@@ -153,6 +165,7 @@ class FeatureSpace:
         elif path.suffix == ".json":
             io.save_config_json(self, path)
         else:
-            raise ValueError(
-                f"Path must have .yaml, .yml, or .json extension, got {path.suffix}"
+            msg = (
+                f"Path must have .yaml, .yml, or .json extension, " f"got {path.suffix}"
             )
+            raise ValueError(msg)

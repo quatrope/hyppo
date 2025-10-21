@@ -1,12 +1,11 @@
 """Tests for configuration loading and FeatureSpace generation."""
 
-import pytest
-import json
-import yaml
-from pathlib import Path
-
 from hyppo.core import FeatureSpace
-from hyppo.io import load_config_yaml, load_config_json
+from hyppo.io import load_config_json, load_config_yaml
+import json
+from pathlib import Path
+import pytest
+import yaml
 
 
 class TestConfigLoader:
@@ -249,10 +248,13 @@ class TestConfigLoader:
         assert "mean" in results
         assert "std" in results
 
-    @pytest.mark.parametrize("loader,extension", [
-        (load_config_yaml, ".yaml"),
-        (load_config_json, ".json"),
-    ])
+    @pytest.mark.parametrize(
+        "loader,extension",
+        [
+            (load_config_yaml, ".yaml"),
+            (load_config_json, ".json"),
+        ],
+    )
     def test_format_consistency(self, tmp_path, loader, extension):
         """Test that YAML and JSON produce identical FeatureSpace."""
         # Arrange: Same config in different formats
@@ -377,7 +379,9 @@ class TestConfigLoader:
         # Arrange: Config with params as list
         config_path = tmp_path / "config.json"
         with open(config_path, "w") as f:
-            f.write('{"pipeline": {"mean": {"extractor": "MeanExtractor", "params": [1, 2, 3]}}}')
+            f.write(
+                '{"pipeline": {"mean": {"extractor": "MeanExtractor", "params": [1, 2, 3]}}}'
+            )
 
         # Act & Assert: Verify error raised
         with pytest.raises(ValueError, match="must be a dictionary"):

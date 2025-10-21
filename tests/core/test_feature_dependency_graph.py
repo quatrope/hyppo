@@ -1,16 +1,13 @@
 """Tests for FeatureDependencyGraph."""
 
-import pytest
-import numpy as np
+from hyppo.core import FeatureDependencyGraph
 from hyppo.extractor.base import Extractor
 from hyppo.extractor.mean import MeanExtractor
 from hyppo.extractor.std import StdExtractor
-from hyppo.core import FeatureDependencyGraph
-from tests.fixtures.extractors import (
-    SimpleExtractor,
-    MediumExtractor,
-    AdvancedExtractor,
-)
+import numpy as np
+import pytest
+from tests.fixtures.extractors import (AdvancedExtractor, MediumExtractor,
+                                       SimpleExtractor)
 
 
 class TestFeatureDependencyGraph:

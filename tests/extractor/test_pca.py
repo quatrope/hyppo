@@ -1,8 +1,8 @@
 """Tests for PCAExtractor."""
 
-import pytest
-import numpy as np
 from hyppo.extractor.pca import PCAExtractor
+import numpy as np
+import pytest
 
 
 class TestPCAExtractor:

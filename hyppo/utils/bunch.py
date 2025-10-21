@@ -7,8 +7,8 @@
 
 """Container object exposing keys as attributes."""
 
-import copy
 from collections.abc import Mapping
+import copy
 
 
 class Bunch(Mapping):

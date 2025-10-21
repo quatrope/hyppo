@@ -1,12 +1,11 @@
 """Command-line interface for hyppo feature extraction."""
 
 import argparse
-import sys
-from pathlib import Path
-from typing import TYPE_CHECKING
-
 from hyppo.io import load_h5_hsi
-from hyppo.io._config import load_config_yaml, load_config_json
+from hyppo.io._config import load_config_json, load_config_yaml
+from pathlib import Path
+import sys
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from hyppo.core import FeatureSpace
@@ -73,9 +72,7 @@ class CLI:
         )
 
         # Info command
-        info_parser = subparsers.add_parser(
-            "info", help="Display information about feature space"
-        )
+        subparsers.add_parser("info", help="Display information about feature space")
 
         return parser
 
@@ -89,11 +86,12 @@ class CLI:
         input_path = Path(args.input)
 
         if not input_path.exists():
-            print(f"Error: Input file not found: {input_path}", file=sys.stderr)
+            msg = f"Error: Input file not found: {input_path}"
+            print(msg, file=sys.stderr)
             sys.exit(1)
 
         if input_path.suffix != ".h5":
-            print(f"Error: Input file must be .h5 format", file=sys.stderr)
+            print("Error: Input file must be .h5 format", file=sys.stderr)
             sys.exit(1)
 
         print(f"Loading HSI data from {input_path}...")
@@ -176,9 +174,7 @@ def main():
     )
 
     # Info command
-    info_parser = subparsers.add_parser(
-        "info", help="Display information about configuration"
-    )
+    subparsers.add_parser("info", help="Display information about configuration")
 
     args = parser.parse_args()
 
@@ -189,7 +185,8 @@ def main():
     # Load configuration
     config_path = Path(args.config)
     if not config_path.exists():
-        print(f"Error: Configuration file not found: {config_path}", file=sys.stderr)
+        msg = f"Error: Configuration file not found: {config_path}"
+        print(msg, file=sys.stderr)
         sys.exit(1)
 
     print(f"Loading configuration from {config_path}...")
@@ -199,10 +196,8 @@ def main():
     elif config_path.suffix == ".json":
         feature_space = load_config_json(config_path)
     else:
-        print(
-            f"Error: Unsupported config format. Use .yaml, .yml, or .json",
-            file=sys.stderr,
-        )
+        msg = "Error: Unsupported config format. Use .yaml, .yml, or .json"
+        print(msg, file=sys.stderr)
         sys.exit(1)
 
     # Create runner

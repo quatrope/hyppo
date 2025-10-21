@@ -1,6 +1,5 @@
 from .base import Extractor
 from hyppo.core import HSI
-
 import numpy as np
 from skimage.feature import local_binary_pattern
 
@@ -128,7 +127,9 @@ class LBPExtractor(Extractor):
 
     def _validate(self, data: HSI, **inputs):
         """Validate extractor parameters."""
-        if self.bands is not None and (not isinstance(self.bands, list) or not self.bands):
+        if self.bands is not None and (
+            not isinstance(self.bands, list) or not self.bands
+        ):
             raise ValueError("bands must be None or a non-empty list of integers.")
 
         if not isinstance(self.radius, (int, float)) or self.radius <= 0:

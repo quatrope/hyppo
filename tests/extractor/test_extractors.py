@@ -5,32 +5,18 @@ This module contains basic smoke tests for all concrete extractor classes
 to verify they can successfully complete extraction without errors.
 """
 
-import pytest
+from hyppo.extractor import (DWT1DExtractor, DWT2DExtractor, DWT3DExtractor,
+                             GaborExtractor, GeometricMomentExtractor,
+                             GLCMExtractor, ICAExtractor, LBPExtractor,
+                             LegendreMomentExtractor, MaxExtractor,
+                             MeanExtractor, MedianExtractor, MinExtractor,
+                             MNFExtractor, MPExtractor, NDVIExtractor,
+                             NDWIExtractor, PCAExtractor, PPExtractor,
+                             SAVIExtractor, StdExtractor,
+                             ZernikeMomentExtractor)
 import numpy as np
-from hyppo.extractor import (
-    DWT1DExtractor,
-    DWT2DExtractor,
-    DWT3DExtractor,
-    GaborExtractor,
-    GeometricMomentExtractor,
-    GLCMExtractor,
-    ICAExtractor,
-    LBPExtractor,
-    LegendreMomentExtractor,
-    MaxExtractor,
-    MeanExtractor,
-    MedianExtractor,
-    MinExtractor,
-    MNFExtractor,
-    MPExtractor,
-    NDVIExtractor,
-    NDWIExtractor,
-    PCAExtractor,
-    PPExtractor,
-    SAVIExtractor,
-    StdExtractor,
-    ZernikeMomentExtractor,
-)
+import pytest
+
 
 class TestMaxExtractor:
     """Test cases for MaxExtractor."""

@@ -1,7 +1,7 @@
-from pathlib import Path
 import h5py
-import numpy as np
 from hyppo.core import HSI
+import numpy as np
+from pathlib import Path
 
 
 def load_h5_hsi(
@@ -38,7 +38,10 @@ def load_h5_hsi(
         }
 
         return HSI(
-            reflectance=scaled_reflectance, wavelengths=wavelengths, mask=mask, metadata=metadata
+            reflectance=scaled_reflectance,
+            wavelengths=wavelengths,
+            mask=mask,
+            metadata=metadata,
         )
 
 

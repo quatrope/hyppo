@@ -1,26 +1,29 @@
-import networkx as nx
-
 from hyppo.extractor.base import Extractor
+import networkx as nx
 
 
 class FeatureDependencyGraph:
+    """Manages feature extraction dependencies as a directed acyclic graph."""
 
     def __init__(self):
+        """Initialize dependency graph with empty graph and mappings."""
         self.graph = nx.DiGraph()
         self.extractors = {}
         self.input_mappings = {}
 
     def add_extractor(
-        self, name: str, extractor: Extractor, input_mapping: dict | None = None
+        self,
+        name: str,
+        extractor: Extractor,
+        input_mapping: dict | None = None,
     ):
         """
-        Add an extractor with its input mapping to the dependency graph.
+        Add extractor with input mapping to dependency graph.
 
         Args:
             name: Unique name for this extractor instance
             extractor: The extractor instance
             input_mapping: dict mapping {input_name: source_extractor_name}
-                          If None, no inputs are mapped (extractor has no dependencies)
         """
         if input_mapping is None:
             input_mapping = {}
@@ -62,26 +65,34 @@ class FeatureDependencyGraph:
             # Check each declared input dependency
             for input_name, dep_spec in input_deps.items():
                 # Check if required input is missing
-                if dep_spec.get("required", True) and input_name not in input_mapping:
-                    raise ValueError(
-                        f"Extractor '{node_name}' requires input '{input_name}' but it was not provided"
+                is_required = dep_spec.get("required", True)
+                if is_required and input_name not in input_mapping:
+                    msg = (
+                        f"Extractor '{node_name}' requires input "
+                        f"'{input_name}' but it was not provided"
                     )
+                    raise ValueError(msg)
 
                 # If input is mapped, validate the source extractor type
                 if input_name in input_mapping:
                     source_name = input_mapping[input_name]
                     if source_name not in self.extractors:
-                        raise ValueError(
-                            f"Source extractor '{source_name}' not found for input '{input_name}' of '{node_name}'"
+                        msg = (
+                            f"Source extractor '{source_name}' not found "
+                            f"for input '{input_name}' of '{node_name}'"
                         )
+                        raise ValueError(msg)
 
                     source_extractor = self.extractors[source_name]
-                    if not isinstance(source_extractor, dep_spec["extractor"]):
-                        raise TypeError(
-                            f"Type mismatch for input '{input_name}' of '{node_name}': "
-                            f"expected {dep_spec['extractor'].__name__}, "
+                    expected_type = dep_spec["extractor"]
+                    if not isinstance(source_extractor, expected_type):
+                        msg = (
+                            f"Type mismatch for input '{input_name}' "
+                            f"of '{node_name}': "
+                            f"expected {expected_type.__name__}, "
                             f"got {type(source_extractor).__name__}"
                         )
+                        raise TypeError(msg)
 
     def get_execution_order(self) -> list[str]:
         """
@@ -97,12 +108,12 @@ class FeatureDependencyGraph:
 
     def get_execution_layers(self) -> list[list[str]]:
         """
-        Get extractors organized in execution layers for parallel execution.
+        Get extractors organized in layers for parallel execution.
 
-        Each layer has dependencies on the previous layer. Except for the first layer.
+        Each layer has dependencies on the previous layer.
 
         Returns:
-            list of layers, where each layer contains extractors that can run in parallel
+            List of layers with extractors that can run in parallel
         """
         layers = []
         remaining_nodes = set(self.graph.nodes())
@@ -116,7 +127,11 @@ class FeatureDependencyGraph:
                 if predecessors.isdisjoint(remaining_nodes):
                     current_layer.append(node)
 
-            assert current_layer, f"Cannot compute execution layers. Remaining nodes: {remaining_nodes}"
+            msg = (
+                f"Cannot compute execution layers. "
+                f"Remaining nodes: {remaining_nodes}"
+            )
+            assert current_layer, msg
 
             layers.append(current_layer)
             remaining_nodes.difference_update(current_layer)

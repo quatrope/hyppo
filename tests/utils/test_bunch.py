@@ -1,10 +1,8 @@
 """Tests for Bunch."""
 
 import copy
-
-import pytest
-
 from hyppo.utils.bunch import Bunch
+import pytest
 
 
 class TestBunch:

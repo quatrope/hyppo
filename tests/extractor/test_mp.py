@@ -1,8 +1,8 @@
 """Tests for MPExtractor."""
 
-import pytest
-import numpy as np
 from hyppo.extractor.mp import MPExtractor
+import numpy as np
+import pytest
 
 
 class TestMPExtractor:
@@ -226,9 +226,7 @@ class TestMPExtractor:
         extractor = MPExtractor(structuring_element="invalid")
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(
-            ValueError, match="structuring_element must be one of"
-        ):
+        with pytest.raises(ValueError, match="structuring_element must be one of"):
             extractor.extract(small_hsi)
 
     def test_feature_name(self):

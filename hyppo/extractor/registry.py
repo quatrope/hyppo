@@ -1,5 +1,5 @@
-from typing import Dict, Type, Optional, List
 from .base import Extractor
+from typing import Dict, List, Optional, Type
 
 
 class ExtractorRegistry:

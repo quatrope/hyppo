@@ -1,7 +1,6 @@
-import numpy as np
-
-from hyppo.core import HSI
 from .base import Extractor
+from hyppo.core import HSI
+import numpy as np
 
 
 class StdExtractor(Extractor):

@@ -2,9 +2,9 @@
 HSI fixtures
 """
 
-import pytest
-import numpy as np
 from hyppo.core import HSI
+import numpy as np
+import pytest
 
 
 @pytest.fixture

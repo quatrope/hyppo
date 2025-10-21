@@ -9,9 +9,11 @@ class DWT3DExtractor(Extractor):
     """
     Discrete Wavelet Transform (3D) feature extractor for hyperspectral images.
 
-    Applies 3D DWT along the spatial (H, W) and spectral (B) dimensions of the hyperspectral cube.
-    Each level of decomposition produces an approximation (LLL) and detail coefficients (subbands)
-    that are upsampled to the original resolution and concatenated along the feature axis.
+    Applies 3D DWT along the spatial (H, W) and spectral (B) dimensions
+    of the hyperspectral cube. Each level of decomposition produces an
+    approximation (LLL) and detail coefficients (subbands) that are
+    upsampled to the original resolution and concatenated along the
+    feature axis.
 
     Parameters
     ----------
@@ -24,12 +26,13 @@ class DWT3DExtractor(Extractor):
 
     References
     ----------
-    Qian, Ye, and Zhou (2012): Decomposed hyperspectral images at different scales,
-        orientations, and frequencies using 3-D wavelets, and applied sparse logistic
-        regression for feature selection and classification.
-    Ye et al. (2014): Extracted 3-D DWT coefficients to acquire spectral–spatial
-        information for classification, using subspace division to improve class separation
-        and reduce training samples.
+    Qian, Ye, and Zhou (2012): Decomposed hyperspectral images at
+        different scales, orientations, and frequencies using 3-D
+        wavelets, and applied sparse logistic regression for feature
+        selection and classification.
+    Ye et al. (2014): Extracted 3-D DWT coefficients to acquire
+        spectral–spatial information for classification, using subspace
+        division to improve class separation and reduce training samples.
 
     """
 

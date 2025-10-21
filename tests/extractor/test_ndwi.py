@@ -1,9 +1,9 @@
 """Tests for NDWIExtractor."""
 
-import pytest
-import numpy as np
-import warnings
 from hyppo.extractor.ndwi import NDWIExtractor
+import numpy as np
+import pytest
+import warnings
 
 
 class TestNDWIExtractor:
@@ -196,11 +196,14 @@ class TestNDWIExtractor:
         assert isinstance(green_wl, (int, float, np.number))
         assert isinstance(nir_wl, (int, float, np.number))
 
-    @pytest.mark.parametrize("green_wl,nir_wl", [
-        (540, 800),
-        (560, 850),
-        (580, 900),
-    ])
+    @pytest.mark.parametrize(
+        "green_wl,nir_wl",
+        [
+            (540, 800),
+            (560, 850),
+            (580, 900),
+        ],
+    )
     def test_different_wavelength_combinations(self, small_hsi, green_wl, nir_wl):
         """Test extraction with different wavelength combinations."""
         # Arrange: Create extractor with specific wavelengths

@@ -1,7 +1,7 @@
-from pathlib import Path
 import h5py
-import numpy as np
 from hyppo.core import FeatureCollection
+import numpy as np
+from pathlib import Path
 
 
 def save_feature_collection(
@@ -49,7 +49,9 @@ def save_feature_collection(
                         feature_subgroup.create_dataset(key, data=value)
 
             if hasattr(feature, "extractor") and feature.extractor is not None:
-                metadata_subgroup.attrs["extractor_type"] = type(feature.extractor).__name__
+                metadata_subgroup.attrs["extractor_type"] = type(
+                    feature.extractor
+                ).__name__
 
             if hasattr(feature, "inputs_used"):
                 metadata_subgroup.attrs["inputs_used"] = str(feature.inputs_used)

@@ -1,7 +1,7 @@
-from typing import Iterable
 from .base import BaseRunner
-from hyppo.core import HSI, Feature, FeatureCollection
 from dask.distributed import Client, LocalCluster
+from hyppo.core import Feature, FeatureCollection, HSI
+from typing import Iterable
 
 
 class DaskRunner(BaseRunner):

@@ -1,12 +1,11 @@
 """Configuration loaders for YAML and JSON formats."""
 
-import json
-import yaml
-from pathlib import Path
-from typing import Dict, Any
-
 from hyppo.core import FeatureSpace
 from hyppo.extractor import registry
+import json
+from pathlib import Path
+from typing import Any, Dict
+import yaml
 
 
 def load_config_yaml(config_path: str | Path) -> FeatureSpace:
@@ -120,9 +119,7 @@ def _build_feature_space(config_dict: Dict[str, Any]) -> FeatureSpace:
             )
 
         if "extractor" not in extractor_spec:
-            raise ValueError(
-                f"Required field 'extractor' missing for '{feature_name}'"
-            )
+            raise ValueError(f"Required field 'extractor' missing for '{feature_name}'")
 
         extractor_type = extractor_spec["extractor"]
 

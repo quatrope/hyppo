@@ -1,8 +1,8 @@
-import pytest
-from hyppo.extractor.std import StdExtractor
-from hyppo.core import FeatureSpace
-from tests.fixtures.extractors import SimpleExtractor, MediumExtractor
 import hyppo
+from hyppo.core import FeatureSpace
+from hyppo.extractor.std import StdExtractor
+import pytest
+from tests.fixtures.extractors import MediumExtractor, SimpleExtractor
 
 
 class TestFeatureSpace:
@@ -74,7 +74,7 @@ class TestFeatureSpace:
 
     def test_from_list_with_dependencies(self, sample_hsi):
         """Test creating FeatureSpace from list with dependencies."""
-        from tests.fixtures.extractors import SimpleExtractor, MediumExtractor
+        from tests.fixtures.extractors import MediumExtractor, SimpleExtractor
 
         extractors = [
             SimpleExtractor(),
@@ -112,11 +112,9 @@ class TestFeatureSpace:
 
     def test_from_list_complex_chain(self, sample_hsi):
         """Test complex dependency chain resolution."""
-        from tests.fixtures.extractors import (
-            SimpleExtractor,
-            MediumExtractor,
-            AdvancedExtractor,
-        )
+        from tests.fixtures.extractors import (AdvancedExtractor,
+                                               MediumExtractor,
+                                               SimpleExtractor)
 
         extractors = [
             SimpleExtractor(),  # no deps
@@ -140,7 +138,8 @@ class TestFeatureSpace:
 
     def test_from_list_required_dependency_missing_fails(self):
         """Test that missing required dependencies cause errors."""
-        from tests.fixtures.extractors import AdvancedExtractor, SimpleExtractor
+        from tests.fixtures.extractors import (AdvancedExtractor,
+                                               SimpleExtractor)
 
         # AdvancedExtractor requires MediumExtractor but we don't provide it
         extractors = [
@@ -167,10 +166,7 @@ class TestFeatureSpace:
 
     def test_from_list_ambiguous_dependency(self):
         """Test error when multiple extractors match the same required type."""
-        from tests.fixtures.extractors import (
-            SimpleExtractor,
-            MediumExtractor,
-        )
+        from tests.fixtures.extractors import MediumExtractor, SimpleExtractor
 
         # To test ambiguous dependency, we need two DIFFERENT extractors that are both
         # instances of the same base type. Let's use subclasses.

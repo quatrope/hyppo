@@ -1,14 +1,13 @@
 """Tests for FeatureCollection save functionality."""
 
-import pytest
 import h5py
-import numpy as np
-import tempfile
-from pathlib import Path
-
 from hyppo import io
-from hyppo.core import FeatureCollection, Feature
+from hyppo.core import Feature, FeatureCollection
 from hyppo.extractor import MeanExtractor, StdExtractor
+import numpy as np
+from pathlib import Path
+import pytest
+import tempfile
 
 
 class TestSaveFeatureCollection:
@@ -28,10 +27,7 @@ class TestSaveFeatureCollection:
         mean_feature = Feature(mean_result, mean_ext, {})
         std_feature = Feature(std_result, std_ext, {})
 
-        return FeatureCollection({
-            "mean": mean_feature,
-            "std": std_feature
-        })
+        return FeatureCollection({"mean": mean_feature, "std": std_feature})
 
     def test_save_feature_collection_creates_file(self, sample_feature_collection):
         """Test that save_feature_collection creates an HDF5 file."""
@@ -157,12 +153,18 @@ class TestSaveFeatureCollection:
                 assert "extra_key" in f["features/mean"]
                 assert "another_key" in f["features/mean"]
 
-                np.testing.assert_array_equal(f["features/mean/extra_key"][:], [1, 2, 3])
-                np.testing.assert_array_equal(f["features/mean/another_key"][:], [[4, 5], [6, 7]])
+                np.testing.assert_array_equal(
+                    f["features/mean/extra_key"][:], [1, 2, 3]
+                )
+                np.testing.assert_array_equal(
+                    f["features/mean/another_key"][:], [[4, 5], [6, 7]]
+                )
         finally:
             Path(tmp_path).unlink(missing_ok=True)
 
-    def test_save_feature_collection_accepts_string_path(self, sample_feature_collection):
+    def test_save_feature_collection_accepts_string_path(
+        self, sample_feature_collection
+    ):
         """Test that save_feature_collection accepts string paths."""
         # Arrange: Create string path
         with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp:
@@ -177,7 +179,9 @@ class TestSaveFeatureCollection:
         finally:
             Path(tmp_path).unlink(missing_ok=True)
 
-    def test_save_feature_collection_accepts_path_object(self, sample_feature_collection):
+    def test_save_feature_collection_accepts_path_object(
+        self, sample_feature_collection
+    ):
         """Test that save_feature_collection accepts Path objects."""
         # Arrange: Create Path object
         with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp:

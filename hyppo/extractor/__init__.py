@@ -1,6 +1,6 @@
-from .base import Extractor
-from .registry import registry
+"""Feature extractors for hyperspectral image processing."""
 
+from .base import Extractor
 from .dwt1d import DWT1DExtractor
 from .dwt2d import DWT2DExtractor
 from .dwt3d import DWT3DExtractor
@@ -20,13 +20,14 @@ from .ndvi import NDVIExtractor
 from .ndwi import NDWIExtractor
 from .pca import PCAExtractor
 from .pp import PPExtractor
+from .registry import registry
 from .savi import SAVIExtractor
 from .std import StdExtractor
 from .zernikemoment import ZernikeMomentExtractor
 
 __all__ = [
-    "registry",
     "Extractor",
+    "registry",
     "DWT1DExtractor",
     "DWT2DExtractor",
     "DWT3DExtractor",

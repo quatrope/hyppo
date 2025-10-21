@@ -1,8 +1,7 @@
+from .base import Extractor
+from hyppo.core import HSI
 import numpy as np
 from scipy import ndimage
-
-from hyppo.core import HSI
-from .base import Extractor
 
 
 class GaborExtractor(Extractor):
@@ -27,7 +26,8 @@ class GaborExtractor(Extractor):
             frequencies = [0.05, 0.1, 0.2]  # Different spatial frequencies
 
         if thetas is None:
-            thetas = [0, np.pi / 4, np.pi / 2, 3 * np.pi / 4]  # 0°, 45°, 90°, 135°
+            # 0°, 45°, 90°, 135°
+            thetas = [0, np.pi / 4, np.pi / 2, 3 * np.pi / 4]
 
         self.frequencies = frequencies
         self.thetas = thetas
@@ -148,7 +148,8 @@ class GaborExtractor(Extractor):
         feat_idx = 0
         for band_feature in band_features:
             n_band_features = band_feature.shape[2]
-            features[:, :, feat_idx : feat_idx + n_band_features] = band_feature
+            end_idx = feat_idx + n_band_features
+            features[:, :, feat_idx:end_idx] = band_feature
             feat_idx += n_band_features
 
         return features
@@ -166,7 +167,8 @@ class GaborExtractor(Extractor):
         n_orientations = len(self.thetas)
         height, width = band.shape
 
-        # 2 features per filter: magnitude mean and energy (magnitude squared mean)
+        # 2 features per filter: magnitude mean and energy
+        # (magnitude squared mean)
         n_features = n_frequencies * n_orientations * 2
         features = np.zeros((height, width, n_features), dtype=np.float32)
 

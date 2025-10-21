@@ -1,7 +1,6 @@
+from hyppo.utils.bunch import Bunch
 import numpy as np
 import pandas as pd
-
-from hyppo.utils.bunch import Bunch
 
 
 class Feature(Bunch):
@@ -17,6 +16,7 @@ class Feature(Bunch):
     """
 
     def __init__(self, data, extractor, inputs_used):
+        """Initialize Feature with data, extractor, and inputs used."""
         mapping = {
             "result": data.get("features", None),
             "data": data,
@@ -30,9 +30,7 @@ class Feature(Bunch):
         Get summary information about this feature result.
 
         Returns:
-            Dictionary with:
-                - dimensions: Shape of the 'features' array if present
-                - extra_data: Comma-separated list of extra data keys (excluding 'features')
+            Dictionary with dimensions and extra_data keys
         """
         data = self.get("data", {})
 
@@ -58,7 +56,7 @@ class FeatureCollection(Bunch):
     """
     Collection of Feature objects.
 
-    This class manages results from multiple feature extractors
+    This class manages results from multiple feature extractors.
 
     Examples:
         >>> results = FeatureCollection()
@@ -70,11 +68,13 @@ class FeatureCollection(Bunch):
     """
 
     def __init__(self, data: dict[str, Feature]):
+        """Initialize FeatureCollection with dictionary of Feature objects."""
         super().__init__("FeatureCollection", data)
 
     @classmethod
     def from_features(cls, features: dict[str, Feature]) -> "FeatureCollection":
-        """Create a FeatureCollection from a dictionary of features.
+        """
+        Create a FeatureCollection from a dictionary of features.
 
         Args:
             features: Dictionary of features (extractor_name -> Feature)
@@ -141,7 +141,8 @@ class FeatureCollection(Bunch):
             info["feature_name"] = feature_name
             rows.append(info)
 
-        return pd.DataFrame(rows, columns=["feature_name", "dimensions", "extra_data"])
+        columns = ["feature_name", "dimensions", "extra_data"]
+        return pd.DataFrame(rows, columns=columns)
 
     def save(self, path) -> None:
         """
@@ -155,6 +156,7 @@ class FeatureCollection(Bunch):
             >>> results.save("output.h5")
         """
         from hyppo import io
+
         io.save_feature_collection(self, path)
 
 

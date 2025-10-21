@@ -1,15 +1,8 @@
 from .base import Extractor
 from hyppo.core import HSI
 import numpy as np
-from skimage.morphology import (
-    opening,
-    closing,
-    dilation,
-    erosion,
-    disk,
-    square,
-    octagon,
-)
+from skimage.morphology import (closing, dilation, disk, erosion, octagon,
+                                opening, square)
 
 
 class MPExtractor(Extractor):

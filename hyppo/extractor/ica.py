@@ -1,7 +1,7 @@
 from .base import Extractor
 from hyppo.core import HSI
-from sklearn.decomposition import FastICA
 import numpy as np
+from sklearn.decomposition import FastICA
 
 
 class ICAExtractor(Extractor):

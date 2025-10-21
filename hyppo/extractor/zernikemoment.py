@@ -1,9 +1,9 @@
-import numpy as np
-import math
+from .base import Extractor
 from hyppo.core import HSI
+import math
+import numpy as np
 from skimage.util.shape import view_as_windows
 from sklearn.decomposition import PCA
-from .base import Extractor
 
 
 class ZernikeMomentExtractor(Extractor):

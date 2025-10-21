@@ -1,5 +1,5 @@
-from hyppo.core import HSI, Feature, FeatureCollection
 from .base import BaseRunner
+from hyppo.core import Feature, FeatureCollection, HSI
 
 
 class SequentialRunner(BaseRunner):

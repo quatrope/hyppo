@@ -1,19 +1,20 @@
 from .base import Extractor
 from hyppo.core import HSI
-from sklearn.decomposition import PCA
-from skimage.util.shape import view_as_windows
 import numpy as np
+from skimage.util.shape import view_as_windows
+from sklearn.decomposition import PCA
 
 
 class GeometricMomentExtractor(Extractor):
     """
     Geometric Moment feature extractor for hyperspectral images (HSI).
 
-    Computes multiscale geometric (raw) moments on the principal components of the HSI.
-    For each principal component, the image is processed with sliding windows of
-    specified sizes. Monomials X^p * Y^q up to a specified maximum order are used
-    to compute the geometric moments within each window. Moments are concatenated
-    across scales and components to form the final feature vector.
+    Computes multiscale geometric (raw) moments on the principal
+    components of the HSI. For each principal component, the image is
+    processed with sliding windows of specified sizes. Monomials X^p *
+    Y^q up to a specified maximum order are used to compute the geometric
+    moments within each window. Moments are concatenated across scales
+    and components to form the final feature vector.
 
     Parameters
     ----------
@@ -26,16 +27,19 @@ class GeometricMomentExtractor(Extractor):
 
     References
     ----------
-    Kumar, A., & Dikshit, O. (2015a). Geometric moment features for hyperspectral image classification.
-    Mirzapour, A., & Ghassemian, H. (2016). Comparison of geometric, Zernike, and Legendre moments for hyperspectral images.
-    Hu, M. K. (1962). Visual pattern recognition by moment invariants. IRE Transactions on Information Theory, 8(2), 179–187.
+    Kumar, A., & Dikshit, O. (2015a). Geometric moment features for
+        hyperspectral image classification.
+    Mirzapour, A., & Ghassemian, H. (2016). Comparison of geometric,
+        Zernike, and Legendre moments for hyperspectral images.
+    Hu, M. K. (1962). Visual pattern recognition by moment invariants.
+        IRE Transactions on Information Theory, 8(2), 179–187.
     """
 
     def __init__(self, n_components=3, max_order=3, window_sizes=[3, 9, 15]):
         super().__init__()
         self.n_components = n_components
         # Max order = 6 by the paper but it is slow # TODO! Check
-        self.max_order = max_order  
+        self.max_order = max_order
         self.window_sizes = window_sizes
 
     def _geometric_moments(self, patches):
@@ -58,7 +62,7 @@ class GeometricMomentExtractor(Extractor):
         ]
         # Stack the kernels in a single matrix
         # Shape: (moments_count, height, width)
-        kernels = np.stack(kernels, axis=0)  
+        kernels = np.stack(kernels, axis=0)
 
         moments_count = kernels.shape[0]
 
@@ -120,11 +124,13 @@ class GeometricMomentExtractor(Extractor):
         dict
             Dictionary containing:
                 - "features": np.ndarray, shape (H, W, n_features)
-                    Geometric moment features concatenated across scales and components.
+                    Geometric moment features concatenated across scales
+                    and components.
                 - "explained_variance_ratio": array
                     Variance ratio explained by each PCA component.
                 - "n_components": int, number of PCA components used.
-                - "window_sizes": list of int, window sizes used for multiscale computation.
+                - "window_sizes": list of int, window sizes used for
+                    multiscale computation.
                 - "max_order": int, maximum order of geometric moments used.
         """
         reflectance = data.reflectance

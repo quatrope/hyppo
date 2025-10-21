@@ -1,10 +1,10 @@
-import pytest
-import numpy as np
+"""Test cases for SequentialRunner."""
 
-from hyppo.core import HSI, FeatureSpace, FeatureCollection
-from hyppo.core import Feature
-from hyppo.runner import SequentialRunner
+from hyppo.core import Feature, FeatureCollection, FeatureSpace, HSI
 from hyppo.extractor.base import Extractor
+from hyppo.runner import SequentialRunner
+import numpy as np
+import pytest
 
 
 class SimpleExtractor(Extractor):
@@ -19,6 +19,7 @@ class DependentExtractor(Extractor):
 
     @classmethod
     def get_input_dependencies(cls):
+        """Get input dependencies."""
         return {"input_data": {"extractor": SimpleExtractor, "required": True}}
 
     def _extract(self, data: HSI, **inputs) -> dict:
@@ -31,10 +32,12 @@ class OptionalDependencyExtractor(Extractor):
 
     @classmethod
     def get_input_dependencies(cls) -> dict:
+        """Get input dependencies."""
         return {"optional_input": {"extractor": SimpleExtractor, "required": False}}
 
     @classmethod
     def get_input_default(cls, input_name: str):
+        """Get input default."""
         if input_name == "optional_input":
             return SimpleExtractor()
         return None
@@ -59,6 +62,7 @@ class CounterExtractor(Extractor):
 
     @classmethod
     def reset(cls):
+        """Reset execution count and order."""
         cls.execution_count = 0
         cls.execution_order = []
 

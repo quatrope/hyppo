@@ -1,6 +1,6 @@
-import pytest
-from hyppo.extractor.base import Extractor
 from hyppo.core import HSI
+from hyppo.extractor.base import Extractor
+import pytest
 
 
 class ConcreteExtractor(Extractor):
@@ -79,7 +79,7 @@ class TestExtractor:
     def test_extractor_is_abstract(self):
         """Test that Extractor base class cannot be instantiated directly."""
         with pytest.raises(TypeError):
-            Extractor() # type: ignore
+            Extractor()  # type: ignore
 
     def test_basic_extract_call(self, small_hsi):
         """Test extract() happy path."""
@@ -99,7 +99,7 @@ class TestExtractor:
 
         # Act & Assert: Verify validation raises error for invalid data
         with pytest.raises(ValueError, match="Data cannot be None"):
-            extractor.extract(None) # type: ignore
+            extractor.extract(None)  # type: ignore
 
     def test_validate_passes_with_valid_data(self, small_hsi):
         """Test that _validate() allows execution to proceed with valid data."""
@@ -180,6 +180,7 @@ class TestExtractor:
 
     def test_feature_name_camel_case_conversion(self):
         """Test feature_name() correctly splits CamelCase into snake_case."""
+
         # Arrange: Create class with complex CamelCase name
         class MyComplexFeatureName(Extractor):
             def _extract(self, data: HSI, **inputs) -> dict:

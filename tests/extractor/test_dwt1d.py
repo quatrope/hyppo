@@ -1,7 +1,7 @@
 """Tests for DWT1DExtractor."""
 
-import pytest
 from hyppo.extractor.dwt1d import DWT1DExtractor
+import pytest
 
 
 class TestDWT1DExtractor:

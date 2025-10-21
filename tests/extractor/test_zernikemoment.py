@@ -1,8 +1,8 @@
 """Tests for ZernikeMomentExtractor."""
 
-import pytest
-import numpy as np
 from hyppo.extractor.zernikemoment import ZernikeMomentExtractor
+import numpy as np
+import pytest
 
 
 class TestZernikeMomentExtractor:
@@ -200,7 +200,7 @@ class TestZernikeMomentExtractor:
     def test_validate_non_integer_n_components(self, small_hsi):
         """Test validation fails with non-integer n_components."""
         # Arrange: Create extractor with float n_components
-        extractor = ZernikeMomentExtractor(n_components=2.5) # type: ignore
+        extractor = ZernikeMomentExtractor(n_components=2.5)  # type: ignore
 
         # Act & Assert: Verify validation raises ValueError
         with pytest.raises(ValueError, match="n_components must be a positive integer"):
@@ -209,7 +209,7 @@ class TestZernikeMomentExtractor:
     def test_validate_non_integer_max_order(self, small_hsi):
         """Test validation fails with non-integer max_order."""
         # Arrange: Create extractor with float max_order
-        extractor = ZernikeMomentExtractor(degree=2.5) # type: ignore
+        extractor = ZernikeMomentExtractor(degree=2.5)  # type: ignore
 
         # Act & Assert: Verify validation raises ValueError
         with pytest.raises(ValueError, match="degree must be a non-negative integer"):

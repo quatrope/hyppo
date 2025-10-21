@@ -1,14 +1,14 @@
 """Tests for FeatureSpace configuration saving functionality."""
 
-import pytest
-import json
-import yaml
-from pathlib import Path
-
 from hyppo import io
 from hyppo.core import FeatureSpace, HSI
-from hyppo.extractor import MeanExtractor, StdExtractor, PCAExtractor, MaxExtractor
+from hyppo.extractor import (MaxExtractor, MeanExtractor, PCAExtractor,
+                             StdExtractor)
 from hyppo.extractor.base import Extractor
+import json
+from pathlib import Path
+import pytest
+import yaml
 
 
 class ExtractorWithUnderscoreParam(Extractor):
@@ -135,11 +135,9 @@ class TestSaveConfigYAML:
     def test_save_config_yaml_roundtrip(self, tmp_path):
         """Test that saved YAML can be loaded back to equivalent FeatureSpace."""
         # Arrange: Create FeatureSpace with multiple extractors
-        original_fs = FeatureSpace.from_list([
-            MeanExtractor(),
-            StdExtractor(),
-            MaxExtractor()
-        ])
+        original_fs = FeatureSpace.from_list(
+            [MeanExtractor(), StdExtractor(), MaxExtractor()]
+        )
         yaml_path = tmp_path / "config.yaml"
 
         # Act: Save and reload
@@ -153,7 +151,9 @@ class TestSaveConfigYAML:
     def test_save_config_yaml_skip_underscore_params(self, tmp_path):
         """Test that parameters starting with underscore are skipped."""
         # Arrange: Create extractor with underscore parameter
-        extractor = ExtractorWithUnderscoreParam(_internal_param="secret", normal_param=42)
+        extractor = ExtractorWithUnderscoreParam(
+            _internal_param="secret", normal_param=42
+        )
         fs = FeatureSpace({"test": (extractor, {})})
         yaml_path = tmp_path / "config.yaml"
 
@@ -279,11 +279,9 @@ class TestSaveConfigJSON:
     def test_save_config_json_roundtrip(self, tmp_path):
         """Test that saved JSON can be loaded back to equivalent FeatureSpace."""
         # Arrange: Create FeatureSpace with multiple extractors
-        original_fs = FeatureSpace.from_list([
-            MeanExtractor(),
-            StdExtractor(),
-            PCAExtractor(n_components=5)
-        ])
+        original_fs = FeatureSpace.from_list(
+            [MeanExtractor(), StdExtractor(), PCAExtractor(n_components=5)]
+        )
         json_path = tmp_path / "config.json"
 
         # Act: Save and reload
@@ -366,7 +364,9 @@ class TestFeatureSpaceSaveConfigMethod:
     def test_save_config_roundtrip_json(self, tmp_path):
         """Test save_config and load_config_json roundtrip."""
         # Arrange: Create FeatureSpace
-        original_fs = FeatureSpace.from_list([MeanExtractor(), PCAExtractor(n_components=3)])
+        original_fs = FeatureSpace.from_list(
+            [MeanExtractor(), PCAExtractor(n_components=3)]
+        )
         json_path = tmp_path / "config.json"
 
         # Act: Save and reload

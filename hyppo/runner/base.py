@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
-from hyppo.core import HSI, FeatureSpace
-from hyppo.core import FeatureCollection
+from hyppo.core import FeatureCollection, FeatureSpace, HSI
 
 
 class BaseRunner(ABC):

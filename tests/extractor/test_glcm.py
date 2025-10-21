@@ -1,8 +1,8 @@
 """Tests for GLCMExtractor."""
 
-import pytest
-import numpy as np
 from hyppo.extractor.glcm import GLCMExtractor
+import numpy as np
+import pytest
 
 
 class TestGLCMExtractor:
@@ -32,7 +32,12 @@ class TestGLCMExtractor:
 
         # Assert: Verify default parameters
         assert result["distances"] == [1]
-        assert result["properties"] == ["contrast", "entropy", "correlation", "dissimilarity"]
+        assert result["properties"] == [
+            "contrast",
+            "entropy",
+            "correlation",
+            "dissimilarity",
+        ]
         assert result["window_sizes"] == [7]
         assert result["orientation_mode"] == "separate"
 
@@ -159,7 +164,9 @@ class TestGLCMExtractor:
         assert features.ndim == 3
         assert levels > 0
 
-    @pytest.mark.parametrize("orientation_mode", ["separate", "look_direction", "average"])
+    @pytest.mark.parametrize(
+        "orientation_mode", ["separate", "look_direction", "average"]
+    )
     def test_different_orientation_modes(self, small_hsi, orientation_mode):
         """Test extraction with different orientation modes."""
         # Arrange: Create extractor with specific orientation mode
@@ -175,7 +182,7 @@ class TestGLCMExtractor:
     def test_validate_invalid_bands(self, small_hsi):
         """Test validation fails with invalid bands."""
         # Arrange: Create extractor with invalid bands
-        extractor = GLCMExtractor(bands="invalid") # type: ignore
+        extractor = GLCMExtractor(bands="invalid")  # type: ignore
 
         # Act & Assert: Verify validation raises ValueError
         with pytest.raises(ValueError, match="bands must be None or a non-empty list"):

@@ -2,13 +2,13 @@
 Tests for the IO module.
 """
 
-import pytest
-import numpy as np
-import tempfile
 import h5py
-from pathlib import Path
 from hyppo import io
 from hyppo.core import HSI
+import numpy as np
+from pathlib import Path
+import pytest
+import tempfile
 
 
 class TestH5Loading:
@@ -342,7 +342,9 @@ class TestLoadH5Specific:
         try:
             with h5py.File(tmp_path, "w") as f:
                 ds = f.create_dataset("reflectance_data", data=reflectance)
-                ds.attrs["band_names"] = np.array([b"band1", b"band2", b"band3"], dtype="S10")
+                ds.attrs["band_names"] = np.array(
+                    [b"band1", b"band2", b"band3"], dtype="S10"
+                )
                 f.create_dataset("wavelength", data=wavelengths)
 
             hsi = io.load_h5_hsi(tmp_path)

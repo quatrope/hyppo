@@ -1,8 +1,8 @@
+from .base import BaseRunner
+from hyppo.core import Feature, FeatureCollection, HSI
 import multiprocessing as mp
 from multiprocessing.shared_memory import SharedMemory
 import numpy as np
-from .base import BaseRunner
-from hyppo.core import HSI, Feature, FeatureCollection
 
 
 class LocalProcessRunner(BaseRunner):

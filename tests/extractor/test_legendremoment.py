@@ -1,8 +1,8 @@
 """Tests for LegendreMomentExtractor."""
 
-import pytest
-import numpy as np
 from hyppo.extractor.legendremoment import LegendreMomentExtractor
+import numpy as np
+import pytest
 
 
 class TestLegendreMomentExtractor:
@@ -97,7 +97,9 @@ class TestLegendreMomentExtractor:
         extractor = LegendreMomentExtractor(max_order=-1)
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="max_order must be a non-negative integer"):
+        with pytest.raises(
+            ValueError, match="max_order must be a non-negative integer"
+        ):
             extractor.extract(small_hsi)
 
     def test_validate_invalid_window_sizes_empty(self, small_hsi):
@@ -183,7 +185,7 @@ class TestLegendreMomentExtractor:
     def test_validate_non_integer_n_components(self, small_hsi):
         """Test validation fails with non-integer n_components."""
         # Arrange: Create extractor with float n_components
-        extractor = LegendreMomentExtractor(n_components=2.5) # type: ignore
+        extractor = LegendreMomentExtractor(n_components=2.5)  # type: ignore
 
         # Act & Assert: Verify validation raises ValueError
         with pytest.raises(ValueError, match="n_components must be a positive integer"):
@@ -192,10 +194,12 @@ class TestLegendreMomentExtractor:
     def test_validate_non_integer_max_order(self, small_hsi):
         """Test validation fails with non-integer max_order."""
         # Arrange: Create extractor with float max_order
-        extractor = LegendreMomentExtractor(max_order=2.5) # type: ignore
+        extractor = LegendreMomentExtractor(max_order=2.5)  # type: ignore
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="max_order must be a non-negative integer"):
+        with pytest.raises(
+            ValueError, match="max_order must be a non-negative integer"
+        ):
             extractor.extract(small_hsi)
 
     def test_pca_object_stored(self, small_hsi):

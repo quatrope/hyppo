@@ -1,8 +1,8 @@
 """Tests for GaborExtractor."""
 
-import pytest
-import numpy as np
 from hyppo.extractor.gabor import GaborExtractor
+import numpy as np
+import pytest
 
 
 class TestGaborExtractor:
@@ -31,9 +31,7 @@ class TestGaborExtractor:
         frequencies = [0.1, 0.2]
         thetas = [0, np.pi / 2]
         sigma = 2.0
-        extractor = GaborExtractor(
-            frequencies=frequencies, thetas=thetas, sigma=sigma
-        )
+        extractor = GaborExtractor(frequencies=frequencies, thetas=thetas, sigma=sigma)
 
         # Act: Execute extraction
         result = extractor.extract(small_hsi)

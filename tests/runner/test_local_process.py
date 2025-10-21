@@ -1,9 +1,8 @@
-import pytest
-import numpy as np
-
-from hyppo.core import FeatureSpace, FeatureCollection, HSI
-from hyppo.runner import LocalProcessRunner
+from hyppo.core import FeatureCollection, FeatureSpace, HSI
 from hyppo.extractor.base import Extractor
+from hyppo.runner import LocalProcessRunner
+import numpy as np
+import pytest
 
 
 class SimpleTestExtractor(Extractor):
@@ -231,7 +230,7 @@ class TestLocalProcessRunner:
     def test_resolve_complex_pipeline(self, small_hsi):
         """Test complex pipeline with multiple extractors."""
         # Arrange: Import real extractors and create pipeline
-        from hyppo.extractor import MeanExtractor, StdExtractor, PCAExtractor
+        from hyppo.extractor import MeanExtractor, PCAExtractor, StdExtractor
 
         runner = LocalProcessRunner(num_workers=2)
         fs = FeatureSpace.from_list([MeanExtractor(), StdExtractor(), PCAExtractor()])
@@ -533,7 +532,8 @@ class TestLocalProcessRunner:
 
     def test_execute_extractor_with_shared_hsi_function(self, small_hsi):
         """Test the worker function _execute_extractor_with_shared_hsi directly."""
-        from hyppo.runner.local_process import _execute_extractor_with_shared_hsi
+        from hyppo.runner.local_process import \
+            _execute_extractor_with_shared_hsi
 
         # Create shared memory metadata
         runner = LocalProcessRunner(num_workers=1)
@@ -558,7 +558,8 @@ class TestLocalProcessRunner:
 
     def test_execute_extractor_with_shared_hsi_with_inputs(self, small_hsi):
         """Test the worker function with input kwargs."""
-        from hyppo.runner.local_process import _execute_extractor_with_shared_hsi
+        from hyppo.runner.local_process import \
+            _execute_extractor_with_shared_hsi
 
         # Create shared memory metadata
         runner = LocalProcessRunner(num_workers=1)

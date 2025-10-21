@@ -1,8 +1,8 @@
 """Tests for ICAExtractor."""
 
-import pytest
-import numpy as np
 from hyppo.extractor.ica import ICAExtractor
+import numpy as np
+import pytest
 
 
 class TestICAExtractor:
@@ -137,7 +137,9 @@ class TestICAExtractor:
         assert "features" in result
         assert result["n_components"] == 2
 
-    @pytest.mark.skip(reason="Implementation bug: whiten=False causes reshape error. Check implementation.")
+    @pytest.mark.skip(
+        reason="Implementation bug: whiten=False causes reshape error. Check implementation."
+    )
     def test_whiten_false_behavior(self, small_hsi):
         """Test extraction with whiten=False."""
         # Arrange: Create extractor with whiten=False
@@ -151,7 +153,7 @@ class TestICAExtractor:
     def test_validate_invalid_whiten(self, small_hsi):
         """Test validation fails with invalid whiten value."""
         # Arrange: Create extractor with invalid whiten
-        extractor = ICAExtractor(whiten="invalid") # type: ignore
+        extractor = ICAExtractor(whiten="invalid")  # type: ignore
 
         # Act & Assert: Verify validation raises ValueError
         with pytest.raises(ValueError, match="whiten must be one of"):

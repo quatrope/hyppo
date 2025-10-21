@@ -1,8 +1,8 @@
 """Tests for GeometricMomentExtractor."""
 
-import pytest
-import numpy as np
 from hyppo.extractor.geometricmoment import GeometricMomentExtractor
+import numpy as np
+import pytest
 
 
 class TestGeometricMomentExtractor:
@@ -97,7 +97,9 @@ class TestGeometricMomentExtractor:
         extractor = GeometricMomentExtractor(max_order=-1)
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="max_order must be a non-negative integer"):
+        with pytest.raises(
+            ValueError, match="max_order must be a non-negative integer"
+        ):
             extractor.extract(small_hsi)
 
     def test_validate_invalid_window_sizes_empty(self, small_hsi):
@@ -183,7 +185,7 @@ class TestGeometricMomentExtractor:
     def test_validate_non_integer_n_components(self, small_hsi):
         """Test validation fails with non-integer n_components."""
         # Arrange: Create extractor with float n_components
-        extractor = GeometricMomentExtractor(n_components=2.5) # type: ignore
+        extractor = GeometricMomentExtractor(n_components=2.5)  # type: ignore
 
         # Act & Assert: Verify validation raises ValueError
         with pytest.raises(ValueError, match="n_components must be a positive integer"):
@@ -192,8 +194,10 @@ class TestGeometricMomentExtractor:
     def test_validate_non_integer_max_order(self, small_hsi):
         """Test validation fails with non-integer max_order."""
         # Arrange: Create extractor with float max_order
-        extractor = GeometricMomentExtractor(max_order=2.5) # type: ignore
+        extractor = GeometricMomentExtractor(max_order=2.5)  # type: ignore
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="max_order must be a non-negative integer"):
+        with pytest.raises(
+            ValueError, match="max_order must be a non-negative integer"
+        ):
             extractor.extract(small_hsi)

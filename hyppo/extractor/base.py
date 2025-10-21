@@ -1,16 +1,15 @@
-import re
+"""Base class for feature extractors."""
+
 from abc import ABC, abstractmethod
-from typing import Optional
 from hyppo.core import HSI
+import re
 
 
 class Extractor(ABC):
     """Unified base class for all feature extractors."""
 
     def extract(self, data: HSI, **inputs):
-        """
-        Extract features from the hyperspectral image.
-        """
+        """Extract features from the hyperspectral image."""
         self._validate(data, **inputs)
 
         return self._extract(data, **inputs)
@@ -31,7 +30,6 @@ class Extractor(ABC):
         Returns:
             Dictionary containing extracted features and metadata
         """
-        
 
     @classmethod
     def get_input_dependencies(cls) -> dict:

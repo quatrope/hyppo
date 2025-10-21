@@ -1,9 +1,9 @@
 """Tests for SAVIExtractor."""
 
-import pytest
-import numpy as np
-import warnings
 from hyppo.extractor.savi import SAVIExtractor
+import numpy as np
+import pytest
+import warnings
 
 
 class TestSAVIExtractor:
@@ -266,11 +266,14 @@ class TestSAVIExtractor:
         assert "features" in result
         assert result["brightness_correction"] == 0.5
 
-    @pytest.mark.parametrize("red_wl,nir_wl", [
-        (650, 800),
-        (660, 850),
-        (670, 900),
-    ])
+    @pytest.mark.parametrize(
+        "red_wl,nir_wl",
+        [
+            (650, 800),
+            (660, 850),
+            (670, 900),
+        ],
+    )
     def test_different_wavelength_combinations(self, small_hsi, red_wl, nir_wl):
         """Test extraction with different wavelength combinations."""
         # Arrange: Create extractor with specific wavelengths

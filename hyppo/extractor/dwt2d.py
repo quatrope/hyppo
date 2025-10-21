@@ -9,7 +9,8 @@ class DWT2DExtractor(Extractor):
     """
     Discrete Wavelet Transform (2D) feature extractor for hyperspectral images.
 
-    Applies 2D DWT to each spectral band and upsamples coefficients to original resolution.
+    Applies 2D DWT to each spectral band and upsamples coefficients to
+    original resolution.
     Captures spatial texture information per band.
 
     Parameters
@@ -23,16 +24,21 @@ class DWT2DExtractor(Extractor):
 
     References
     ----------
-    Gormus, A., Canagarajah, C. N., & Achim, A. (2012). Hyperspectral image classification using
-        2-D wavelet decomposition and spatial-spectral information fusion. *IEEE Transactions on
-        Geoscience and Remote Sensing*, 50(12), 4950–4962. doi:10.1109/TGRS.2012.2192800
+    Gormus, A., Canagarajah, C. N., & Achim, A. (2012). Hyperspectral
+        image classification using 2-D wavelet decomposition and
+        spatial-spectral information fusion. *IEEE Transactions on
+        Geoscience and Remote Sensing*, 50(12), 4950–4962.
+        doi:10.1109/TGRS.2012.2192800
 
-    Quesada-Barriuso, J., Arguello, H., & Heras, P. (2014). Feature extraction from hyperspectral
-        images using 2-D discrete wavelet transform. *IEEE Journal of Selected Topics in Applied
-        Earth Observations and Remote Sensing*, 7(6), 2345–2353. doi:10.1109/JSTARS.2014.2313456
+    Quesada-Barriuso, J., Arguello, H., & Heras, P. (2014). Feature
+        extraction from hyperspectral images using 2-D discrete wavelet
+        transform. *IEEE Journal of Selected Topics in Applied Earth
+        Observations and Remote Sensing*, 7(6), 2345–2353.
+        doi:10.1109/JSTARS.2014.2313456
 
-    Kumar, P., & Dikshit, O. (2015a). Texture feature extraction for hyperspectral image
-        classification using 2-D DWT. *International Journal of Remote Sensing*, 36(4), 1012–1031.
+    Kumar, P., & Dikshit, O. (2015a). Texture feature extraction for
+        hyperspectral image classification using 2-D DWT. *International
+        Journal of Remote Sensing*, 36(4), 1012–1031.
         doi:10.1080/01431161.2015.1012345
     """
 
@@ -77,7 +83,10 @@ class DWT2DExtractor(Extractor):
 
             # Perform 2D wavelet decomposition on the band image
             coefficients = pywt.wavedec2(
-                band_img, wavelet=self.wavelet, mode=self.mode, level=self.levels
+                band_img,
+                wavelet=self.wavelet,
+                mode=self.mode,
+                level=self.levels,
             )
 
             upsampled_maps = []
@@ -98,11 +107,16 @@ class DWT2DExtractor(Extractor):
             for details in coefficients[1:]:
                 for c in details:
                     c_up = resize(
-                        c, (height, width), order=1, mode="reflect", anti_aliasing=False
+                        c,
+                        (height, width),
+                        order=1,
+                        mode="reflect",
+                        anti_aliasing=False,
                     )
                     upsampled_maps.append(c_up)
 
-            # Stack all upsampled coefficient maps for this band along the feature axis
+            # Stack all upsampled coefficient maps for this band along the
+            # feature axis
             # Shape (height, width, n_coeffs_per_band)
             band_features = np.stack(upsampled_maps, axis=-1)
 

@@ -1,9 +1,9 @@
-import numpy as np
+from .base import Extractor
 from hyppo.core import HSI
+import numpy as np
+from scipy.special import legendre
 from skimage.util.shape import view_as_windows
 from sklearn.decomposition import PCA
-from scipy.special import legendre
-from .base import Extractor
 
 
 class LegendreMomentExtractor(Extractor):

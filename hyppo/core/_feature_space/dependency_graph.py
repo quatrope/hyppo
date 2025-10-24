@@ -1,5 +1,8 @@
-from hyppo.extractor.base import Extractor
+from typing import TYPE_CHECKING
 import networkx as nx
+
+if TYPE_CHECKING:
+    from hyppo.extractor.base import Extractor
 
 
 class FeatureDependencyGraph:
@@ -14,7 +17,7 @@ class FeatureDependencyGraph:
     def add_extractor(
         self,
         name: str,
-        extractor: Extractor,
+        extractor: "Extractor",
         input_mapping: dict | None = None,
     ):
         """

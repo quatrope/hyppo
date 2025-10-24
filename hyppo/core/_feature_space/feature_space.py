@@ -1,9 +1,9 @@
 from .._hsi import HSI
 from .dependency_graph import FeatureDependencyGraph
-from hyppo.extractor import Extractor
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from hyppo.extractor.base import Extractor
     from hyppo.runner import BaseRunner
 
 
@@ -57,7 +57,7 @@ class FeatureSpace:
         return graph
 
     @classmethod
-    def from_list(cls, extractors: list[Extractor]):
+    def from_list(cls, extractors: list["Extractor"]):
         """
         Convert list of extractors to configuration dict.
 

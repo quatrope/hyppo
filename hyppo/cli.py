@@ -25,6 +25,7 @@ Display configuration information:
 # =============================================================================
 
 import inspect
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -283,6 +284,56 @@ def _create_feature_space(config: Path) -> "FeatureSpace":
         raise typer.Exit(code=1)
 
 
+def _make_help(obj) -> str:
+    r"""Extract summary from a method's NumPy-style docstring.
+
+    This function extracts the summary section from a objects's
+    docstring, which includes all content before the first section
+    separator (a line of dashes). This is useful for generating
+    concise help text for CLI commands.
+
+    Parameters
+    ----------
+    obj : object
+        Object with a NumPy-style docstring to extract help from.
+
+    Returns
+    -------
+    str
+        Summary portion of the docstring, or empty string if no
+        docstring exists.
+
+    Notes
+    -----
+    The function stops extracting at the first line that contains
+    only dashes (e.g., "----------"), which marks the beginning of
+    a formal section in NumPy-style docstrings.
+
+    Examples
+    --------
+    >>> def example():
+    ...     '''Short description.
+    ...
+    ...     Longer description here.
+    ...
+    ...     Parameters
+    ...     ----------
+    ...     ...
+    ...     '''
+    >>> _make_help(example)
+    'Short description.\\n\\nLonger description here.'
+    """
+    lines = (obj.__doc__ or "").strip().splitlines()
+    if lines:
+        for lineno, line in enumerate(lines):
+            line = line.strip()
+            if line and not line.replace("-", ""):
+                break
+        last_line = lineno - 1
+        lines = lines[:last_line]
+    return "\n".join(lines)
+
+
 def _create_runner(
     runner_type: str,
     workers: int | None = None,
@@ -325,7 +376,7 @@ def _create_runner(
 def _global_config(
     ctx: typer.Context,
     config: Path = typer.Option(
-        ...,
+        None,
         "-c",
         "--config",
         help="Path to configuration file (.yaml or .json)",
@@ -362,6 +413,9 @@ def _global_config(
     workers : int, optional
         Number of workers for parallel runners.
     """
+    if "--help" in sys.argv:
+        return
+
     # Load configuration and create components
     app_config = {
         "feature_space": _create_feature_space(config),
@@ -422,7 +476,9 @@ def _create_app(cli_manager):
     members = inspect.getmembers(cli_manager, predicate=inspect.ismethod)
     for name, method in members:
         if not name.startswith("_"):
-            app.command(name=name)(method)
+            doc = _make_help(method)
+            cmd_wrapper = app.command(name=name, help=doc)
+            cmd_wrapper(method)
 
     return app
 

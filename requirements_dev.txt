@@ -1,4 +1,4 @@
-.
+-e .
 tox
 pytest
 
@@ -8,6 +8,9 @@ flake8-import-order
 flake8-black
 flake8-builtins
 flake8-docstrings
+
+ipython
+ipdb
 
 coverage
 pytest-cov

@@ -35,11 +35,15 @@ dependencies = [
     "scikit-image",
     "PyWavelets",
     "pandas",
+    "typer"
 ]
 
 [project.urls]
 Repository = "https://github.com/quatrope/hyppo"
 Issues = "https://github.com/quatrope/hyppo/issues"
+
+[project.scripts]
+hyppo = "hyppo.cli:main"
 
 [project.optional-dependencies]
 dev = [

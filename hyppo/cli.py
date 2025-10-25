@@ -1,251 +1,234 @@
-"""Command-line interface for hyppo feature extraction."""
+"""Command-line interface for hyppo feature extraction using Typer."""
 
-import argparse
-from hyppo.io import load_h5_hsi
-from hyppo.io._config import load_config_json, load_config_yaml
+import inspect
 from pathlib import Path
-import sys
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
+
+import typer
+
+from .io import load_h5_hsi
+from .io._config import load_config_json, load_config_yaml
+
+from .utils.bunch import Bunch
 
 if TYPE_CHECKING:
     from hyppo.core import FeatureSpace
     from hyppo.runner import BaseRunner
 
 
+# =============================================================================
+# RUNNER REGISTRY
+# =============================================================================
+
+
+def _create_sequential_runner(workers: Optional[int] = None) -> "BaseRunner":
+    from hyppo.runner import SequentialRunner
+
+    return SequentialRunner()
+
+
+def _create_local_runner(workers: Optional[int] = None) -> "BaseRunner":
+    from hyppo.runner import LocalProcessRunner
+
+    return LocalProcessRunner(num_workers=workers or 4)
+
+
+def _create_dask_thread_runner(workers: Optional[int] = None) -> "BaseRunner":
+    from hyppo.runner import DaskThreadedRunner
+
+    return DaskThreadedRunner()
+
+
+def _create_dask_process_runner(workers: Optional[int] = None) -> "BaseRunner":
+    from hyppo.runner import DaskProcessRunner
+
+    return DaskProcessRunner()
+
+
+_RUNNERS_REGISTRY = {
+    "sequential": _create_sequential_runner,
+    "local": _create_local_runner,
+    "dask-thread": _create_dask_thread_runner,
+    "dask-process": _create_dask_process_runner,
+}
+
+
+# =============================================================================
+# CLASSES
+# =============================================================================
+
+
 class CLI:
-    """Command-line interface for hyppo feature extraction."""
+    """
+    CLI class that exposes methods as typer subcommands.
 
-    def __init__(self, feature_space: "FeatureSpace", runner: "BaseRunner"):
-        """
-        Initialize CLI with feature space and runner.
+    This class has one method per subcommand with the real typer interface.
+    """
 
-        Args:
-            feature_space: FeatureSpace instance with extractors
-            runner: Runner instance for execution
-        """
-        self.feature_space = feature_space
-        self.runner = runner
-
-    def run_from_command_line(self, argv=None):
-        """
-        Parse command-line arguments and execute extraction.
-
-        Args:
-            argv: Command-line arguments (defaults to sys.argv)
-        """
-        parser = self._create_parser()
-        args = parser.parse_args(argv)
-
-        if args.command is None:
-            parser.print_help()
-            sys.exit(1)
-
-        if args.command == "extract":
-            self._handle_extract(args)
-        elif args.command == "info":
-            self._handle_info(args)
-
-    def _create_parser(self):
-        """Create argument parser."""
-        parser = argparse.ArgumentParser(
-            prog="hyppo",
-            description="Hyperspectral feature extraction toolkit",
-            formatter_class=argparse.RawDescriptionHelpFormatter,
-        )
-
-        subparsers = parser.add_subparsers(dest="command", help="Available commands")
-
-        # Extract command
-        extract_parser = subparsers.add_parser(
-            "extract", help="Extract features from HSI data"
-        )
-        extract_parser.add_argument(
-            "input",
-            type=str,
+    def extract(
+        self,
+        ctx: typer.Context,
+        input_file: str = typer.Argument(
+            ...,
             help="Path to input HSI file (.h5)",
-        )
-        extract_parser.add_argument(
+        ),
+        output: Optional[str] = typer.Option(
+            None,
             "-o",
             "--output",
-            type=str,
             help="Path to output file (optional)",
-        )
+        ),
+    ) -> None:
+        """Extract features from HSI data."""
 
-        # Info command
-        subparsers.add_parser("info", help="Display information about feature space")
+        feature_space, runner = ctx.obj.feature_space, ctx.obj.runner
 
-        return parser
-
-    def _handle_extract(self, args):
-        """
-        Handle extract command.
-
-        Args:
-            args: Parsed command-line arguments
-        """
-        input_path = Path(args.input)
+        input_path = Path(input_file)
 
         if not input_path.exists():
             msg = f"Error: Input file not found: {input_path}"
-            print(msg, file=sys.stderr)
-            sys.exit(1)
+            typer.echo(msg, err=True)
+            raise typer.Exit(code=1)
 
         if input_path.suffix != ".h5":
-            print("Error: Input file must be .h5 format", file=sys.stderr)
-            sys.exit(1)
+            typer.echo("Error: Input file must be .h5 format", err=True)
+            raise typer.Exit(code=1)
 
-        print(f"Loading HSI data from {input_path}...")
+        typer.echo(f"Loading HSI data from {input_path}...")
         hsi = load_h5_hsi(str(input_path))
 
-        print(f"Extracting features using {type(self.runner).__name__}...")
-        result = self.feature_space.extract(hsi, runner=self.runner)
+        typer.echo(f"Extracting features using {type(runner).__name__}...")
+        result = feature_space.extract(hsi, runner=runner)
 
-        print("Extraction complete!")
-        print(result.describe())
+        typer.echo("Extraction complete!")
+        typer.echo(result.describe())
 
-        if args.output:
-            output_path = Path(args.output)
-            print(f"Saving results to {output_path}...")
+        if output:
+            output_path = Path(output)
+            typer.echo(f"Saving results to {output_path}...")
             # TODO: Implement result saving
 
-    def _handle_info(self, args):
-        """
-        Handle info command.
+    def info(self, ctx: typer.Context) -> None:
+        """Display information about feature space configuration."""
+        feature_space, runner = ctx.obj.feature_space, ctx.obj.runner
 
-        Args:
-            args: Parsed command-line arguments
-        """
-        print("Feature Space Configuration:")
-        print("-" * 40)
+        typer.echo("Feature Space Configuration:")
+        typer.echo("-" * 40)
 
-        extractors = self.feature_space.get_extractors()
+        extractors = feature_space.get_extractors()
         for name, extractor in extractors.items():
-            print(f"  {name}: {type(extractor).__name__}")
+            typer.echo(f"  {name}: {type(extractor).__name__}")
 
-        print(f"\nRunner: {type(self.runner).__name__}")
-
-
-def main():
-    """Entry point for standalone CLI usage with config files."""
-    parser = argparse.ArgumentParser(
-        prog="hyppo",
-        description="Hyperspectral feature extraction toolkit",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-
-    parser.add_argument(
-        "-c",
-        "--config",
-        type=str,
-        required=True,
-        help="Path to configuration file (.yaml or .json)",
-    )
-
-    subparsers = parser.add_subparsers(dest="command", help="Available commands")
-
-    # Extract command
-    extract_parser = subparsers.add_parser(
-        "extract", help="Extract features from HSI data"
-    )
-    extract_parser.add_argument(
-        "input",
-        type=str,
-        help="Path to input HSI file (.h5)",
-    )
-    extract_parser.add_argument(
-        "-o",
-        "--output",
-        type=str,
-        help="Path to output file (optional)",
-    )
-    extract_parser.add_argument(
-        "-r",
-        "--runner",
-        type=str,
-        default="sequential",
-        choices=["sequential", "local", "dask-thread", "dask-process"],
-        help="Runner type (default: sequential)",
-    )
-    extract_parser.add_argument(
-        "-w",
-        "--workers",
-        type=int,
-        help="Number of workers for parallel runners",
-    )
-
-    # Info command
-    subparsers.add_parser("info", help="Display information about configuration")
-
-    args = parser.parse_args()
-
-    if args.command is None:
-        parser.print_help()
-        sys.exit(1)
-
-    # Load configuration
-    config_path = Path(args.config)
-    if not config_path.exists():
-        msg = f"Error: Configuration file not found: {config_path}"
-        print(msg, file=sys.stderr)
-        sys.exit(1)
-
-    print(f"Loading configuration from {config_path}...")
-
-    if config_path.suffix in [".yaml", ".yml"]:
-        feature_space = load_config_yaml(config_path)
-    elif config_path.suffix == ".json":
-        feature_space = load_config_json(config_path)
-    else:
-        msg = "Error: Unsupported config format. Use .yaml, .yml, or .json"
-        print(msg, file=sys.stderr)
-        sys.exit(1)
-
-    # Create runner
-    runner = _create_runner(args)
-
-    # Create CLI and execute
-    cli = CLI(feature_space=feature_space, runner=runner)
-
-    if args.command == "extract":
-        cli._handle_extract(args)
-    elif args.command == "info":
-        cli._handle_info(args)
+        typer.echo(f"\nRunner: {type(runner).__name__}")
 
 
-def _create_runner(args):
+# =============================================================================
+# FUNCTIONS
+# =============================================================================
+
+
+def _create_feature_space(config: Path) -> "FeatureSpace":
     """
-    Create runner from command-line arguments.
+    Create feature space from configuration file.
 
     Args:
-        args: Parsed command-line arguments
+        config: Path to configuration file (.yaml, .yml, or .json)
+
+    Returns:
+        FeatureSpace instance
+    """
+    typer.echo(f"Loading configuration from {config}...")
+    if config is None:
+        return ""
+
+    if config.suffix in [".yaml", ".yml"]:
+        return load_config_yaml(config)
+    elif config.suffix == ".json":
+        return load_config_json(config)
+    else:
+        typer.echo(
+            "Error: Unsupported config format. Use .yaml, .yml, or .json",
+            err=True,
+        )
+        raise typer.Exit(code=1)
+
+
+def _create_runner(runner_type: str, workers: Optional[int] = None) -> "BaseRunner":
+    """
+    Create runner from registry.
+
+    Args:
+        runner_type: Type of runner (sequential, local, dask-thread, dask-process)
+        workers: Number of workers for parallel runners
 
     Returns:
         Runner instance
     """
-    if args.command != "extract":
-        from hyppo.runner import SequentialRunner
+    factory = _RUNNERS_REGISTRY.get(runner_type)
 
-        return SequentialRunner()
+    if factory is None:
+        valid_runners = ", ".join(_RUNNERS_REGISTRY.keys())
+        typer.echo(f"Error: Unknown runner type: {runner_type}", err=True)
+        typer.echo(f"Valid options: {valid_runners}", err=True)
+        raise typer.Exit(code=1)
 
-    runner_type = args.runner
+    return factory(workers)
 
-    if runner_type == "sequential":
-        from hyppo.runner import SequentialRunner
 
-        return SequentialRunner()
-    elif runner_type == "local":
-        from hyppo.runner import LocalProcessRunner
+def _global_config(
+    ctx: typer.Context,
+    config: Path = typer.Option(
+        ...,
+        "-c",
+        "--config",
+        help="Path to configuration file (.yaml or .json)",
+        exists=True,
+        dir_okay=False,
+    ),
+    runner_type: str = typer.Option(
+        "sequential",
+        "-r",
+        "--runner",
+        help="Runner type",
+    ),
+    workers: Optional[int] = typer.Option(
+        None,
+        "-w",
+        "--workers",
+        help="Number of workers for parallel runners",
+    ),
+):
 
-        num_workers = args.workers or 4
-        return LocalProcessRunner(num_workers=num_workers)
-    elif runner_type == "dask-thread":
-        from hyppo.runner import DaskThreadedRunner
+    # Load configuration and create components
+    app_config = {
+        "feature_space": _create_feature_space(config),
+        "runner": _create_runner(runner_type, workers),
+    }
 
-        return DaskThreadedRunner()
-    elif runner_type == "dask-process":
-        from hyppo.runner import DaskProcessRunner
+    ctx.obj = Bunch("app_config", app_config)
 
-        return DaskProcessRunner()
+
+def _create_app():
+    app = typer.Typer(
+        name="hyppo",
+        help="Hyperspectral feature extraction toolkit",
+        add_completion=False,
+        callback=_global_config,
+    )
+
+    cli = CLI()
+
+    # Introspect CLI class and register methods as commands
+    for name, method in inspect.getmembers(cli, predicate=inspect.ismethod):
+        if not name.startswith("_"):
+            app.command(name=name)(method)
+
+    return app
+
+
+def main():
+    app = _create_app()
+    app()
 
 
 if __name__ == "__main__":

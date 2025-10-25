@@ -1,45 +1,122 @@
-"""Command-line interface for hyppo feature extraction using Typer."""
+"""Command-line interface for hyppo feature extraction using Typer.
+
+This module provides a CLI for extracting features from hyperspectral
+imaging (HSI) data. It uses Typer for argument parsing and supports
+multiple execution backends through a runner registry.
+
+The CLI supports the following commands:
+    - extract: Extract features from HSI data
+    - info: Display configuration information
+
+Examples
+--------
+Extract features using default sequential runner:
+    $ hyppo -c config.yaml extract input.h5
+
+Extract features using local parallel runner with 8 workers:
+    $ hyppo -c config.yaml -r local -w 8 extract input.h5 -o output.h5
+
+Display configuration information:
+    $ hyppo -c config.yaml info
+"""
+
+# =============================================================================
+# IMPORTS
+# =============================================================================
 
 import inspect
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import typer
 
 from .io import load_h5_hsi
 from .io._config import load_config_json, load_config_yaml
-
 from .utils.bunch import Bunch
 
 if TYPE_CHECKING:
-    from hyppo.core import FeatureSpace
-    from hyppo.runner import BaseRunner
+    from .core import FeatureSpace
+    from .runner import BaseRunner
 
 
-# =============================================================================
+# =========================================================================
 # RUNNER REGISTRY
-# =============================================================================
+# =========================================================================
 
 
-def _create_sequential_runner(workers: Optional[int] = None) -> "BaseRunner":
+def _create_sequential_runner(
+    workers: int | None = None,
+) -> "BaseRunner":
+    """Create a sequential runner instance.
+
+    Parameters
+    ----------
+    workers : int, optional
+        Number of workers (unused for sequential runner).
+
+    Returns
+    -------
+    BaseRunner
+        Sequential runner instance.
+    """
     from hyppo.runner import SequentialRunner
 
     return SequentialRunner()
 
 
-def _create_local_runner(workers: Optional[int] = None) -> "BaseRunner":
+def _create_local_runner(workers: int | None = None) -> "BaseRunner":
+    """Create a local process pool runner instance.
+
+    Parameters
+    ----------
+    workers : int, optional
+        Number of worker processes. Defaults to 4.
+
+    Returns
+    -------
+    BaseRunner
+        Local process runner instance.
+    """
     from hyppo.runner import LocalProcessRunner
 
     return LocalProcessRunner(num_workers=workers or 4)
 
 
-def _create_dask_thread_runner(workers: Optional[int] = None) -> "BaseRunner":
+def _create_dask_thread_runner(
+    workers: int | None = None,
+) -> "BaseRunner":
+    """Create a Dask threaded runner instance.
+
+    Parameters
+    ----------
+    workers : int, optional
+        Number of workers (unused for Dask threaded runner).
+
+    Returns
+    -------
+    BaseRunner
+        Dask threaded runner instance.
+    """
     from hyppo.runner import DaskThreadedRunner
 
     return DaskThreadedRunner()
 
 
-def _create_dask_process_runner(workers: Optional[int] = None) -> "BaseRunner":
+def _create_dask_process_runner(
+    workers: int | None = None,
+) -> "BaseRunner":
+    """Create a Dask process runner instance.
+
+    Parameters
+    ----------
+    workers : int, optional
+        Number of workers (unused for Dask process runner).
+
+    Returns
+    -------
+    BaseRunner
+        Dask process runner instance.
+    """
     from hyppo.runner import DaskProcessRunner
 
     return DaskProcessRunner()
@@ -53,16 +130,24 @@ _RUNNERS_REGISTRY = {
 }
 
 
-# =============================================================================
+# =========================================================================
 # CLASSES
-# =============================================================================
+# =========================================================================
 
 
-class CLI:
-    """
-    CLI class that exposes methods as typer subcommands.
+class CLIManager:
+    """CLI manager that exposes methods as typer subcommands.
 
-    This class has one method per subcommand with the real typer interface.
+    This class contains methods that are automatically registered as
+    Typer commands through introspection. Each public method becomes
+    a CLI subcommand.
+
+    Methods
+    -------
+    extract
+        Extract features from HSI data.
+    info
+        Display feature space configuration information.
     """
 
     def extract(
@@ -72,16 +157,36 @@ class CLI:
             ...,
             help="Path to input HSI file (.h5)",
         ),
-        output: Optional[str] = typer.Option(
+        output: str | None = typer.Option(
             None,
             "-o",
             "--output",
             help="Path to output file (optional)",
         ),
     ) -> None:
-        """Extract features from HSI data."""
+        """Extract features from HSI data.
 
-        feature_space, runner = ctx.obj.feature_space, ctx.obj.runner
+        This command loads an HSI file, applies the configured feature
+        extractors from the feature space, and outputs the results.
+
+        Parameters
+        ----------
+        ctx : typer.Context
+            Typer context containing feature_space and runner.
+        input_file : str
+            Path to input HSI file in .h5 format.
+        output : str, optional
+            Path to save extraction results.
+
+        Raises
+        ------
+        typer.Exit
+            If input file not found or has invalid format.
+        """
+        feature_space, runner = (
+            ctx.obj.feature_space,
+            ctx.obj.runner,
+        )
 
         input_path = Path(input_file)
 
@@ -91,13 +196,15 @@ class CLI:
             raise typer.Exit(code=1)
 
         if input_path.suffix != ".h5":
-            typer.echo("Error: Input file must be .h5 format", err=True)
+            msg = "Error: Input file must be .h5 format"
+            typer.echo(msg, err=True)
             raise typer.Exit(code=1)
 
         typer.echo(f"Loading HSI data from {input_path}...")
         hsi = load_h5_hsi(str(input_path))
 
-        typer.echo(f"Extracting features using {type(runner).__name__}...")
+        runner_name = type(runner).__name__
+        typer.echo(f"Extracting features using {runner_name}...")
         result = feature_space.extract(hsi, runner=runner)
 
         typer.echo("Extraction complete!")
@@ -109,33 +216,57 @@ class CLI:
             # TODO: Implement result saving
 
     def info(self, ctx: typer.Context) -> None:
-        """Display information about feature space configuration."""
-        feature_space, runner = ctx.obj.feature_space, ctx.obj.runner
+        """Display information about feature space configuration.
+
+        This command shows all configured feature extractors and the
+        selected runner type.
+
+        Parameters
+        ----------
+        ctx : typer.Context
+            Typer context containing feature_space and runner.
+        """
+        feature_space, runner = (
+            ctx.obj.feature_space,
+            ctx.obj.runner,
+        )
 
         typer.echo("Feature Space Configuration:")
         typer.echo("-" * 40)
 
         extractors = feature_space.get_extractors()
         for name, extractor in extractors.items():
-            typer.echo(f"  {name}: {type(extractor).__name__}")
+            extractor_type = type(extractor).__name__
+            typer.echo(f"  {name}: {extractor_type}")
 
         typer.echo(f"\nRunner: {type(runner).__name__}")
 
 
-# =============================================================================
+# =========================================================================
 # FUNCTIONS
-# =============================================================================
+# =========================================================================
 
 
 def _create_feature_space(config: Path) -> "FeatureSpace":
-    """
-    Create feature space from configuration file.
+    """Create feature space from configuration file.
 
-    Args:
-        config: Path to configuration file (.yaml, .yml, or .json)
+    Loads a configuration file in YAML or JSON format and creates
+    a FeatureSpace instance with the specified extractors.
 
-    Returns:
-        FeatureSpace instance
+    Parameters
+    ----------
+    config : Path
+        Path to configuration file (.yaml, .yml, or .json).
+
+    Returns
+    -------
+    FeatureSpace
+        Configured feature space instance.
+
+    Raises
+    ------
+    typer.Exit
+        If configuration format is not supported.
     """
     typer.echo(f"Loading configuration from {config}...")
     if config is None:
@@ -146,29 +277,45 @@ def _create_feature_space(config: Path) -> "FeatureSpace":
     elif config.suffix == ".json":
         return load_config_json(config)
     else:
-        typer.echo(
-            "Error: Unsupported config format. Use .yaml, .yml, or .json",
-            err=True,
-        )
+        msg = "Error: Unsupported config format. "
+        msg += "Use .yaml, .yml, or .json"
+        typer.echo(msg, err=True)
         raise typer.Exit(code=1)
 
 
-def _create_runner(runner_type: str, workers: Optional[int] = None) -> "BaseRunner":
-    """
-    Create runner from registry.
+def _create_runner(
+    runner_type: str,
+    workers: int | None = None,
+) -> "BaseRunner":
+    """Create runner from registry.
 
-    Args:
-        runner_type: Type of runner (sequential, local, dask-thread, dask-process)
-        workers: Number of workers for parallel runners
+    Uses the runner registry to instantiate the appropriate runner
+    type based on the provided name.
 
-    Returns:
-        Runner instance
+    Parameters
+    ----------
+    runner_type : str
+        Type of runner to create. Valid options:
+        'sequential', 'local', 'dask-thread', 'dask-process'.
+    workers : int, optional
+        Number of workers for parallel runners.
+
+    Returns
+    -------
+    BaseRunner
+        Configured runner instance.
+
+    Raises
+    ------
+    typer.Exit
+        If runner type is not found in registry.
     """
     factory = _RUNNERS_REGISTRY.get(runner_type)
 
     if factory is None:
         valid_runners = ", ".join(_RUNNERS_REGISTRY.keys())
-        typer.echo(f"Error: Unknown runner type: {runner_type}", err=True)
+        msg = f"Error: Unknown runner type: {runner_type}"
+        typer.echo(msg, err=True)
         typer.echo(f"Valid options: {valid_runners}", err=True)
         raise typer.Exit(code=1)
 
@@ -191,14 +338,30 @@ def _global_config(
         "--runner",
         help="Runner type",
     ),
-    workers: Optional[int] = typer.Option(
+    workers: int | None = typer.Option(
         None,
         "-w",
         "--workers",
         help="Number of workers for parallel runners",
     ),
 ):
+    """Global configuration callback for Typer application.
 
+    This function is called before any command and sets up the global
+    configuration context. It loads the feature space from the config
+    file and creates the appropriate runner.
+
+    Parameters
+    ----------
+    ctx : typer.Context
+        Typer context to store application configuration.
+    config : Path
+        Path to configuration file.
+    runner_type : str
+        Type of runner to use.
+    workers : int, optional
+        Number of workers for parallel runners.
+    """
     # Load configuration and create components
     app_config = {
         "feature_space": _create_feature_space(config),
@@ -208,7 +371,46 @@ def _global_config(
     ctx.obj = Bunch("app_config", app_config)
 
 
-def _create_app():
+def _create_app(cli_manager):
+    """Create and configure the Typer application.
+
+    This function sets up the main Typer application instance and
+    automatically registers all public methods from the CLI class as
+    subcommands using introspection. This approach allows for clean
+    separation of command logic while maintaining a simple
+    registration mechanism.
+
+    The application is configured with:
+        - name: "hyppo"
+        - Global callback: _global_config (handles -c, -r, -w options)
+        - Auto-completion: Disabled
+        - Commands: Dynamically registered from CLI class methods
+
+    Parameters
+    ----------
+    cli_manager : CLIManager
+        Instance of CLIManager class containing command methods to
+        register.
+
+    Returns
+    -------
+    typer.Typer
+        Configured Typer application instance with all commands
+        registered and ready to use.
+
+    Notes
+    -----
+    Only public methods (not starting with '_') from the CLIManager
+    class are registered as commands. Each method should accept a
+    typer.Context as its first parameter to access the global
+    configuration.
+
+    Examples
+    --------
+    The returned app can be invoked directly:
+        >>> app = _create_app(CLIManager())
+        >>> app()  # Processes sys.argv and runs appropriate command
+    """
     app = typer.Typer(
         name="hyppo",
         help="Hyperspectral feature extraction toolkit",
@@ -216,18 +418,24 @@ def _create_app():
         callback=_global_config,
     )
 
-    cli = CLI()
-
     # Introspect CLI class and register methods as commands
-    for name, method in inspect.getmembers(cli, predicate=inspect.ismethod):
+    members = inspect.getmembers(cli_manager, predicate=inspect.ismethod)
+    for name, method in members:
         if not name.startswith("_"):
             app.command(name=name)(method)
 
     return app
 
 
+# =============================================================================
+# ENTRY POINT
+# =============================================================================
+
+
 def main():
-    app = _create_app()
+    """Entry point for the hyppo CLI application."""
+    cli_manager = CLIManager()
+    app = _create_app(cli_manager)
     app()
 
 

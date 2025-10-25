@@ -373,10 +373,28 @@ def _create_runner(
     return factory(workers)
 
 
+# PROUD OF THIS HACK!
+# This clever trick makes the config parameter conditionally required:
+# - When "--help" is in sys.argv, the default is None (optional)
+# - Otherwise, the default is ... (Ellipsis), which means required
+#
+# Why this works:
+# 1. typer.Option(...) means "required parameter" (no default value)
+# 2. typer.Option(None) means "optional parameter" (default is None)
+# 3. sys.argv is checked at import/parse time, before Typer validates
+# 4. This allows `hyppo --help` and `hyppo extract --help` to work
+#    without requiring -c/--config
+# 5. But when actually running a command (no --help), config becomes
+#    required and Typer will error if not provided
+#
+# Benefits:
+# - Users can see help without needing a config file
+# - Config is still mandatory for actual command execution
+# - No need to check ctx.obj or add validation in each command
 def _global_config(
     ctx: typer.Context,
     config: Path = typer.Option(
-        None,
+        (None if "--help" in sys.argv else ...),
         "-c",
         "--config",
         help="Path to configuration file (.yaml or .json)",
@@ -413,9 +431,6 @@ def _global_config(
     workers : int, optional
         Number of workers for parallel runners.
     """
-    if "--help" in sys.argv:
-        return
-
     # Load configuration and create components
     app_config = {
         "feature_space": _create_feature_space(config),

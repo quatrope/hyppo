@@ -9,6 +9,9 @@ class PCAExtractor(Extractor):
     Principal Component Analysis (PCA) feature extractor for hyperspectral
     images.
 
+    Applies PCA transformation [1]_ to reduce dimensionality while preserving
+    maximum variance in the spectral data.
+
     Parameters
     ----------
     n_components : int, default=5

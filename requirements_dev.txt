@@ -17,3 +17,14 @@ pytest-cov
 
 pydocstyle
 toml
+
+sphinx
+sphinx_rtd_theme
+nbsphinx
+sphinx_copybutton
+sphinxcontrib-bibtex
+m2r2
+ipykernel
+ipython
+pybtex-apa-style
+lxml_html_clean

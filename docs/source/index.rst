@@ -33,6 +33,7 @@ Contents
     :caption: Tutorials
 
     install
+    tutorial/index
 
 .. toctree::
     :maxdepth: 3
@@ -40,6 +41,12 @@ Contents
 
     api/index
 
+.. toctree::
+    :maxdepth: 2
+    :caption: Misc
+
+    changelog
+    bibliography
 
 
 Indices and tables

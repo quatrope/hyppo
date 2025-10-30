@@ -1,31 +1,32 @@
-.. _api:
+``hyppo`` package
+==================
 
-API Reference
-=============
+.. automodule:: hyppo
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :ignore-module-all:
 
-This is the API reference for HYPPO (Hyperspectral Processing).
-
-Core Components
----------------
-
-.. toctree::
-   :maxdepth: 2
-
-   core
-   io
-
-Feature Extractors
-------------------
 
 .. toctree::
    :maxdepth: 2
 
-   extractors
+   core/index
 
-Runners
--------
 
 .. toctree::
    :maxdepth: 2
 
-   runners
+   io/index
+
+
+.. toctree::
+   :maxdepth: 2
+
+   extractor/index
+
+
+.. toctree::
+   :maxdepth: 2
+
+   runner/index

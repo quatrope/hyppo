@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """Command-line interface for hyppo feature extraction using Typer.
 
 This module provides a CLI for extracting features from hyperspectral
@@ -31,9 +33,9 @@ from typing import TYPE_CHECKING
 
 import typer
 
-from .io import load_h5_hsi
-from .io._config import load_config_json, load_config_yaml
-from .utils.bunch import Bunch
+from hyppo.io import load_h5_hsi
+from hyppo.io._config import load_config_json, load_config_yaml
+from hyppo.utils.bunch import Bunch
 
 if TYPE_CHECKING:
     from .core import FeatureSpace

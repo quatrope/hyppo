@@ -1,7 +1,10 @@
-from .base import Extractor
-from hyppo.core import HSI
+"""Gabor filter feature extractor for texture analysis of hyperspectral images."""
+
 import numpy as np
 from scipy import ndimage
+
+from hyppo.core import HSI
+from .base import Extractor
 
 
 class GaborExtractor(Extractor):
@@ -19,6 +22,7 @@ class GaborExtractor(Extractor):
         band_indices: list[int] | None = None,
         aggregate_bands: bool = True,
     ) -> None:
+        """Initialize Gabor extractor with filter parameters."""
         super().__init__()
 
         # Default frequencies and orientations if not provided
@@ -154,7 +158,9 @@ class GaborExtractor(Extractor):
 
         return features
 
-    def _extract_gabor_features_single_band(self, band: np.ndarray) -> np.ndarray:
+    def _extract_gabor_features_single_band(
+        self, band: np.ndarray
+    ) -> np.ndarray:
         """Extract Gabor features from a single band.
 
         Args:

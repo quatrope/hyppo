@@ -1,6 +1,7 @@
-from .._hsi import HSI
-from .dependency_graph import FeatureDependencyGraph
 from typing import TYPE_CHECKING
+
+from .dependency_graph import FeatureDependencyGraph
+from .._hsi import HSI
 
 if TYPE_CHECKING:
     from hyppo.extractor.base import Extractor
@@ -154,8 +155,9 @@ class FeatureSpace:
             >>> fs.save_config("pipeline.yaml")
             >>> fs.save_config("pipeline.json")
         """
-        from hyppo import io
         from pathlib import Path
+
+        from hyppo import io
 
         if not isinstance(path, Path):
             path = Path(path)
@@ -166,6 +168,7 @@ class FeatureSpace:
             io.save_config_json(self, path)
         else:
             msg = (
-                f"Path must have .yaml, .yml, or .json extension, " f"got {path.suffix}"
+                f"Path must have .yaml, .yml, or .json extension, "
+                f"got {path.suffix}"
             )
             raise ValueError(msg)

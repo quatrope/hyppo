@@ -1,13 +1,16 @@
 """Tests for DWT3DExtractor."""
 
-from hyppo.extractor.dwt3d import DWT3DExtractor
 import pytest
+
+from hyppo.extractor.dwt3d import DWT3DExtractor
 
 
 class TestDWT3DExtractor:
     """Test cases for DWT3DExtractor."""
 
-    @pytest.mark.skip(reason="Paper reference validation pending implementation")
+    @pytest.mark.skip(
+        reason="Paper reference validation pending implementation"
+    )
     def test_paper_reference_result_1(self, sample_hsi):
         """Test results match reference values from literature."""
         # TODO: Implement validation against reference paper results
@@ -15,7 +18,9 @@ class TestDWT3DExtractor:
         # scales, orientations, and frequencies using 3-D wavelets.
         pass
 
-    @pytest.mark.skip(reason="Paper reference validation pending implementation")
+    @pytest.mark.skip(
+        reason="Paper reference validation pending implementation"
+    )
     def test_paper_reference_result_2(self, sample_hsi):
         """Test wavelet decomposition follows established theory."""
         # TODO: Implement validation against theoretical results
@@ -81,7 +86,9 @@ class TestDWT3DExtractor:
         extractor = DWT3DExtractor(levels=levels)  # type: ignore
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="levels must be a positive integer"):
+        with pytest.raises(
+            ValueError, match="levels must be a positive integer"
+        ):
             extractor.extract(small_hsi)
 
     @pytest.mark.parametrize(

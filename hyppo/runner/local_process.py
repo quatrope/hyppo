@@ -1,8 +1,12 @@
-from .base import BaseRunner
-from hyppo.core import Feature, FeatureCollection, HSI
+"""Process-based runner with shared memory for efficient data sharing."""
+
 import multiprocessing as mp
 from multiprocessing.shared_memory import SharedMemory
+
 import numpy as np
+
+from hyppo.core import Feature, FeatureCollection, HSI
+from .base import BaseRunner
 
 
 class LocalProcessRunner(BaseRunner):
@@ -69,12 +73,16 @@ class LocalProcessRunner(BaseRunner):
                 async_results = []
                 for extractor_name in extractor_names:
                     extractor = feature_graph.extractors[extractor_name]
-                    input_mapping = feature_graph.get_input_mapping_for(extractor_name)
+                    input_mapping = feature_graph.get_input_mapping_for(
+                        extractor_name
+                    )
 
                     # Prepare inputs from previous results
                     input_kwargs = {}
                     for input_name, source_name in input_mapping.items():
-                        input_kwargs[input_name] = extracted_results[source_name]
+                        input_kwargs[input_name] = extracted_results[
+                            source_name
+                        ]
 
                     # Get defaults for optional inputs
                     defaults = self._get_defaults_for_extractor(extractor)
@@ -89,7 +97,12 @@ class LocalProcessRunner(BaseRunner):
                         (extractor, shm_metadata, input_kwargs),
                     )
                     async_results.append(
-                        (extractor_name, extractor, input_mapping, async_result)
+                        (
+                            extractor_name,
+                            extractor,
+                            input_mapping,
+                            async_result,
+                        )
                     )
 
                 # Wait for all extractors at this level to complete
@@ -112,7 +125,9 @@ class LocalProcessRunner(BaseRunner):
 
         return FeatureCollection.from_features(results)
 
-    def _compute_dependency_levels(self, feature_graph) -> dict[int, list[str]]:
+    def _compute_dependency_levels(
+        self, feature_graph
+    ) -> dict[int, list[str]]:
         """
         Compute dependency levels for parallel execution.
 
@@ -139,7 +154,9 @@ class LocalProcessRunner(BaseRunner):
                 level = 0
             else:
                 # Level is max dependency level + 1
-                dependency_levels = [get_level(dep) for dep in input_mapping.values()]
+                dependency_levels = [
+                    get_level(dep) for dep in input_mapping.values()
+                ]
                 level = max(dependency_levels) + 1
 
             extractor_levels[extractor_name] = level
@@ -165,7 +182,9 @@ class LocalProcessRunner(BaseRunner):
             Dictionary with shared memory metadata and shm references
         """
         # Create shared memory for reflectance array
-        reflectance_shm = SharedMemory(create=True, size=data.reflectance.nbytes)
+        reflectance_shm = SharedMemory(
+            create=True, size=data.reflectance.nbytes
+        )
         reflectance_shared = np.ndarray(
             data.reflectance.shape,
             dtype=data.reflectance.dtype,
@@ -175,7 +194,9 @@ class LocalProcessRunner(BaseRunner):
         np.copyto(reflectance_shared, data.reflectance)
 
         # Create shared memory for wavelengths
-        wavelengths_shm = SharedMemory(create=True, size=data.wavelengths.nbytes)
+        wavelengths_shm = SharedMemory(
+            create=True, size=data.wavelengths.nbytes
+        )
         wavelengths_shared = np.ndarray(
             data.wavelengths.shape,
             dtype=data.wavelengths.dtype,
@@ -259,7 +280,9 @@ def _execute_extractor_with_shared_hsi(
     return result
 
 
-def _reconstruct_hsi_from_shared(shm_metadata: dict) -> tuple[HSI, list[SharedMemory]]:
+def _reconstruct_hsi_from_shared(
+    shm_metadata: dict,
+) -> tuple[HSI, list[SharedMemory]]:
     """
     Reconstruct HSI object from shared memory metadata.
 

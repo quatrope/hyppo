@@ -1,7 +1,10 @@
+"""Tests for FeatureSpace."""
+
+import pytest
+
 import hyppo
 from hyppo.core import FeatureSpace
 from hyppo.extractor.std import StdExtractor
-import pytest
 from tests.fixtures.extractors import MediumExtractor, SimpleExtractor
 
 
@@ -112,9 +115,11 @@ class TestFeatureSpace:
 
     def test_from_list_complex_chain(self, sample_hsi):
         """Test complex dependency chain resolution."""
-        from tests.fixtures.extractors import (AdvancedExtractor,
-                                               MediumExtractor,
-                                               SimpleExtractor)
+        from tests.fixtures.extractors import (
+            AdvancedExtractor,
+            MediumExtractor,
+            SimpleExtractor,
+        )
 
         extractors = [
             SimpleExtractor(),  # no deps
@@ -138,8 +143,10 @@ class TestFeatureSpace:
 
     def test_from_list_required_dependency_missing_fails(self):
         """Test that missing required dependencies cause errors."""
-        from tests.fixtures.extractors import (AdvancedExtractor,
-                                               SimpleExtractor)
+        from tests.fixtures.extractors import (
+            AdvancedExtractor,
+            SimpleExtractor,
+        )
 
         # AdvancedExtractor requires MediumExtractor but we don't provide it
         extractors = [

@@ -1,20 +1,27 @@
 """Tests for FeatureSpace configuration saving functionality."""
 
-from hyppo import io
-from hyppo.core import FeatureSpace, HSI
-from hyppo.extractor import (MaxExtractor, MeanExtractor, PCAExtractor,
-                             StdExtractor)
-from hyppo.extractor.base import Extractor
 import json
 from pathlib import Path
+
 import pytest
 import yaml
+
+from hyppo import io
+from hyppo.core import FeatureSpace, HSI
+from hyppo.extractor import (
+    MaxExtractor,
+    MeanExtractor,
+    PCAExtractor,
+    StdExtractor,
+)
+from hyppo.extractor.base import Extractor
 
 
 class ExtractorWithUnderscoreParam(Extractor):
     """Test extractor with underscore parameter."""
 
     def __init__(self, _internal_param=None, normal_param=1):
+        """Initialize test extractor."""
         self._internal_param = _internal_param
         self.normal_param = normal_param
 
@@ -26,6 +33,7 @@ class ExtractorWithNoneDefault(Extractor):
     """Test extractor with None default parameter."""
 
     def __init__(self, optional_param=None, required_param=5):
+        """Initialize test extractor."""
         self.optional_param = optional_param
         self.required_param = required_param
 
@@ -145,7 +153,9 @@ class TestSaveConfigYAML:
         loaded_fs = io.load_config_yaml(yaml_path)
 
         # Assert: Same extractors
-        assert set(loaded_fs.extractors.keys()) == set(original_fs.extractors.keys())
+        assert set(loaded_fs.extractors.keys()) == set(
+            original_fs.extractors.keys()
+        )
         assert len(loaded_fs.extractors) == len(original_fs.extractors)
 
     def test_save_config_yaml_skip_underscore_params(self, tmp_path):
@@ -172,7 +182,9 @@ class TestSaveConfigYAML:
     def test_save_config_yaml_skip_none_matching_default(self, tmp_path):
         """Test that None values matching None defaults are skipped."""
         # Arrange: Create extractor with None parameter matching default
-        extractor = ExtractorWithNoneDefault(optional_param=None, required_param=10)
+        extractor = ExtractorWithNoneDefault(
+            optional_param=None, required_param=10
+        )
         fs = FeatureSpace({"test": (extractor, {})})
         yaml_path = tmp_path / "config.yaml"
 
@@ -289,7 +301,9 @@ class TestSaveConfigJSON:
         loaded_fs = io.load_config_json(json_path)
 
         # Assert: Same extractors
-        assert set(loaded_fs.extractors.keys()) == set(original_fs.extractors.keys())
+        assert set(loaded_fs.extractors.keys()) == set(
+            original_fs.extractors.keys()
+        )
         assert len(loaded_fs.extractors) == len(original_fs.extractors)
 
 
@@ -359,7 +373,9 @@ class TestFeatureSpaceSaveConfigMethod:
         loaded_fs = io.load_config_yaml(yaml_path)
 
         # Assert: Same extractors
-        assert set(loaded_fs.extractors.keys()) == set(original_fs.extractors.keys())
+        assert set(loaded_fs.extractors.keys()) == set(
+            original_fs.extractors.keys()
+        )
 
     def test_save_config_roundtrip_json(self, tmp_path):
         """Test save_config and load_config_json roundtrip."""
@@ -374,4 +390,6 @@ class TestFeatureSpaceSaveConfigMethod:
         loaded_fs = io.load_config_json(json_path)
 
         # Assert: Same extractors
-        assert set(loaded_fs.extractors.keys()) == set(original_fs.extractors.keys())
+        assert set(loaded_fs.extractors.keys()) == set(
+            original_fs.extractors.keys()
+        )

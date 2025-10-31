@@ -1,14 +1,14 @@
-"""
-Tests for the IO module.
-"""
+"""Tests for the IO module."""
+
+from pathlib import Path
+import tempfile
 
 import h5py
+import numpy as np
+import pytest
+
 from hyppo import io
 from hyppo.core import HSI
-import numpy as np
-from pathlib import Path
-import pytest
-import tempfile
 
 
 class TestH5Loading:
@@ -25,7 +25,9 @@ class TestH5Loading:
             tmp_file.write(b"not an h5 file")
             tmp_file.flush()
 
-            with pytest.raises(ValueError, match="Unknown Hyper Spectral Image format"):
+            with pytest.raises(
+                ValueError, match="Unknown Hyper Spectral Image format"
+            ):
                 io.load_h5_hsi(tmp_file.name)
 
     @pytest.fixture
@@ -38,7 +40,9 @@ class TestH5Loading:
         wavelengths = np.linspace(400, 1000, spectral_bands)
 
         # Create temporary H5 file
-        with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp_file:
+        with tempfile.NamedTemporaryFile(
+            suffix=".h5", delete=False
+        ) as tmp_file:
             tmp_path = tmp_file.name
 
         try:
@@ -83,7 +87,9 @@ class TestHeuristicDetection:
         radiance = reflectance * 1000  # Simulated radiance
         wavelengths = np.linspace(450, 900, spectral_bands)
 
-        with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp_file:
+        with tempfile.NamedTemporaryFile(
+            suffix=".h5", delete=False
+        ) as tmp_file:
             tmp_path = tmp_file.name
 
         try:
@@ -149,7 +155,9 @@ class TestLoadH5Specific:
         reflectance = np.random.rand(*spatial_shape, spectral_bands) * 0.8
         wavelengths = np.linspace(400, 800, spectral_bands)
 
-        with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp_file:
+        with tempfile.NamedTemporaryFile(
+            suffix=".h5", delete=False
+        ) as tmp_file:
             tmp_path = tmp_file.name
 
         try:
@@ -182,12 +190,16 @@ class TestLoadH5Specific:
         wavelengths = np.linspace(500, 700, spectral_bands)
         scale_factor = 10000.0
 
-        with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp_file:
+        with tempfile.NamedTemporaryFile(
+            suffix=".h5", delete=False
+        ) as tmp_file:
             tmp_path = tmp_file.name
 
         try:
             with h5py.File(tmp_path, "w") as f:
-                ds = f.create_dataset("reflectance_scaled", data=reflectance_raw)
+                ds = f.create_dataset(
+                    "reflectance_scaled", data=reflectance_raw
+                )
                 ds.attrs["Scale_Factor"] = [scale_factor]
                 f.create_dataset("wavelength", data=wavelengths)
 
@@ -214,12 +226,16 @@ class TestLoadH5Specific:
         reflectance[0, 0, :] = null_value  # First pixel all bands null
         reflectance[1, 1, 2] = null_value  # One band null in second pixel
 
-        with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp_file:
+        with tempfile.NamedTemporaryFile(
+            suffix=".h5", delete=False
+        ) as tmp_file:
             tmp_path = tmp_file.name
 
         try:
             with h5py.File(tmp_path, "w") as f:
-                ds = f.create_dataset("reflectance_with_nulls", data=reflectance)
+                ds = f.create_dataset(
+                    "reflectance_with_nulls", data=reflectance
+                )
                 ds.attrs["Data_Ignore_Value"] = [null_value]
                 f.create_dataset("wavelength", data=wavelengths)
 
@@ -242,7 +258,9 @@ class TestLoadH5Specific:
 
     def test_load_h5_hsi_missing_datasets(self):
         """Test load_h5_hsi with missing required datasets."""
-        with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp_file:
+        with tempfile.NamedTemporaryFile(
+            suffix=".h5", delete=False
+        ) as tmp_file:
             tmp_path = tmp_file.name
 
         try:
@@ -250,7 +268,9 @@ class TestLoadH5Specific:
                 # Create file with no datasets
                 f.attrs["description"] = "Empty H5 file"
 
-            with pytest.raises(ValueError, match="Could not find reflectance dataset"):
+            with pytest.raises(
+                ValueError, match="Could not find reflectance dataset"
+            ):
                 io.load_h5_hsi(tmp_path)
 
         finally:
@@ -263,7 +283,9 @@ class TestLoadH5Specific:
         reflectance = np.random.rand(*spatial_shape, spectral_bands) * 0.8
         wavelengths = np.linspace(400, 800, spectral_bands)
 
-        with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp_file:
+        with tempfile.NamedTemporaryFile(
+            suffix=".h5", delete=False
+        ) as tmp_file:
             tmp_path = tmp_file.name
 
         try:
@@ -292,14 +314,18 @@ class TestLoadH5Specific:
         spectral_bands = 5
         reflectance = np.random.rand(*spatial_shape, spectral_bands) * 0.8
 
-        with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp_file:
+        with tempfile.NamedTemporaryFile(
+            suffix=".h5", delete=False
+        ) as tmp_file:
             tmp_path = tmp_file.name
 
         try:
             with h5py.File(tmp_path, "w") as f:
                 f.create_dataset("reflectance_data", data=reflectance)
 
-            with pytest.raises(ValueError, match="Could not find wavelength dataset"):
+            with pytest.raises(
+                ValueError, match="Could not find wavelength dataset"
+            ):
                 io.load_h5_hsi(tmp_path)
 
         finally:
@@ -312,7 +338,9 @@ class TestLoadH5Specific:
         reflectance = np.random.rand(*spatial_shape, spectral_bands) * 0.8
         wavelengths = np.linspace(400, 800, spectral_bands)
 
-        with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp_file:
+        with tempfile.NamedTemporaryFile(
+            suffix=".h5", delete=False
+        ) as tmp_file:
             tmp_path = tmp_file.name
 
         try:
@@ -336,7 +364,9 @@ class TestLoadH5Specific:
         reflectance = np.random.rand(*spatial_shape, spectral_bands) * 0.8
         wavelengths = np.linspace(400, 800, spectral_bands)
 
-        with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp_file:
+        with tempfile.NamedTemporaryFile(
+            suffix=".h5", delete=False
+        ) as tmp_file:
             tmp_path = tmp_file.name
 
         try:
@@ -361,13 +391,17 @@ class TestLoadH5Specific:
         reflectance = np.random.rand(*spatial_shape, spectral_bands) * 0.8
         wavelengths = np.linspace(400, 800, spectral_bands)
 
-        with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp_file:
+        with tempfile.NamedTemporaryFile(
+            suffix=".h5", delete=False
+        ) as tmp_file:
             tmp_path = tmp_file.name
 
         try:
             with h5py.File(tmp_path, "w") as f:
                 ds = f.create_dataset("reflectance_data", data=reflectance)
-                ds.attrs.create("invalid_utf8", b"\xff\xfe", dtype=h5py.string_dtype())
+                ds.attrs.create(
+                    "invalid_utf8", b"\xff\xfe", dtype=h5py.string_dtype()
+                )
                 f.create_dataset("wavelength", data=wavelengths)
 
             hsi = io.load_h5_hsi(tmp_path)

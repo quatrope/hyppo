@@ -1,8 +1,11 @@
-from .base import Extractor
-from hyppo.core import HSI
+"""Gray Level Co-occurrence Matrix (GLCM) texture feature extractor."""
+
 import numpy as np
 from skimage.feature import graycomatrix, graycoprops
 from skimage.util.shape import view_as_windows
+
+from hyppo.core import HSI
+from .base import Extractor
 
 
 class GLCMExtractor(Extractor):
@@ -80,6 +83,7 @@ class GLCMExtractor(Extractor):
         window_sizes=[7],
         orientation_mode="separate",
     ):
+        """Initialize GLCM extractor with texture analysis parameters."""
         super().__init__()
 
         self.bands = bands
@@ -89,7 +93,9 @@ class GLCMExtractor(Extractor):
 
         # Paper uses 0°, 45°, 90°, 135° - all orientations separately
         self.angles = (
-            angles if angles is not None else [0, np.pi / 4, np.pi / 2, 3 * np.pi / 4]
+            angles
+            if angles is not None
+            else [0, np.pi / 4, np.pi / 2, 3 * np.pi / 4]
         )
 
         self.symmetric = symmetric
@@ -144,14 +150,14 @@ class GLCMExtractor(Extractor):
         return normalized.astype(np.uint8)
 
     def _compute_glcm_features_optimized(self, patches, levels):
-        """
-        Optimized GLCM computation based on paper's recommendations
-        """
+        """Optimized GLCM computation based on paper's recommendations."""
         N, height, width = patches.shape
 
         if self.orientation_mode == "separate":
             # Use all orientations separately (paper's recommendation)
-            n_features = len(self.distances) * len(self.angles) * len(self.properties)
+            n_features = (
+                len(self.distances) * len(self.angles) * len(self.properties)
+            )
         elif self.orientation_mode == "look_direction":
             # Use look direction approach: 0°, 90°, and average of 45°/135°
             n_features = len(self.distances) * 3 * len(self.properties)
@@ -234,7 +240,9 @@ class GLCMExtractor(Extractor):
                                         (vals[2] + vals[3]) / 2,
                                     ]
                                     end_idx = feature_idx + 3
-                                    features[i + j, feature_idx:end_idx] = look_vals
+                                    features[i + j, feature_idx:end_idx] = (
+                                        look_vals
+                                    )
                                     feature_idx += 3
                                 except Exception:
                                     end_idx = feature_idx + 3
@@ -264,7 +272,9 @@ class GLCMExtractor(Extractor):
                     except Exception:
                         # Skip this distance if GLCM computation fails
                         if self.orientation_mode == "separate":
-                            skip_features = len(self.angles) * len(self.properties)
+                            skip_features = len(self.angles) * len(
+                                self.properties
+                            )
                         elif self.orientation_mode == "look_direction":
                             skip_features = 3 * len(self.properties)
                         else:
@@ -277,9 +287,7 @@ class GLCMExtractor(Extractor):
         return features
 
     def _extract_glcm_multiscale(self, image):
-        """
-        Extract multiscale GLCM features following paper's methodology
-        """
+        """Extract multiscale GLCM features following paper's methodology."""
         image_height, image_width = image.shape
         all_scales = []
 
@@ -302,10 +310,14 @@ class GLCMExtractor(Extractor):
             patches = windows.reshape(-1, window_size, window_size)
 
             # Compute GLCM features with optimized approach
-            glcm_features = self._compute_glcm_features_optimized(patches, levels)
+            glcm_features = self._compute_glcm_features_optimized(
+                patches, levels
+            )
 
             # Reshape to spatial dimensions
-            glcm_features = glcm_features.reshape(image_height, image_width, -1)
+            glcm_features = glcm_features.reshape(
+                image_height, image_width, -1
+            )
             all_scales.append(glcm_features)
 
         # Concatenate all scales
@@ -317,7 +329,9 @@ class GLCMExtractor(Extractor):
         height, width, bands = reflectance.shape
 
         # Determine which bands to process
-        bands_to_process = self.bands if self.bands is not None else list(range(bands))
+        bands_to_process = (
+            self.bands if self.bands is not None else list(range(bands))
+        )
 
         # Extract GLCM features for each spectral band
         all_features = []
@@ -363,13 +377,17 @@ class GLCMExtractor(Extractor):
         if self.bands is not None and (
             not isinstance(self.bands, list) or not self.bands
         ):
-            raise ValueError("bands must be None or a non-empty list of integers.")
+            raise ValueError(
+                "bands must be None or a non-empty list of integers."
+            )
 
         if not self.distances or not isinstance(self.distances, list):
             raise ValueError("distances must be a non-empty list of integers.")
 
         if not self.angles or not isinstance(self.angles, list):
-            raise ValueError("angles must be a non-empty list of floats (radians).")
+            raise ValueError(
+                "angles must be a non-empty list of floats (radians)."
+            )
 
         if (
             not isinstance(self.window_sizes, (list, tuple))

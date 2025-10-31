@@ -1,12 +1,16 @@
+"""Tests for BaseRunner."""
+
+import pytest
+
 from hyppo.core import FeatureSpace, HSI
 from hyppo.runner import BaseRunner
-import pytest
 
 
 class ConcreteRunner(BaseRunner):
     """Concrete implementation for testing purposes."""
 
     def resolve(self, data: HSI, feature_space) -> dict:
+        """Execute test resolution."""
         return {"test": "result"}
 
 
@@ -16,7 +20,9 @@ class TestBaseRunner:
     def test_cannot_instantiate_abstract_class(self):
         """Test that BaseRunner cannot be instantiated directly."""
         # Act & Assert: Attempt to instantiate abstract class
-        with pytest.raises(TypeError, match="Can't instantiate abstract class"):
+        with pytest.raises(
+            TypeError, match="Can't instantiate abstract class"
+        ):
             BaseRunner()  # type: ignore
 
     def test_concrete_subclass_can_be_instantiated(self):
@@ -57,5 +63,7 @@ class TestBaseRunner:
             pass
 
         # Act & Assert: Attempt to instantiate
-        with pytest.raises(TypeError, match="Can't instantiate abstract class"):
+        with pytest.raises(
+            TypeError, match="Can't instantiate abstract class"
+        ):
             IncompleteRunner()  # type: ignore

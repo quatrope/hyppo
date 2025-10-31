@@ -1,8 +1,9 @@
 """Tests for GaborExtractor."""
 
-from hyppo.extractor.gabor import GaborExtractor
 import numpy as np
 import pytest
+
+from hyppo.extractor.gabor import GaborExtractor
 
 
 class TestGaborExtractor:
@@ -31,7 +32,9 @@ class TestGaborExtractor:
         frequencies = [0.1, 0.2]
         thetas = [0, np.pi / 2]
         sigma = 2.0
-        extractor = GaborExtractor(frequencies=frequencies, thetas=thetas, sigma=sigma)
+        extractor = GaborExtractor(
+            frequencies=frequencies, thetas=thetas, sigma=sigma
+        )
 
         # Act: Execute extraction
         result = extractor.extract(small_hsi)
@@ -95,7 +98,9 @@ class TestGaborExtractor:
         theta = 0
 
         # Act: Apply filter
-        magnitude, phase = extractor._apply_gabor_filter(band, frequency, theta)
+        magnitude, phase = extractor._apply_gabor_filter(
+            band, frequency, theta
+        )
 
         # Assert: Verify outputs
         assert magnitude.shape == band.shape
@@ -138,7 +143,9 @@ class TestGaborExtractor:
             ([0.05, 0.1, 0.2], [0, np.pi / 4, np.pi / 2, 3 * np.pi / 4]),
         ],
     )
-    def test_frequency_theta_combinations(self, small_hsi, frequencies, thetas):
+    def test_frequency_theta_combinations(
+        self, small_hsi, frequencies, thetas
+    ):
         """Test extraction with different frequency and theta combinations."""
         # Arrange: Create extractor with specific parameters
         extractor = GaborExtractor(frequencies=frequencies, thetas=thetas)

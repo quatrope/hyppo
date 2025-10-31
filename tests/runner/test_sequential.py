@@ -1,10 +1,11 @@
 """Test cases for SequentialRunner."""
 
+import numpy as np
+import pytest
+
 from hyppo.core import Feature, FeatureCollection, FeatureSpace, HSI
 from hyppo.extractor.base import Extractor
 from hyppo.runner import SequentialRunner
-import numpy as np
-import pytest
 
 
 class SimpleExtractor(Extractor):
@@ -33,7 +34,9 @@ class OptionalDependencyExtractor(Extractor):
     @classmethod
     def get_input_dependencies(cls) -> dict:
         """Get input dependencies."""
-        return {"optional_input": {"extractor": SimpleExtractor, "required": False}}
+        return {
+            "optional_input": {"extractor": SimpleExtractor, "required": False}
+        }
 
     @classmethod
     def get_input_default(cls, input_name: str):
@@ -44,7 +47,10 @@ class OptionalDependencyExtractor(Extractor):
 
     def _extract(self, data: HSI, **inputs) -> dict:
         if "optional_input" in inputs:
-            return {"has_input": True, "value": inputs["optional_input"]["value"]}
+            return {
+                "has_input": True,
+                "value": inputs["optional_input"]["value"],
+            }
         return {"has_input": False}
 
 
@@ -141,7 +147,10 @@ class TestSequentialRunner:
         runner.resolve(small_hsi, fs)
 
         # Assert: First extractor executed before second
-        assert CounterExtractor.execution_order == ["first_counter", "second_counter"]
+        assert CounterExtractor.execution_order == [
+            "first_counter",
+            "second_counter",
+        ]
 
     def test_resolve_with_optional_dependency_provided(self, small_hsi):
         """Test optional dependency when source is provided."""

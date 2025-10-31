@@ -1,12 +1,16 @@
-from .base import Extractor
-from hyppo.core import HSI
+"""Standard deviation spectral feature extractor for hyperspectral images."""
+
 import numpy as np
+
+from hyppo.core import HSI
+from .base import Extractor
 
 
 class StdExtractor(Extractor):
     """Extractor that computes the standard deviation across spectral bands for each pixel."""
 
     def __init__(self) -> None:
+        """Initialize standard deviation extractor."""
         super().__init__()
 
     def _extract(self, data: HSI, **inputs):

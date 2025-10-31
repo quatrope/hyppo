@@ -1,11 +1,13 @@
 """Tests for configuration loading and FeatureSpace generation."""
 
-from hyppo.core import FeatureSpace
-from hyppo.io import load_config_json, load_config_yaml
 import json
 from pathlib import Path
+
 import pytest
 import yaml
+
+from hyppo.core import FeatureSpace
+from hyppo.io import load_config_json, load_config_yaml
 
 
 class TestConfigLoader:
@@ -157,7 +159,9 @@ class TestConfigLoader:
     def test_unknown_extractor_raises_error(self, tmp_path):
         """Test that unknown extractor type raises error."""
         # Arrange: Config with non-existent extractor
-        config_data = {"pipeline": {"fake": {"extractor": "NonExistentExtractor"}}}
+        config_data = {
+            "pipeline": {"fake": {"extractor": "NonExistentExtractor"}}
+        }
         config_path = tmp_path / "config.yaml"
         with open(config_path, "w") as f:
             yaml.dump(config_data, f)

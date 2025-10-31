@@ -1,7 +1,10 @@
-from .base import Extractor
-from hyppo.core import HSI
+"""Principal Component Analysis (PCA) feature extractor for hyperspectral images."""
+
 import numpy as np
 from sklearn.decomposition import PCA
+
+from hyppo.core import HSI
+from .base import Extractor
 
 
 class PCAExtractor(Extractor):
@@ -27,6 +30,7 @@ class PCAExtractor(Extractor):
     """
 
     def __init__(self, n_components=5, whiten=False, random_state=42):
+        """Initialize PCA extractor with decomposition parameters."""
         super().__init__()
         self.n_components = n_components
         self.whiten = whiten
@@ -94,7 +98,9 @@ class PCAExtractor(Extractor):
             "mean": self.pca.mean_,
             "n_components": actual_n_components,
             "original_shape": (h, w, bands),
-            "cumulative_variance_ratio": np.cumsum(self.pca.explained_variance_ratio_),
+            "cumulative_variance_ratio": np.cumsum(
+                self.pca.explained_variance_ratio_
+            ),
         }
 
     def _validate(self, data: HSI, **inputs):

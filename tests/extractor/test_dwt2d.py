@@ -1,13 +1,16 @@
 """Tests for DWT2DExtractor."""
 
-from hyppo.extractor.dwt2d import DWT2DExtractor
 import pytest
+
+from hyppo.extractor.dwt2d import DWT2DExtractor
 
 
 class TestDWT2DExtractor:
     """Test cases for DWT2DExtractor."""
 
-    @pytest.mark.skip(reason="Paper reference validation pending implementation")
+    @pytest.mark.skip(
+        reason="Paper reference validation pending implementation"
+    )
     def test_paper_reference_result_1(self, sample_hsi):
         """Test results match reference values from literature."""
         # TODO: Implement validation against reference paper results
@@ -16,7 +19,9 @@ class TestDWT2DExtractor:
         # information fusion.
         pass
 
-    @pytest.mark.skip(reason="Paper reference validation pending implementation")
+    @pytest.mark.skip(
+        reason="Paper reference validation pending implementation"
+    )
     def test_paper_reference_result_2(self, sample_hsi):
         """Test wavelet decomposition follows established theory."""
         # TODO: Implement validation against theoretical results
@@ -24,7 +29,9 @@ class TestDWT2DExtractor:
         # from hyperspectral images using 2-D discrete wavelet transform.
         pass
 
-    @pytest.mark.skip(reason="Paper reference validation pending implementation")
+    @pytest.mark.skip(
+        reason="Paper reference validation pending implementation"
+    )
     def test_paper_reference_result_3(self, sample_hsi):
         """Test texture feature extraction methodology."""
         # TODO: Implement validation against theoretical results
@@ -90,7 +97,9 @@ class TestDWT2DExtractor:
         extractor = DWT2DExtractor(levels=levels)  # type: ignore
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="levels must be a positive integer"):
+        with pytest.raises(
+            ValueError, match="levels must be a positive integer"
+        ):
             extractor.extract(small_hsi)
 
     @pytest.mark.parametrize(

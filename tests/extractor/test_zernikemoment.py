@@ -1,14 +1,17 @@
 """Tests for ZernikeMomentExtractor."""
 
-from hyppo.extractor.zernikemoment import ZernikeMomentExtractor
 import numpy as np
 import pytest
+
+from hyppo.extractor.zernikemoment import ZernikeMomentExtractor
 
 
 class TestZernikeMomentExtractor:
     """Test cases for ZernikeMomentExtractor."""
 
-    @pytest.mark.skip(reason="Paper reference validation pending implementation")
+    @pytest.mark.skip(
+        reason="Paper reference validation pending implementation"
+    )
     def test_paper_reference_result(self, sample_hsi):
         """Test results match reference values from literature."""
         # TODO: Implement validation against reference paper results
@@ -94,7 +97,9 @@ class TestZernikeMomentExtractor:
         extractor = ZernikeMomentExtractor(n_components=0)
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="n_components must be a positive integer"):
+        with pytest.raises(
+            ValueError, match="n_components must be a positive integer"
+        ):
             extractor.extract(small_hsi)
 
     def test_validate_invalid_max_order(self, small_hsi):
@@ -103,7 +108,9 @@ class TestZernikeMomentExtractor:
         extractor = ZernikeMomentExtractor(degree=-1)
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="degree must be a non-negative integer"):
+        with pytest.raises(
+            ValueError, match="degree must be a non-negative integer"
+        ):
             extractor.extract(small_hsi)
 
     def test_validate_odd_max_order(self, small_hsi):
@@ -123,17 +130,23 @@ class TestZernikeMomentExtractor:
         extractor = ZernikeMomentExtractor(window_sizes=[])
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="window_sizes must be a non-empty list"):
+        with pytest.raises(
+            ValueError, match="window_sizes must be a non-empty list"
+        ):
             extractor.extract(small_hsi)
 
     @pytest.mark.parametrize("invalid_window", [2, 4, 1])
-    def test_validate_invalid_window_size_values(self, small_hsi, invalid_window):
+    def test_validate_invalid_window_size_values(
+        self, small_hsi, invalid_window
+    ):
         """Test validation fails with invalid window size values."""
         # Arrange: Create extractor with invalid window size
         extractor = ZernikeMomentExtractor(window_sizes=[invalid_window])
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="Each window size must be an odd integer"):
+        with pytest.raises(
+            ValueError, match="Each window size must be an odd integer"
+        ):
             extractor.extract(small_hsi)
 
     @pytest.mark.parametrize("n_components", [1, 3, 5])
@@ -203,7 +216,9 @@ class TestZernikeMomentExtractor:
         extractor = ZernikeMomentExtractor(n_components=2.5)  # type: ignore
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="n_components must be a positive integer"):
+        with pytest.raises(
+            ValueError, match="n_components must be a positive integer"
+        ):
             extractor.extract(small_hsi)
 
     def test_validate_non_integer_max_order(self, small_hsi):
@@ -212,7 +227,9 @@ class TestZernikeMomentExtractor:
         extractor = ZernikeMomentExtractor(degree=2.5)  # type: ignore
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="degree must be a non-negative integer"):
+        with pytest.raises(
+            ValueError, match="degree must be a non-negative integer"
+        ):
             extractor.extract(small_hsi)
 
     def test_pca_object_stored(self, small_hsi):

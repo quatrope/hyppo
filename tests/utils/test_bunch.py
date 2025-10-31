@@ -1,8 +1,10 @@
 """Tests for Bunch."""
 
 import copy
-from hyppo.utils.bunch import Bunch
+
 import pytest
+
+from hyppo.utils.bunch import Bunch
 
 
 class TestBunch:
@@ -26,7 +28,9 @@ class TestBunch:
         data = [1, 2, 3]
 
         # Act & Assert: Verify TypeError raised
-        with pytest.raises(TypeError, match="Data must be some kind of mapping"):
+        with pytest.raises(
+            TypeError, match="Data must be some kind of mapping"
+        ):
             Bunch("test", data)
 
     def test_getitem_access(self):

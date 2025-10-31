@@ -1,9 +1,10 @@
 """Discrete Wavelet Transform 1D feature extractor."""
 
-from .base import Extractor
-from hyppo.core import HSI
 import numpy as np
 import pywt
+
+from hyppo.core import HSI
+from .base import Extractor
 
 
 class DWT1DExtractor(Extractor):

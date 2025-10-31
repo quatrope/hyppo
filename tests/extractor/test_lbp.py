@@ -1,8 +1,9 @@
 """Tests for LBPExtractor."""
 
-from hyppo.extractor.lbp import LBPExtractor
 import numpy as np
 import pytest
+
+from hyppo.extractor.lbp import LBPExtractor
 
 
 class TestLBPExtractor:
@@ -144,7 +145,9 @@ class TestLBPExtractor:
         extractor = LBPExtractor(bands="invalid")  # type: ignore
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="bands must be None or a non-empty list"):
+        with pytest.raises(
+            ValueError, match="bands must be None or a non-empty list"
+        ):
             extractor.extract(small_hsi)
 
     def test_validate_empty_bands(self, small_hsi):
@@ -153,7 +156,9 @@ class TestLBPExtractor:
         extractor = LBPExtractor(bands=[])
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="bands must be None or a non-empty list"):
+        with pytest.raises(
+            ValueError, match="bands must be None or a non-empty list"
+        ):
             extractor.extract(small_hsi)
 
     def test_validate_invalid_radius(self, small_hsi):
@@ -162,7 +167,9 @@ class TestLBPExtractor:
         extractor = LBPExtractor(radius=0)
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="radius must be a positive number"):
+        with pytest.raises(
+            ValueError, match="radius must be a positive number"
+        ):
             extractor.extract(small_hsi)
 
     def test_validate_negative_radius(self, small_hsi):
@@ -171,7 +178,9 @@ class TestLBPExtractor:
         extractor = LBPExtractor(radius=-1)
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="radius must be a positive number"):
+        with pytest.raises(
+            ValueError, match="radius must be a positive number"
+        ):
             extractor.extract(small_hsi)
 
     def test_validate_invalid_n_points(self, small_hsi):
@@ -180,7 +189,9 @@ class TestLBPExtractor:
         extractor = LBPExtractor(n_points=0)
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="n_points must be a positive integer"):
+        with pytest.raises(
+            ValueError, match="n_points must be a positive integer"
+        ):
             extractor.extract(small_hsi)
 
     def test_validate_n_points_too_small(self, small_hsi):

@@ -1,7 +1,10 @@
-from .base import Extractor
-from hyppo.core import HSI
+"""Minimum Noise Fraction (MNF) feature extractor for hyperspectral images."""
+
 import numpy as np
 from sklearn.decomposition import PCA
+
+from hyppo.core import HSI
+from .base import Extractor
 
 
 class MNFExtractor(Extractor):
@@ -29,6 +32,7 @@ class MNFExtractor(Extractor):
     """
 
     def __init__(self, n_components=5, whiten=False, random_state=42):
+        """Initialize MNF extractor with transformation parameters."""
         super().__init__()
         self.n_components = n_components
         self.whiten = whiten
@@ -116,7 +120,9 @@ class MNFExtractor(Extractor):
             "mean": X_mean,
             "n_components": self.pca.n_components_,
             "original_shape": (h, w, bands),
-            "cumulative_variance_ratio": np.cumsum(self.pca.explained_variance_ratio_),
+            "cumulative_variance_ratio": np.cumsum(
+                self.pca.explained_variance_ratio_
+            ),
             "noise_eigenvalues": eigvals,
             "whitening_matrix": W,
         }

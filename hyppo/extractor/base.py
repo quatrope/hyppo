@@ -1,8 +1,9 @@
 """Base class for feature extractors."""
 
 from abc import ABC, abstractmethod
-from hyppo.core import HSI
 import re
+
+from hyppo.core import HSI
 
 
 class Extractor(ABC):

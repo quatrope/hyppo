@@ -1,13 +1,15 @@
 """Tests for FeatureCollection save functionality."""
 
+from pathlib import Path
+import tempfile
+
 import h5py
+import numpy as np
+import pytest
+
 from hyppo import io
 from hyppo.core import Feature, FeatureCollection
 from hyppo.extractor import MeanExtractor, StdExtractor
-import numpy as np
-from pathlib import Path
-import pytest
-import tempfile
 
 
 class TestSaveFeatureCollection:
@@ -29,7 +31,9 @@ class TestSaveFeatureCollection:
 
         return FeatureCollection({"mean": mean_feature, "std": std_feature})
 
-    def test_save_feature_collection_creates_file(self, sample_feature_collection):
+    def test_save_feature_collection_creates_file(
+        self, sample_feature_collection
+    ):
         """Test that save_feature_collection creates an HDF5 file."""
         # Arrange: Create temporary file path
         with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp:
@@ -44,7 +48,9 @@ class TestSaveFeatureCollection:
         finally:
             Path(tmp_path).unlink(missing_ok=True)
 
-    def test_save_feature_collection_invalid_extension(self, sample_feature_collection):
+    def test_save_feature_collection_invalid_extension(
+        self, sample_feature_collection
+    ):
         """Test that save_feature_collection raises ValueError for invalid extension."""
         # Arrange: Create path with wrong extension
         with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as tmp:
@@ -72,7 +78,9 @@ class TestSaveFeatureCollection:
         finally:
             Path(tmp_path).unlink(missing_ok=True)
 
-    def test_save_feature_collection_saves_features(self, sample_feature_collection):
+    def test_save_feature_collection_saves_features(
+        self, sample_feature_collection
+    ):
         """Test that feature arrays are saved correctly."""
         # Arrange: Create temporary file
         with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp:
@@ -91,18 +99,24 @@ class TestSaveFeatureCollection:
                 # Verify mean feature data
                 assert "features" in f["features/mean"]
                 mean_data = f["features/mean/features"][:]
-                expected_mean = sample_feature_collection["mean"].data["features"]
+                expected_mean = sample_feature_collection["mean"].data[
+                    "features"
+                ]
                 np.testing.assert_array_equal(mean_data, expected_mean)
 
                 # Verify std feature data
                 assert "features" in f["features/std"]
                 std_data = f["features/std/features"][:]
-                expected_std = sample_feature_collection["std"].data["features"]
+                expected_std = sample_feature_collection["std"].data[
+                    "features"
+                ]
                 np.testing.assert_array_equal(std_data, expected_std)
         finally:
             Path(tmp_path).unlink(missing_ok=True)
 
-    def test_save_feature_collection_saves_metadata(self, sample_feature_collection):
+    def test_save_feature_collection_saves_metadata(
+        self, sample_feature_collection
+    ):
         """Test that metadata is saved correctly."""
         # Arrange: Create temporary file
         with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp:
@@ -225,7 +239,9 @@ class TestFeatureCollectionSaveMethod:
         finally:
             Path(tmp_path).unlink(missing_ok=True)
 
-    def test_save_method_calls_save_feature_collection(self, sample_feature_collection):
+    def test_save_method_calls_save_feature_collection(
+        self, sample_feature_collection
+    ):
         """Test that save() method delegates to save_feature_collection."""
         # Arrange: Create temporary file
         with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp:

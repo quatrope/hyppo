@@ -1,8 +1,10 @@
-from hyppo.core import Feature, FeatureCollection
-from hyppo.extractor.mean import MeanExtractor
+"""Tests for Feature and FeatureCollection."""
+
 import numpy as np
 import pandas as pd
-import pytest
+
+from hyppo.core import Feature, FeatureCollection
+from hyppo.extractor.mean import MeanExtractor
 
 
 class TestFeature:
@@ -167,11 +169,16 @@ class TestFeatureCollection:
         collection = FeatureCollection.from_features(
             {
                 "mean_ext": Feature(
-                    {"features": np.array([[1, 2, 3], [4, 5, 6]]), "extra": "value"},
+                    {
+                        "features": np.array([[1, 2, 3], [4, 5, 6]]),
+                        "extra": "value",
+                    },
                     None,
                     [],
                 ),
-                "std_ext": Feature({"features": np.array([1, 2, 3, 4])}, None, []),
+                "std_ext": Feature(
+                    {"features": np.array([1, 2, 3, 4])}, None, []
+                ),
             }
         )
 

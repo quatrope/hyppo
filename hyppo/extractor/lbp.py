@@ -1,7 +1,10 @@
-from .base import Extractor
-from hyppo.core import HSI
+"""Local Binary Pattern (LBP) texture feature extractor for hyperspectral images."""
+
 import numpy as np
 from skimage.feature import local_binary_pattern
+
+from hyppo.core import HSI
+from .base import Extractor
 
 
 class LBPExtractor(Extractor):
@@ -33,6 +36,7 @@ class LBPExtractor(Extractor):
     """
 
     def __init__(self, bands=None, radius=3, n_points=None, method="uniform"):
+        """Initialize LBP extractor with texture parameters."""
         super().__init__()
 
         valid_methods = ["default", "ror", "uniform", "nri_uniform", "var"]
@@ -130,7 +134,9 @@ class LBPExtractor(Extractor):
         if self.bands is not None and (
             not isinstance(self.bands, list) or not self.bands
         ):
-            raise ValueError("bands must be None or a non-empty list of integers.")
+            raise ValueError(
+                "bands must be None or a non-empty list of integers."
+            )
 
         if not isinstance(self.radius, (int, float)) or self.radius <= 0:
             raise ValueError("radius must be a positive number.")

@@ -1,7 +1,9 @@
-import h5py
-from hyppo.core import FeatureCollection
-import numpy as np
 from pathlib import Path
+
+import h5py
+import numpy as np
+
+from hyppo.core import FeatureCollection
 
 
 def save_feature_collection(
@@ -54,7 +56,11 @@ def save_feature_collection(
                 ).__name__
 
             if hasattr(feature, "inputs_used"):
-                metadata_subgroup.attrs["inputs_used"] = str(feature.inputs_used)
+                metadata_subgroup.attrs["inputs_used"] = str(
+                    feature.inputs_used
+                )
 
             if hasattr(feature, "data") and isinstance(feature.data, dict):
-                metadata_subgroup.attrs["feature_keys"] = list(feature.data.keys())
+                metadata_subgroup.attrs["feature_keys"] = list(
+                    feature.data.keys()
+                )

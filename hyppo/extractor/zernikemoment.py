@@ -1,9 +1,13 @@
-from .base import Extractor
-from hyppo.core import HSI
+"""Zernike moment feature extractor for hyperspectral images."""
+
 import math
+
 import numpy as np
 from skimage.util.shape import view_as_windows
 from sklearn.decomposition import PCA
+
+from hyppo.core import HSI
+from .base import Extractor
 
 
 class ZernikeMomentExtractor(Extractor):
@@ -36,6 +40,7 @@ class ZernikeMomentExtractor(Extractor):
     """
 
     def __init__(self, n_components=3, window_sizes=[3, 9, 15], degree=3):
+        """Initialize Zernike moment extractor with PCA and polynomial parameters."""
         super().__init__()
         self.n_components = n_components
         self.window_sizes = window_sizes
@@ -82,12 +87,16 @@ class ZernikeMomentExtractor(Extractor):
 
         # precalcula la base de polinomios
         kernels = np.zeros((M, h, w), dtype=complex)
-        for i, (n, m) in enumerate(nm_list):  # para (n,m) en el enrejado del parche
+        for i, (n, m) in enumerate(
+            nm_list
+        ):  # para (n,m) en el enrejado del parche
             Rnm = self._zernike_radial_poly(n, m, R)  # parte radial
             kernels[i] = Rnm * np.exp(
                 -1j * m * Theta
             )  # multiplica por la parte angular
-            kernels[i] *= mask  # multiplica por mask para forzar ceros fuera del disco
+            kernels[
+                i
+            ] *= mask  # multiplica por mask para forzar ceros fuera del disco
 
         moments = np.zeros((N, M))
 
@@ -100,7 +109,9 @@ class ZernikeMomentExtractor(Extractor):
             complex_moments = (
                 prod.sum(axis=(-2, -1)) / area
             )  # suma (que seria integrarcion discreta) y normalizacion
-            moments[i : i + block_size] = np.abs(complex_moments)  # solo módulo real
+            moments[i : i + block_size] = np.abs(
+                complex_moments
+            )  # solo módulo real
 
         return moments
 
@@ -147,7 +158,9 @@ class ZernikeMomentExtractor(Extractor):
         X_reshaped = X.reshape(-1, b)
 
         self.pca = PCA(n_components=self.n_components)
-        pcs = self.pca.fit_transform(X_reshaped).reshape(h, w, self.n_components)
+        pcs = self.pca.fit_transform(X_reshaped).reshape(
+            h, w, self.n_components
+        )
 
         all_features = []
         for i in range(self.n_components):

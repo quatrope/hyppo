@@ -1,8 +1,12 @@
-from .base import Extractor
-from hyppo.core import HSI
+"""Projection Pursuit feature extractor for hyperspectral images."""
+
+import warnings
+
 import numpy as np
 from sklearn.decomposition import PCA
-import warnings
+
+from hyppo.core import HSI
+from .base import Extractor
 
 
 class PPExtractor(Extractor):
@@ -41,6 +45,7 @@ class PPExtractor(Extractor):
         sample_size=1000,  # Number of pixels to sample for efficiency
         random_state=42,
     ):
+        """Initialize PP extractor with projection search parameters."""
         super().__init__()
         self.n_projections = n_projections
         self.n_bins = n_bins
@@ -88,9 +93,7 @@ class PPExtractor(Extractor):
         return divergence
 
     def _pca_preprocessing(self, X):
-        """
-        Apply PCA preprocessing ("sphering") as described in Section III.A
-        """
+        """Apply PCA preprocessing ("sphering") as described in Section III.A."""
         # Determine number of components if not specified
         if self.pca_components is None:
             pca_temp = PCA()
@@ -134,7 +137,9 @@ class PPExtractor(Extractor):
 
             # Orthogonalize against previous projections
             for prev_proj in previous_projections:
-                candidate_vector -= np.dot(candidate_vector, prev_proj) * prev_proj
+                candidate_vector -= (
+                    np.dot(candidate_vector, prev_proj) * prev_proj
+                )
 
             # Renormalize after orthogonalization
             norm = np.linalg.norm(candidate_vector)
@@ -152,17 +157,23 @@ class PPExtractor(Extractor):
                     best_score = score
                     best_projection = candidate_vector.copy()
                     best_pixel_idx = (
-                        sample_indices[i] if n_samples > self.sample_size else i
+                        sample_indices[i]
+                        if n_samples > self.sample_size
+                        else i
                     )
             except Exception:
                 continue  # Skip if divergence computation fails
 
         if best_projection is None:
             # Fallback to random orthogonal vector
-            warnings.warn("No valid projection found, using random orthogonal vector")
+            warnings.warn(
+                "No valid projection found, using random orthogonal vector"
+            )
             best_projection = self.rng.standard_normal(n_features)
             for prev_proj in previous_projections:
-                best_projection -= np.dot(best_projection, prev_proj) * prev_proj
+                best_projection -= (
+                    np.dot(best_projection, prev_proj) * prev_proj
+                )
             best_projection = best_projection / (
                 np.linalg.norm(best_projection) + 1e-10
             )

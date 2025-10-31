@@ -1,15 +1,20 @@
+"""Tests for DaskRunner."""
+
+from unittest.mock import MagicMock, patch
+
 from dask.distributed import Client, LocalCluster
+import pytest
+
 from hyppo.core import FeatureCollection, FeatureSpace, HSI
 from hyppo.extractor.base import Extractor
 from hyppo.runner import DaskRunner
-import pytest
-from unittest.mock import MagicMock, patch
 
 
 class SimpleTestExtractor(Extractor):
     """Simple extractor for testing."""
 
     def _extract(self, data: HSI, **inputs) -> dict:
+        """Extract simple test value."""
         return {"simple_value": 1.0}
 
 
@@ -18,9 +23,16 @@ class DependentTestExtractor(Extractor):
 
     @classmethod
     def get_input_dependencies(cls) -> dict:
-        return {"simple_input": {"extractor": SimpleTestExtractor, "required": True}}
+        """Return test dependencies."""
+        return {
+            "simple_input": {
+                "extractor": SimpleTestExtractor,
+                "required": True,
+            }
+        }
 
     def _extract(self, data: HSI, **inputs) -> dict:
+        """Extract dependent test value."""
         return {"dependent_value": 2.0}
 
 
@@ -29,10 +41,17 @@ class OptionalDependencyExtractor(Extractor):
 
     @classmethod
     def get_input_dependencies(cls) -> dict:
-        return {"optional_input": {"extractor": SimpleTestExtractor, "required": False}}
+        """Return test dependencies."""
+        return {
+            "optional_input": {
+                "extractor": SimpleTestExtractor,
+                "required": False,
+            }
+        }
 
     @classmethod
     def get_input_default(cls, input_name: str):
+        """Return test default extractor."""
         if input_name == "optional_input":
             return SimpleTestExtractor()
         return None
@@ -53,7 +72,10 @@ class TestDaskRunner:
         """Test that DaskRunner can be instantiated with a client."""
         # Arrange: Create cluster and client
         cluster = LocalCluster(
-            n_workers=1, threads_per_worker=1, processes=False, silence_logs=True
+            n_workers=1,
+            threads_per_worker=1,
+            processes=False,
+            silence_logs=True,
         )
         client = Client(cluster)
 
@@ -185,7 +207,9 @@ class TestDaskRunner:
         from hyppo.extractor import MeanExtractor, PCAExtractor, StdExtractor
 
         runner = DaskRunner.threads(num_threads=2)
-        fs = FeatureSpace.from_list([MeanExtractor(), StdExtractor(), PCAExtractor()])
+        fs = FeatureSpace.from_list(
+            [MeanExtractor(), StdExtractor(), PCAExtractor()]
+        )
 
         # Act: Execute extraction
         results = runner.resolve(small_hsi, fs)
@@ -332,7 +356,8 @@ class TestDaskRunner:
         with patch("hyppo.runner.dask.SLURMCluster", None):
             # Act & Assert: Should raise ImportError
             with pytest.raises(
-                ImportError, match="dask-jobqueue is required for SLURM execution"
+                ImportError,
+                match="dask-jobqueue is required for SLURM execution",
             ):
                 DaskRunner.slurm()
 
@@ -345,10 +370,14 @@ class TestDaskRunner:
         with patch("hyppo.runner.dask.SLURMCluster", mock_cluster):
             with patch("hyppo.runner.dask.Client", return_value=mock_client):
                 # Act & Assert: Invalid cores
-                with pytest.raises(ValueError, match="Invalid number of cores"):
+                with pytest.raises(
+                    ValueError, match="Invalid number of cores"
+                ):
                     DaskRunner.slurm(cores=0)
 
-                with pytest.raises(ValueError, match="Invalid number of cores"):
+                with pytest.raises(
+                    ValueError, match="Invalid number of cores"
+                ):
                     DaskRunner.slurm(cores=-1)
 
     def test_slurm_classmethod_invalid_processes(self):
@@ -360,10 +389,14 @@ class TestDaskRunner:
         with patch("hyppo.runner.dask.SLURMCluster", mock_cluster):
             with patch("hyppo.runner.dask.Client", return_value=mock_client):
                 # Act & Assert: Invalid processes
-                with pytest.raises(ValueError, match="Invalid number of processes"):
+                with pytest.raises(
+                    ValueError, match="Invalid number of processes"
+                ):
                     DaskRunner.slurm(processes=0)
 
-                with pytest.raises(ValueError, match="Invalid number of processes"):
+                with pytest.raises(
+                    ValueError, match="Invalid number of processes"
+                ):
                     DaskRunner.slurm(processes=-1)
 
     def test_slurm_classmethod_invalid_jobs(self):
@@ -409,7 +442,9 @@ class TestDaskRunner:
                 mock_cluster_instance.scale.assert_called_once_with(jobs=5)
 
                 # Assert: Client was created with cluster
-                mock_client_class.assert_called_once_with(mock_cluster_instance)
+                mock_client_class.assert_called_once_with(
+                    mock_cluster_instance
+                )
 
                 # Assert: Runner instance created
                 assert isinstance(runner, DaskRunner)
@@ -436,7 +471,10 @@ class TestDaskRunner:
                     num_jobs=20,
                     account="my_account",
                     project="my_project",
-                    job_extra_directives=["--constraint=haswell", "--exclusive"],
+                    job_extra_directives=[
+                        "--constraint=haswell",
+                        "--exclusive",
+                    ],
                     custom_param="custom_value",
                 )
 

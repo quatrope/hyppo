@@ -27,8 +27,8 @@ Display configuration information:
 # =============================================================================
 
 import inspect
-import sys
 from pathlib import Path
+import sys
 from typing import TYPE_CHECKING
 
 import typer

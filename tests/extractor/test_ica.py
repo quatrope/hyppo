@@ -1,8 +1,9 @@
 """Tests for ICAExtractor."""
 
-from hyppo.extractor.ica import ICAExtractor
 import numpy as np
 import pytest
+
+from hyppo.extractor.ica import ICAExtractor
 
 
 class TestICAExtractor:

@@ -1,7 +1,10 @@
-from .base import Extractor
-from hyppo.core import HSI
+"""Independent Component Analysis (ICA) feature extractor for hyperspectral images."""
+
 import numpy as np
 from sklearn.decomposition import FastICA
+
+from hyppo.core import HSI
+from .base import Extractor
 
 
 class ICAExtractor(Extractor):
@@ -24,7 +27,10 @@ class ICAExtractor(Extractor):
        algorithms and applications. Neural Networks, 13(4–5), 411–430.
     """
 
-    def __init__(self, n_components=5, whiten="unit-variance", random_state=42):
+    def __init__(
+        self, n_components=5, whiten="unit-variance", random_state=42
+    ):
+        """Initialize ICA extractor with decomposition parameters."""
         super().__init__()
         self.n_components = n_components
         self.whiten = whiten

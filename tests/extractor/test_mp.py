@@ -1,14 +1,17 @@
 """Tests for MPExtractor."""
 
-from hyppo.extractor.mp import MPExtractor
 import numpy as np
 import pytest
+
+from hyppo.extractor.mp import MPExtractor
 
 
 class TestMPExtractor:
     """Test cases for MPExtractor."""
 
-    @pytest.mark.skip(reason="Paper reference validation pending implementation")
+    @pytest.mark.skip(
+        reason="Paper reference validation pending implementation"
+    )
     def test_paper_reference_result(self, sample_hsi):
         """Test results match reference values from literature."""
         # TODO: Implement validation against reference paper results
@@ -83,8 +86,12 @@ class TestMPExtractor:
         # Assert: Verify correct bands used
         assert result["bands_used"] == bands
 
-    @pytest.mark.parametrize("structuring_element", ["disk", "square", "octagon"])
-    def test_different_structuring_elements(self, small_hsi, structuring_element):
+    @pytest.mark.parametrize(
+        "structuring_element", ["disk", "square", "octagon"]
+    )
+    def test_different_structuring_elements(
+        self, small_hsi, structuring_element
+    ):
         """Test extraction with different structuring elements."""
         # Arrange: Create extractor with specific structuring element
         extractor = MPExtractor(structuring_element=structuring_element)
@@ -172,7 +179,9 @@ class TestMPExtractor:
         extractor = MPExtractor(bands="invalid")
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="bands must be None or a non-empty"):
+        with pytest.raises(
+            ValueError, match="bands must be None or a non-empty"
+        ):
             extractor.extract(small_hsi)
 
     def test_validate_empty_bands(self, small_hsi):
@@ -181,7 +190,9 @@ class TestMPExtractor:
         extractor = MPExtractor(bands=[])
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="bands must be None or a non-empty"):
+        with pytest.raises(
+            ValueError, match="bands must be None or a non-empty"
+        ):
             extractor.extract(small_hsi)
 
     def test_validate_invalid_radii_type(self, small_hsi):
@@ -226,7 +237,9 @@ class TestMPExtractor:
         extractor = MPExtractor(structuring_element="invalid")
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="structuring_element must be one of"):
+        with pytest.raises(
+            ValueError, match="structuring_element must be one of"
+        ):
             extractor.extract(small_hsi)
 
     def test_feature_name(self):

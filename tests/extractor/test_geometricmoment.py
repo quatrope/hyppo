@@ -1,8 +1,9 @@
 """Tests for GeometricMomentExtractor."""
 
-from hyppo.extractor.geometricmoment import GeometricMomentExtractor
 import numpy as np
 import pytest
+
+from hyppo.extractor.geometricmoment import GeometricMomentExtractor
 
 
 class TestGeometricMomentExtractor:
@@ -88,7 +89,9 @@ class TestGeometricMomentExtractor:
         extractor = GeometricMomentExtractor(n_components=0)
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="n_components must be a positive integer"):
+        with pytest.raises(
+            ValueError, match="n_components must be a positive integer"
+        ):
             extractor.extract(small_hsi)
 
     def test_validate_invalid_max_order(self, small_hsi):
@@ -108,17 +111,23 @@ class TestGeometricMomentExtractor:
         extractor = GeometricMomentExtractor(window_sizes=[])
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="window_sizes must be a non-empty list"):
+        with pytest.raises(
+            ValueError, match="window_sizes must be a non-empty list"
+        ):
             extractor.extract(small_hsi)
 
     @pytest.mark.parametrize("invalid_window", [2, 4, 1])
-    def test_validate_invalid_window_size_values(self, small_hsi, invalid_window):
+    def test_validate_invalid_window_size_values(
+        self, small_hsi, invalid_window
+    ):
         """Test validation fails with invalid window size values."""
         # Arrange: Create extractor with invalid window size
         extractor = GeometricMomentExtractor(window_sizes=[invalid_window])
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="Each window size must be an odd integer"):
+        with pytest.raises(
+            ValueError, match="Each window size must be an odd integer"
+        ):
             extractor.extract(small_hsi)
 
     @pytest.mark.parametrize("n_components", [1, 3, 5])
@@ -188,7 +197,9 @@ class TestGeometricMomentExtractor:
         extractor = GeometricMomentExtractor(n_components=2.5)  # type: ignore
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="n_components must be a positive integer"):
+        with pytest.raises(
+            ValueError, match="n_components must be a positive integer"
+        ):
             extractor.extract(small_hsi)
 
     def test_validate_non_integer_max_order(self, small_hsi):

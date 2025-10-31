@@ -1,15 +1,19 @@
 """Tests for NDVIExtractor."""
 
-from hyppo.extractor.ndvi import NDVIExtractor
+import warnings
+
 import numpy as np
 import pytest
-import warnings
+
+from hyppo.extractor.ndvi import NDVIExtractor
 
 
 class TestNDVIExtractor:
     """Test cases for NDVIExtractor."""
 
-    @pytest.mark.skip(reason="Paper reference validation pending implementation")
+    @pytest.mark.skip(
+        reason="Paper reference validation pending implementation"
+    )
     def test_paper_reference_result(self, sample_hsi):
         """Test results match reference values from literature."""
         # TODO: Implement validation against reference paper results
@@ -119,7 +123,9 @@ class TestNDVIExtractor:
         extractor = NDVIExtractor(red_wavelength=-100)
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="red_wavelength must be positive"):
+        with pytest.raises(
+            ValueError, match="red_wavelength must be positive"
+        ):
             extractor.extract(small_hsi)
 
     def test_validate_zero_red_wavelength(self, small_hsi):
@@ -128,7 +134,9 @@ class TestNDVIExtractor:
         extractor = NDVIExtractor(red_wavelength=0)
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="red_wavelength must be positive"):
+        with pytest.raises(
+            ValueError, match="red_wavelength must be positive"
+        ):
             extractor.extract(small_hsi)
 
     def test_validate_negative_nir_wavelength(self, small_hsi):
@@ -137,7 +145,9 @@ class TestNDVIExtractor:
         extractor = NDVIExtractor(nir_wavelength=-100)
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="nir_wavelength must be positive"):
+        with pytest.raises(
+            ValueError, match="nir_wavelength must be positive"
+        ):
             extractor.extract(small_hsi)
 
     def test_validate_zero_nir_wavelength(self, small_hsi):
@@ -146,7 +156,9 @@ class TestNDVIExtractor:
         extractor = NDVIExtractor(nir_wavelength=0)
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="nir_wavelength must be positive"):
+        with pytest.raises(
+            ValueError, match="nir_wavelength must be positive"
+        ):
             extractor.extract(small_hsi)
 
     def test_validate_red_greater_than_nir(self, small_hsi):
@@ -203,7 +215,9 @@ class TestNDVIExtractor:
             (670, 900),
         ],
     )
-    def test_different_wavelength_combinations(self, small_hsi, red_wl, nir_wl):
+    def test_different_wavelength_combinations(
+        self, small_hsi, red_wl, nir_wl
+    ):
         """Test extraction with different wavelength combinations."""
         # Arrange: Create extractor with specific wavelengths
         extractor = NDVIExtractor(red_wavelength=red_wl, nir_wavelength=nir_wl)

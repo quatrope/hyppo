@@ -36,6 +36,7 @@ class Bunch(Mapping):
     """
 
     def __init__(self, name, data):
+        """Initialize Bunch with name and data dictionary."""
         if not isinstance(data, Mapping):
             raise TypeError("Data must be some kind of mapping")
         super().__setattr__("_name", str(name))

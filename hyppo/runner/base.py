@@ -1,10 +1,19 @@
+"""Base runner interface for feature extraction execution engines."""
+
 from abc import ABC, abstractmethod
+
 from hyppo.core import FeatureCollection, FeatureSpace, HSI
 
 
 class BaseRunner(ABC):
+    """Abstract base class for feature extraction runners."""
+
     @abstractmethod
-    def resolve(self, data: HSI, feature_space: FeatureSpace) -> FeatureCollection: ...
+    def resolve(
+        self, data: HSI, feature_space: FeatureSpace
+    ) -> FeatureCollection:
+        """Execute feature extraction workflow."""
+        ...
 
     def _get_defaults_for_extractor(self, extractor) -> dict:
         """

@@ -1,8 +1,18 @@
-from .base import Extractor
-from hyppo.core import HSI
+"""Morphological Profile (MP) feature extractor for hyperspectral images."""
+
 import numpy as np
-from skimage.morphology import (closing, dilation, disk, erosion, octagon,
-                                opening, square)
+from skimage.morphology import (
+    closing,
+    dilation,
+    disk,
+    erosion,
+    octagon,
+    opening,
+    square,
+)
+
+from hyppo.core import HSI
+from .base import Extractor
 
 
 class MPExtractor(Extractor):
@@ -33,6 +43,7 @@ class MPExtractor(Extractor):
     """
 
     def __init__(self, bands=None, radii=None, structuring_element="disk"):
+        """Initialize MP extractor with morphological operation parameters."""
         super().__init__()
         self.bands = bands
         self.radii = radii if radii is not None else [1, 3, 5]
@@ -47,7 +58,9 @@ class MPExtractor(Extractor):
         elif self.structuring_element == "octagon":
             return octagon(r, r)
         else:
-            raise ValueError(f"Unknown structuring element: {self.structuring_element}")
+            raise ValueError(
+                f"Unknown structuring element: {self.structuring_element}"
+            )
 
     def _extract(self, data: HSI, **inputs):
         """

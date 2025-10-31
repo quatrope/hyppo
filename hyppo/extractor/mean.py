@@ -1,12 +1,16 @@
-from .base import Extractor
-from hyppo.core import HSI
+"""Mean spectral value feature extractor for hyperspectral images."""
+
 import numpy as np
+
+from hyppo.core import HSI
+from .base import Extractor
 
 
 class MeanExtractor(Extractor):
     """Extractor that computes the mean value across spectral bands for each pixel."""
 
     def __init__(self) -> None:
+        """Initialize mean extractor."""
         super().__init__()
 
     def _extract(self, data: HSI, **inputs):

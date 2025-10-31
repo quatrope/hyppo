@@ -1,7 +1,11 @@
-from .base import Extractor
-from hyppo.core import HSI
-import numpy as np
+"""Normalized Difference Water Index (NDWI) extractor for hyperspectral images."""
+
 import warnings
+
+import numpy as np
+
+from hyppo.core import HSI
+from .base import Extractor
 
 
 class NDWIExtractor(Extractor):
@@ -30,6 +34,7 @@ class NDWIExtractor(Extractor):
     """
 
     def __init__(self, green_wavelength=560, nir_wavelength=850):
+        """Initialize NDWI extractor with target wavelengths."""
         super().__init__()
         self.green_wavelength = green_wavelength
         self.nir_wavelength = nir_wavelength
@@ -103,4 +108,6 @@ class NDWIExtractor(Extractor):
         if self.nir_wavelength <= 0:
             raise ValueError("nir_wavelength must be positive")
         if self.green_wavelength >= self.nir_wavelength:
-            warnings.warn("green_wavelength should be less than nir_wavelength")
+            warnings.warn(
+                "green_wavelength should be less than nir_wavelength"
+            )

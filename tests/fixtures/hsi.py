@@ -1,10 +1,9 @@
-"""
-HSI fixtures
-"""
+"""HSI fixtures."""
 
-from hyppo.core import HSI
 import numpy as np
 import pytest
+
+from hyppo.core import HSI
 
 
 @pytest.fixture

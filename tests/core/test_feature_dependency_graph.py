@@ -1,13 +1,16 @@
 """Tests for FeatureDependencyGraph."""
 
-from hyppo.core import FeatureDependencyGraph
-from hyppo.extractor.base import Extractor
-from hyppo.extractor.mean import MeanExtractor
-from hyppo.extractor.std import StdExtractor
 import numpy as np
 import pytest
-from tests.fixtures.extractors import (AdvancedExtractor, MediumExtractor,
-                                       SimpleExtractor)
+
+from hyppo.core import FeatureDependencyGraph
+from hyppo.extractor.base import Extractor
+from hyppo.extractor.std import StdExtractor
+from tests.fixtures.extractors import (
+    AdvancedExtractor,
+    MediumExtractor,
+    SimpleExtractor,
+)
 
 
 class TestFeatureDependencyGraph:
@@ -255,5 +258,7 @@ class TestFeatureDependencyGraph:
         graph.add_extractor("a", a, {"b": "b"})
         graph.add_extractor("b", b, {"a": "a"})
 
-        with pytest.raises(ValueError, match="Cannot determine execution order"):
+        with pytest.raises(
+            ValueError, match="Cannot determine execution order"
+        ):
             graph.get_execution_order()

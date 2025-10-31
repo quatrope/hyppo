@@ -1,6 +1,7 @@
-from hyppo.utils.bunch import Bunch
 import numpy as np
 import pandas as pd
+
+from hyppo.utils.bunch import Bunch
 
 
 class Feature(Bunch):
@@ -72,7 +73,9 @@ class FeatureCollection(Bunch):
         super().__init__("FeatureCollection", data)
 
     @classmethod
-    def from_features(cls, features: dict[str, Feature]) -> "FeatureCollection":
+    def from_features(
+        cls, features: dict[str, Feature]
+    ) -> "FeatureCollection":
         """
         Create a FeatureCollection from a dictionary of features.
 
@@ -103,7 +106,9 @@ class FeatureCollection(Bunch):
             if isinstance(result, Feature):
                 metadata[extractor_name] = {
                     "extractor_type": (
-                        type(result.extractor).__name__ if result.extractor else None
+                        type(result.extractor).__name__
+                        if result.extractor
+                        else None
                     ),
                     "inputs_used": result.inputs_used,
                     "feature_keys": (
@@ -121,7 +126,11 @@ class FeatureCollection(Bunch):
     def to_dict(self):
         """Convert to a regular nested dictionary."""
         return {
-            name: (result.to_dict() if isinstance(result, Feature) else dict(result))
+            name: (
+                result.to_dict()
+                if isinstance(result, Feature)
+                else dict(result)
+            )
             for name, result in self.items()
         }
 

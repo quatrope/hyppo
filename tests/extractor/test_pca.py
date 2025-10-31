@@ -1,14 +1,17 @@
 """Tests for PCAExtractor."""
 
-from hyppo.extractor.pca import PCAExtractor
 import numpy as np
 import pytest
+
+from hyppo.extractor.pca import PCAExtractor
 
 
 class TestPCAExtractor:
     """Test cases for PCAExtractor."""
 
-    @pytest.mark.skip(reason="Paper reference validation pending implementation")
+    @pytest.mark.skip(
+        reason="Paper reference validation pending implementation"
+    )
     def test_paper_reference_result(self, sample_hsi):
         """Test results match reference values from literature."""
         # TODO: Implement validation against reference paper results

@@ -1,10 +1,9 @@
-"""
-Tests for the HSI (Hyperspectral Image) module.
-"""
+"""Tests for the HSI (Hyperspectral Image) module."""
 
-from hyppo.core import HSI
 import numpy as np
 import pytest
+
+from hyppo.core import HSI
 
 
 class TestHSI:
@@ -40,13 +39,17 @@ class TestHSI:
         wavelengths = np.linspace(400, 1000, 50)
         metadata = {"source": "test", "date": "2025-01-01"}
 
-        hsi = HSI(reflectance=reflectance, wavelengths=wavelengths, metadata=metadata)
+        hsi = HSI(
+            reflectance=reflectance, wavelengths=wavelengths, metadata=metadata
+        )
 
         assert hsi.metadata == metadata
 
     def test_reflectance_not_array(self):
         """Test error when reflectance is not numpy array."""
-        with pytest.raises(TypeError, match="Reflectance must be a numpy array"):
+        with pytest.raises(
+            TypeError, match="Reflectance must be a numpy array"
+        ):
             HSI(reflectance=[[1, 2], [3, 4]], wavelengths=np.array([400, 500]))
 
     def test_reflectance_wrong_dimensions(self):
@@ -59,8 +62,13 @@ class TestHSI:
 
     def test_wavelengths_not_array(self):
         """Test error when wavelengths is not numpy array."""
-        with pytest.raises(TypeError, match="Wavelengths must be a numpy array"):
-            HSI(reflectance=np.random.rand(10, 10, 50), wavelengths=[400, 500, 600])
+        with pytest.raises(
+            TypeError, match="Wavelengths must be a numpy array"
+        ):
+            HSI(
+                reflectance=np.random.rand(10, 10, 50),
+                wavelengths=[400, 500, 600],
+            )
 
     def test_wavelengths_wrong_dimensions(self):
         """Test error when wavelengths is not 1D."""
@@ -91,7 +99,8 @@ class TestHSI:
     def test_wavelength_band_mismatch(self):
         """Test error when wavelengths don't match bands."""
         with pytest.raises(
-            ValueError, match="Number of wavelengths .* must match number of bands"
+            ValueError,
+            match="Number of wavelengths .* must match number of bands",
         ):
             HSI(
                 reflectance=np.random.rand(10, 10, 50),

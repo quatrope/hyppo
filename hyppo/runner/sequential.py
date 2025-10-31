@@ -1,5 +1,7 @@
-from .base import BaseRunner
+"""Sequential runner for single-threaded feature extraction."""
+
 from hyppo.core import Feature, FeatureCollection, HSI
+from .base import BaseRunner
 
 
 class SequentialRunner(BaseRunner):

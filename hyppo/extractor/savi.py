@@ -1,7 +1,11 @@
-from .base import Extractor
-from hyppo.core import HSI
-import numpy as np
+"""Soil-Adjusted Vegetation Index (SAVI) extractor for hyperspectral images."""
+
 import warnings
+
+import numpy as np
+
+from hyppo.core import HSI
+from .base import Extractor
 
 
 class SAVIExtractor(Extractor):
@@ -33,14 +37,14 @@ class SAVIExtractor(Extractor):
     """
 
     def __init__(self, red_wavelength=660, nir_wavelength=850, L=0.5):
+        """Initialize SAVI extractor with target wavelengths and soil brightness correction."""
         super().__init__()
         self.red_wavelength = red_wavelength
         self.nir_wavelength = nir_wavelength
         self.L = L
 
     def _extract(self, data: HSI, **inputs):
-        """
-        Compute the SAVI index from a hyperspectral image.
+        """Compute the SAVI index from a hyperspectral image.
 
         Parameters
         ----------
@@ -66,7 +70,6 @@ class SAVIExtractor(Extractor):
             - original_shape : tuple of int
                 Shape of the original HSI cube.
         """
-
         reflectance = data.reflectance
         wavelength = data.wavelengths
 

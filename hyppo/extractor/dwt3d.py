@@ -1,8 +1,11 @@
-from .base import Extractor
-from hyppo.core import HSI
+"""Discrete Wavelet Transform (3D) feature extractor for hyperspectral images."""
+
 import numpy as np
 import pywt
 from skimage.transform import resize
+
+from hyppo.core import HSI
+from .base import Extractor
 
 
 class DWT3DExtractor(Extractor):
@@ -37,6 +40,7 @@ class DWT3DExtractor(Extractor):
     """
 
     def __init__(self, wavelet="db4", mode="symmetric", levels=1):
+        """Initialize DWT3D extractor with wavelet parameters."""
         super().__init__()
         self.wavelet = wavelet
         self.mode = mode
@@ -74,7 +78,10 @@ class DWT3DExtractor(Extractor):
 
         # Apply 3D DWT
         coefficients = pywt.wavedecn(
-            reflectance, wavelet=self.wavelet, mode=self.mode, level=self.levels
+            reflectance,
+            wavelet=self.wavelet,
+            mode=self.mode,
+            level=self.levels,
         )
 
         # coefficients[0] is the LLL approximation

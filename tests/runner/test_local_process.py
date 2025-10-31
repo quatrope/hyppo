@@ -1,14 +1,18 @@
+"""Tests for LocalProcessRunner."""
+
+import numpy as np
+import pytest
+
 from hyppo.core import FeatureCollection, FeatureSpace, HSI
 from hyppo.extractor.base import Extractor
 from hyppo.runner import LocalProcessRunner
-import numpy as np
-import pytest
 
 
 class SimpleTestExtractor(Extractor):
     """Simple extractor for testing."""
 
     def _extract(self, data: HSI, **inputs) -> dict:
+        """Extract simple test value."""
         return {"simple_value": float(np.mean(data.reflectance))}
 
 
@@ -17,9 +21,16 @@ class DependentTestExtractor(Extractor):
 
     @classmethod
     def get_input_dependencies(cls) -> dict:
-        return {"simple_input": {"extractor": SimpleTestExtractor, "required": True}}
+        """Return test dependencies."""
+        return {
+            "simple_input": {
+                "extractor": SimpleTestExtractor,
+                "required": True,
+            }
+        }
 
     def _extract(self, data: HSI, **inputs) -> dict:
+        """Extract dependent test value."""
         input_value = inputs["simple_input"]["simple_value"]
         return {"dependent_value": input_value * 2}
 
@@ -29,10 +40,17 @@ class OptionalDependencyExtractor(Extractor):
 
     @classmethod
     def get_input_dependencies(cls) -> dict:
-        return {"optional_input": {"extractor": SimpleTestExtractor, "required": False}}
+        """Return test dependencies."""
+        return {
+            "optional_input": {
+                "extractor": SimpleTestExtractor,
+                "required": False,
+            }
+        }
 
     @classmethod
     def get_input_default(cls, input_name: str):
+        """Return test default extractor."""
         if input_name == "optional_input":
             return SimpleTestExtractor()
         return None
@@ -68,6 +86,7 @@ class PixelModifierExtractor(Extractor):
     def __init__(
         self, row: int, col: int, marker_value: float, expected_positions: list
     ):
+        """Initialize test extractor."""
         super().__init__()
         self.row = row
         self.col = col
@@ -97,6 +116,7 @@ class TimedExtractor(Extractor):
     """Extractor that records execution time to verify parallelism."""
 
     def __init__(self, sleep_time: float):
+        """Initialize test extractor."""
         super().__init__()
         self.sleep_time = sleep_time
 
@@ -200,7 +220,10 @@ class TestLocalProcessRunner:
         assert "dependent_test" in results
         assert "dependent_value" in results["dependent_test"]["data"]
         expected_value = results["simple_test"]["data"]["simple_value"] * 2
-        assert results["dependent_test"]["data"]["dependent_value"] == expected_value
+        assert (
+            results["dependent_test"]["data"]["dependent_value"]
+            == expected_value
+        )
 
         # Cleanup
         runner._pool.close()
@@ -233,7 +256,9 @@ class TestLocalProcessRunner:
         from hyppo.extractor import MeanExtractor, PCAExtractor, StdExtractor
 
         runner = LocalProcessRunner(num_workers=2)
-        fs = FeatureSpace.from_list([MeanExtractor(), StdExtractor(), PCAExtractor()])
+        fs = FeatureSpace.from_list(
+            [MeanExtractor(), StdExtractor(), PCAExtractor()]
+        )
 
         # Act: Execute extraction
         results = runner.resolve(small_hsi, fs)
@@ -353,7 +378,9 @@ class TestLocalProcessRunner:
         # Assert: Both extractions successful
         assert len(results1) == 1
         assert len(results2) == 1
-        assert results1["simple_test"]["data"] == results2["simple_test"]["data"]
+        assert (
+            results1["simple_test"]["data"] == results2["simple_test"]["data"]
+        )
 
         # Cleanup
         runner._pool.close()
@@ -415,8 +442,14 @@ class TestLocalProcessRunner:
         # Create feature space with dependencies
         config = {
             "modifier_0": (extractors[0], {}),
-            "modifier_1": (extractors[1], {"dummy": "modifier_0"}),  # depends on 0
-            "modifier_2": (extractors[2], {"dummy": "modifier_1"}),  # depends on 1
+            "modifier_1": (
+                extractors[1],
+                {"dummy": "modifier_0"},
+            ),  # depends on 0
+            "modifier_2": (
+                extractors[2],
+                {"dummy": "modifier_1"},
+            ),  # depends on 1
         }
         fs = FeatureSpace(config)
 
@@ -532,8 +565,9 @@ class TestLocalProcessRunner:
 
     def test_execute_extractor_with_shared_hsi_function(self, small_hsi):
         """Test the worker function _execute_extractor_with_shared_hsi directly."""
-        from hyppo.runner.local_process import \
-            _execute_extractor_with_shared_hsi
+        from hyppo.runner.local_process import (
+            _execute_extractor_with_shared_hsi,
+        )
 
         # Create shared memory metadata
         runner = LocalProcessRunner(num_workers=1)
@@ -544,7 +578,9 @@ class TestLocalProcessRunner:
             extractor = SimpleTestExtractor()
 
             # Call the worker function directly
-            result = _execute_extractor_with_shared_hsi(extractor, shm_metadata, {})
+            result = _execute_extractor_with_shared_hsi(
+                extractor, shm_metadata, {}
+            )
 
             # Assert: Result should be valid
             assert "simple_value" in result
@@ -558,8 +594,9 @@ class TestLocalProcessRunner:
 
     def test_execute_extractor_with_shared_hsi_with_inputs(self, small_hsi):
         """Test the worker function with input kwargs."""
-        from hyppo.runner.local_process import \
-            _execute_extractor_with_shared_hsi
+        from hyppo.runner.local_process import (
+            _execute_extractor_with_shared_hsi,
+        )
 
         # Create shared memory metadata
         runner = LocalProcessRunner(num_workers=1)
@@ -597,7 +634,9 @@ class TestLocalProcessRunner:
 
         try:
             # Call the reconstruction function directly
-            reconstructed_hsi, shm_refs = _reconstruct_hsi_from_shared(shm_metadata)
+            reconstructed_hsi, shm_refs = _reconstruct_hsi_from_shared(
+                shm_metadata
+            )
 
             # Assert: Reconstructed HSI should match original
             assert reconstructed_hsi.shape == small_hsi.shape
@@ -605,8 +644,12 @@ class TestLocalProcessRunner:
             assert len(shm_refs) == 3  # reflectance, wavelengths, mask
 
             # Verify data matches
-            assert np.array_equal(reconstructed_hsi.reflectance, small_hsi.reflectance)
-            assert np.array_equal(reconstructed_hsi.wavelengths, small_hsi.wavelengths)
+            assert np.array_equal(
+                reconstructed_hsi.reflectance, small_hsi.reflectance
+            )
+            assert np.array_equal(
+                reconstructed_hsi.wavelengths, small_hsi.wavelengths
+            )
             assert np.array_equal(reconstructed_hsi.mask, small_hsi.mask)
             assert reconstructed_hsi.metadata == small_hsi.metadata
 

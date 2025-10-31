@@ -1,7 +1,11 @@
-from .base import Extractor
-from hyppo.core import HSI
-import numpy as np
+"""Normalized Difference Vegetation Index (NDVI) extractor for hyperspectral images."""
+
 import warnings
+
+import numpy as np
+
+from hyppo.core import HSI
+from .base import Extractor
 
 
 class NDVIExtractor(Extractor):
@@ -30,6 +34,7 @@ class NDVIExtractor(Extractor):
     """
 
     def __init__(self, red_wavelength=660, nir_wavelength=850):
+        """Initialize NDVI extractor with target wavelengths."""
         super().__init__()
         self.red_wavelength = red_wavelength
         self.nir_wavelength = nir_wavelength

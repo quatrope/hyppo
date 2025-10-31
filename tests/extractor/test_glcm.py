@@ -1,8 +1,9 @@
 """Tests for GLCMExtractor."""
 
-from hyppo.extractor.glcm import GLCMExtractor
 import numpy as np
 import pytest
+
+from hyppo.extractor.glcm import GLCMExtractor
 
 
 class TestGLCMExtractor:
@@ -185,7 +186,9 @@ class TestGLCMExtractor:
         extractor = GLCMExtractor(bands="invalid")  # type: ignore
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="bands must be None or a non-empty list"):
+        with pytest.raises(
+            ValueError, match="bands must be None or a non-empty list"
+        ):
             extractor.extract(small_hsi)
 
     def test_validate_invalid_distances(self, small_hsi):
@@ -194,7 +197,9 @@ class TestGLCMExtractor:
         extractor = GLCMExtractor(distances=[])
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="distances must be a non-empty list"):
+        with pytest.raises(
+            ValueError, match="distances must be a non-empty list"
+        ):
             extractor.extract(small_hsi)
 
     def test_validate_invalid_angles(self, small_hsi):
@@ -203,7 +208,9 @@ class TestGLCMExtractor:
         extractor = GLCMExtractor(angles=[])
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="angles must be a non-empty list"):
+        with pytest.raises(
+            ValueError, match="angles must be a non-empty list"
+        ):
             extractor.extract(small_hsi)
 
     def test_validate_invalid_window_sizes_empty(self, small_hsi):
@@ -212,17 +219,23 @@ class TestGLCMExtractor:
         extractor = GLCMExtractor(window_sizes=[])
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="window_sizes must be a non-empty list"):
+        with pytest.raises(
+            ValueError, match="window_sizes must be a non-empty list"
+        ):
             extractor.extract(small_hsi)
 
     @pytest.mark.parametrize("invalid_window", [2, 4, 1])
-    def test_validate_invalid_window_size_values(self, small_hsi, invalid_window):
+    def test_validate_invalid_window_size_values(
+        self, small_hsi, invalid_window
+    ):
         """Test validation fails with invalid window size values."""
         # Arrange: Create extractor with invalid window size
         extractor = GLCMExtractor(window_sizes=[invalid_window])
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="Each window size must be an odd integer"):
+        with pytest.raises(
+            ValueError, match="Each window size must be an odd integer"
+        ):
             extractor.extract(small_hsi)
 
     def test_validate_invalid_levels(self, small_hsi):
@@ -240,7 +253,9 @@ class TestGLCMExtractor:
         extractor = GLCMExtractor(properties=[])
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="properties must be a non-empty list"):
+        with pytest.raises(
+            ValueError, match="properties must be a non-empty list"
+        ):
             extractor.extract(small_hsi)
 
     def test_validate_invalid_orientation_mode(self, small_hsi):

@@ -1,5 +1,8 @@
-from .base import Extractor
+"""Extractor registry system for feature extractors."""
+
 from typing import Dict, List, Optional, Type
+
+from .base import Extractor
 
 
 class ExtractorRegistry:
@@ -14,11 +17,13 @@ class ExtractorRegistry:
     _initialized: bool = False
 
     def __new__(cls) -> "ExtractorRegistry":
+        """Create or return the singleton instance."""
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
 
     def __init__(self):
+        """Initialize the extractor registry."""
         if not self._initialized:
             self._registry: Dict[str, Type[Extractor]] = {}
             self._initialized = True

@@ -1,7 +1,11 @@
-from .base import BaseRunner
-from dask.distributed import Client, LocalCluster
-from hyppo.core import Feature, FeatureCollection, HSI
+"""Dask-based parallel runner for feature extraction."""
+
 from typing import Iterable
+
+from dask.distributed import Client, LocalCluster
+
+from hyppo.core import Feature, FeatureCollection, HSI
+from .base import BaseRunner
 
 try:
     from dask_jobqueue import SLURMCluster
@@ -24,6 +28,7 @@ class DaskRunner(BaseRunner):
     """
 
     def __init__(self, client: Client):
+        """Initialize DaskRunner with a Dask client."""
         super().__init__()
         self._client = client
         self._cluster = client.cluster
@@ -79,7 +84,9 @@ class DaskRunner(BaseRunner):
         if num_workers is not None and num_workers < 1:
             raise ValueError(f"Invalid number of workers: {num_workers}")
         if threads_per_worker < 1:
-            raise ValueError(f"Invalid threads per worker: {threads_per_worker}")
+            raise ValueError(
+                f"Invalid threads per worker: {threads_per_worker}"
+            )
 
         cluster = LocalCluster(
             n_workers=num_workers,
@@ -190,8 +197,7 @@ class DaskRunner(BaseRunner):
         return cls(client)
 
     def resolve(self, data: HSI, feature_space) -> FeatureCollection:
-        """
-        Resolve feature extraction using a complete Dask graph with distributed execution.
+        """Resolve feature extraction using a complete Dask graph with distributed execution.
 
         Args:
             data: HSI object to process
@@ -200,7 +206,6 @@ class DaskRunner(BaseRunner):
         Returns:
             FeatureCollection with extraction results
         """
-
         feature_graph = feature_space.feature_graph
 
         # Build complete Dask computation graph
@@ -217,7 +222,9 @@ class DaskRunner(BaseRunner):
         for extractor_name, result_data in zip(result_keys, computed_results):
             if result_data is not None:
                 extractor = feature_graph.extractors[extractor_name]
-                input_mapping = feature_graph.get_input_mapping_for(extractor_name)
+                input_mapping = feature_graph.get_input_mapping_for(
+                    extractor_name
+                )
 
                 results[extractor_name] = Feature(
                     result_data, extractor, list(input_mapping.keys())
@@ -263,7 +270,9 @@ class DaskRunner(BaseRunner):
 
             # Add metadata about input names and defaults
             task_args.append(list(input_mapping.keys()))  # input names
-            task_args.append(self._get_defaults_for_extractor(extractor))  # defaults
+            task_args.append(
+                self._get_defaults_for_extractor(extractor)
+            )  # defaults
 
             # Create the task tuple for this extractor
             graph[extractor_name] = tuple(task_args)

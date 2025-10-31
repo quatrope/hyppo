@@ -1,6 +1,9 @@
+"""Tests for base Extractor class."""
+
+import pytest
+
 from hyppo.core import HSI
 from hyppo.extractor.base import Extractor
-import pytest
 
 
 class ConcreteExtractor(Extractor):
@@ -26,6 +29,7 @@ class ConcreteExtractorWithDependencies(Extractor):
 
     @classmethod
     def get_input_dependencies(cls) -> dict:
+        """Return test dependencies."""
         return {"mean": "mean", "std": "std"}
 
     def _extract(self, data: HSI, **inputs) -> dict:
@@ -37,6 +41,7 @@ class ConcreteExtractorWithDefaults(Extractor):
 
     @classmethod
     def get_input_default(cls, input_name: str) -> "Extractor | None":
+        """Return test default extractor."""
         if input_name == "mean":
             return ConcreteExtractor()
         return None
@@ -123,7 +128,9 @@ class TestExtractor:
     def test_get_input_dependencies_custom(self):
         """Test that get_input_dependencies() can be overridden to return custom dependencies."""
         # Arrange & Act: Get custom dependencies from overridden method
-        dependencies = ConcreteExtractorWithDependencies.get_input_dependencies()
+        dependencies = (
+            ConcreteExtractorWithDependencies.get_input_dependencies()
+        )
 
         # Assert: Verify custom dependencies returned
         assert dependencies == {"mean": "mean", "std": "std"}
@@ -140,7 +147,9 @@ class TestExtractor:
         """Test that get_input_default() can be overridden to return extractor instances."""
         # Arrange & Act: Get defaults for known and unknown inputs
         default_mean = ConcreteExtractorWithDefaults.get_input_default("mean")
-        default_other = ConcreteExtractorWithDefaults.get_input_default("other")
+        default_other = ConcreteExtractorWithDefaults.get_input_default(
+            "other"
+        )
 
         # Assert: Verify correct defaults returned
         assert isinstance(default_mean, ConcreteExtractor)

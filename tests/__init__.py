@@ -1,1 +1,1 @@
-# Tests for HYPPO (Hyperspectral Processing)
+"""Test suite for HYPPO."""

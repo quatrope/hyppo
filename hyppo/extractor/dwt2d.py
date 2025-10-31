@@ -1,8 +1,11 @@
-from .base import Extractor
-from hyppo.core import HSI
+"""Discrete Wavelet Transform (2D) feature extractor for hyperspectral images."""
+
 import numpy as np
 import pywt
 from skimage.transform import resize
+
+from hyppo.core import HSI
+from .base import Extractor
 
 
 class DWT2DExtractor(Extractor):
@@ -43,6 +46,7 @@ class DWT2DExtractor(Extractor):
     """
 
     def __init__(self, wavelet="db4", mode="symmetric", levels=2):
+        """Initialize DWT2D extractor with wavelet parameters."""
         super().__init__()
         self.wavelet = wavelet
         self.mode = mode

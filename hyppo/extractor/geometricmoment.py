@@ -1,8 +1,11 @@
-from .base import Extractor
-from hyppo.core import HSI
+"""Geometric moment feature extractor for hyperspectral images."""
+
 import numpy as np
 from skimage.util.shape import view_as_windows
 from sklearn.decomposition import PCA
+
+from hyppo.core import HSI
+from .base import Extractor
 
 
 class GeometricMomentExtractor(Extractor):
@@ -36,6 +39,7 @@ class GeometricMomentExtractor(Extractor):
     """
 
     def __init__(self, n_components=3, max_order=3, window_sizes=[3, 9, 15]):
+        """Initialize geometric moment extractor with PCA and moment parameters."""
         super().__init__()
         self.n_components = n_components
         # Max order = 6 by the paper but it is slow # TODO! Check

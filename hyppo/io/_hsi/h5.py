@@ -1,7 +1,9 @@
-import h5py
-from hyppo.core import HSI
-import numpy as np
 from pathlib import Path
+
+import h5py
+import numpy as np
+
+from hyppo.core import HSI
 
 
 def load_h5_hsi(
@@ -9,6 +11,7 @@ def load_h5_hsi(
     reflectance_path: str | None = None,
     wavelength_path: str | None = None,
 ) -> HSI:
+    """Load hyperspectral image from H5 file."""
     if not isinstance(path, Path):
         path = Path(path)
 
@@ -26,7 +29,9 @@ def load_h5_hsi(
         scaled_reflectance = reflectance.astype(np.float32) / scale_factor
 
         if "null_value" in parsed_data:
-            mask = np.all(scaled_reflectance != parsed_data["null_value"], axis=2)
+            mask = np.all(
+                scaled_reflectance != parsed_data["null_value"], axis=2
+            )
         else:
             mask = np.ones(scaled_reflectance.shape[:2], dtype=bool)
 
@@ -102,7 +107,9 @@ def _find_reflectance_dataset(
             node = f[provided_path]
             if isinstance(node, h5py.Dataset) and node.ndim == 3:
                 return node, provided_path
-        raise ValueError(f"Provided reflectance path '{provided_path}' is invalid")
+        raise ValueError(
+            f"Provided reflectance path '{provided_path}' is invalid"
+        )
 
     # Heuristic search
     candidates = []
@@ -118,7 +125,8 @@ def _find_reflectance_dataset(
                 # Prioritize reflectance over radiance
                 priority = (
                     1
-                    if "reflectance" in name_lower or "reflectancia" in name_lower
+                    if "reflectance" in name_lower
+                    or "reflectancia" in name_lower
                     else 2
                 )
                 candidates.append((priority, name, node))
@@ -141,7 +149,9 @@ def _find_wavelength_dataset(
             node = f[provided_path]
             if isinstance(node, h5py.Dataset) and node.ndim == 1:
                 return node, provided_path
-        raise ValueError(f"Provided wavelength path '{provided_path}' is invalid")
+        raise ValueError(
+            f"Provided wavelength path '{provided_path}' is invalid"
+        )
 
     # Heuristic search
     candidates = []

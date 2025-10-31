@@ -1,6 +1,4 @@
-"""
-Pytest configuration HYPPO tests.
-"""
+"""Pytest configuration HYPPO tests."""
 
 from .fixtures.hsi import sample_hsi, sample_hsi_data, small_hsi
 

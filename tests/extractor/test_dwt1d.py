@@ -14,8 +14,8 @@ class TestDWT1DExtractor:
     def test_paper_reference_result_1(self, sample_hsi):
         """Test results match reference values from literature."""
         # TODO: Implement validation against reference paper results
-        # Bruce, K., Koger, C., & Li, J. (2002). Dimensionality reduction
-        # of hyperspectral data using discrete wavelet transform feature extraction.
+        # Bruce, K., Koger, C., & Li, J. (2002).
+        # Dimensionality reduction of hyperspectral data using DWT.
         pass
 
     @pytest.mark.skip(

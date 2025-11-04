@@ -12,7 +12,8 @@ class MNFExtractor(Extractor):
     Minimum Noise Fraction (MNF) feature extractor for hyperspectral images.
 
     MNF is a noise-adjusted principal component analysis that maximizes
-    signal-to-noise ratio by whitening the noise covariance before applying PCA.
+    signal-to-noise ratio by whitening the noise covariance before
+    applying PCA.
 
     Parameters
     ----------

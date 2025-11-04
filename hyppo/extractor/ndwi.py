@@ -1,4 +1,7 @@
-"""Normalized Difference Water Index (NDWI) extractor for hyperspectral images."""
+"""Normalized Difference Water Index (NDWI) extractor.
+
+Provides NDWI feature extraction for hyperspectral images.
+"""
 
 import warnings
 
@@ -9,8 +12,7 @@ from .base import Extractor
 
 
 class NDWIExtractor(Extractor):
-    """
-    Normalized Difference Water Index (NDWI) extractor for hyperspectral images.
+    """Normalized Difference Water Index (NDWI) extractor.
 
     NDWI is a water-related vegetation index computed as:
 

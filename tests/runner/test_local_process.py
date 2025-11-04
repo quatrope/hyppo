@@ -81,7 +81,7 @@ class DataAccessExtractor(Extractor):
 
 
 class PixelModifierExtractor(Extractor):
-    """Extractor that modifies a specific pixel and reads all positions to verify shared memory."""
+    """Extractor that modifies a specific pixel to verify shared memory."""
 
     def __init__(
         self, row: int, col: int, marker_value: float, expected_positions: list
@@ -97,8 +97,8 @@ class PixelModifierExtractor(Extractor):
         # First, modify our designated pixel
         data.reflectance[self.row, self.col, 0] = self.marker_value
 
-        # Then read all the positions to see what other workers have written
-        # If memory is truly shared, we should see modifications from workers that ran before us
+        # Then read all positions to see what other workers have written
+        # If shared, we see modifications from workers that ran before us
         observed_values = {}
         for i, (r, c) in enumerate(self.expected_positions):
             observed_values[f"pos_{i}"] = float(data.reflectance[r, c, 0])
@@ -175,7 +175,7 @@ class TestLocalProcessRunner:
         runner._pool.join()
 
     def test_init_invalid_workers(self):
-        """Test LocalProcessRunner.__init__() raises error for invalid worker count."""
+        """Test LocalProcessRunner raises error for invalid workers."""
         # Act & Assert: Invalid worker count
         with pytest.raises(ValueError, match="Invalid number of workers"):
             LocalProcessRunner(num_workers=0)
@@ -413,10 +413,11 @@ class TestLocalProcessRunner:
         runner._pool.join()
 
     def test_shared_memory_modifications_are_visible(self, small_hsi):
-        """Test that modifications to shared memory are visible across workers.
+        """Test modifications to shared memory are visible across workers.
 
-        Since extractors run sequentially in topological order, each extractor
-        should see the modifications made by previous extractors if memory is shared.
+        Since extractors run sequentially in topological order, each
+        extractor should see modifications made by previous extractors
+        if memory is shared.
         """
         # Arrange: Setup positions and marker values
         positions = [(0, 0), (0, 1), (1, 0)]
@@ -461,10 +462,10 @@ class TestLocalProcessRunner:
         # Assert: All extractors completed
         assert len(results) == num_extractors
 
-        # The critical test: verify that each extractor saw the previous modifications
-        # Extractor 0 runs first: should see original values at pos[1] and pos[2], marker at pos[0]
-        # Extractor 1 runs second: should see marker at pos[0], marker at pos[1], original at pos[2]
-        # Extractor 2 runs third: should see all markers
+        # Critical test: verify each extractor saw previous modifications
+        # Extractor 0: original at pos[1] and pos[2], marker at pos[0]
+        # Extractor 1: marker at pos[0] and pos[1], original at pos[2]
+        # Extractor 2: all markers
 
         # Check extractor 0 (first to run)
         obs_0 = results["modifier_0"]["data"]["observed_values"]
@@ -521,20 +522,21 @@ class TestLocalProcessRunner:
         end_all = time.time()
         total_time = end_all - start_all
 
-        # Assert: If executed in parallel, total time should be ~0.5s (one sleep time)
+        # Assert: If parallel, total time should be ~0.5s (one sleep time)
         # If sequential, it would be ~1.5s (three sleep times)
-        # Allow some overhead for process creation and synchronization
+        # Allow overhead for process creation and synchronization
         assert len(results) == num_extractors
 
-        # With parallel execution, total time should be close to sleep_time, not num_extractors * sleep_time
+        # With parallel execution, time should be close to sleep_time
         # Allow 100% overhead for process management
-        min_sequential_time = (
-            sleep_time * num_extractors * 0.8
-        )  # 1.2 seconds if sequential
+        # 1.2 seconds if sequential
+        min_sequential_time = sleep_time * num_extractors * 0.8
 
-        assert (
-            total_time < min_sequential_time
-        ), f"Execution took {total_time:.3f}s, expected < {min_sequential_time:.3f}s for parallel execution"
+        msg = (
+            f"Execution took {total_time:.3f}s, "
+            f"expected < {min_sequential_time:.3f}s for parallel"
+        )
+        assert total_time < min_sequential_time, msg
 
         # Cleanup
         runner._pool.close()
@@ -564,7 +566,7 @@ class TestLocalProcessRunner:
         pool.join()
 
     def test_execute_extractor_with_shared_hsi_function(self, small_hsi):
-        """Test the worker function _execute_extractor_with_shared_hsi directly."""
+        """Test worker function _execute_extractor_with_shared_hsi."""
         from hyppo.runner.local_process import (
             _execute_extractor_with_shared_hsi,
         )

@@ -101,7 +101,8 @@ def _extract_params(extractor) -> dict:
         if hasattr(extractor, param_name):
             value = getattr(extractor, param_name)
 
-            # Skip attributes that look like internal state (not constructor params)
+            # Skip attributes that look like internal state
+            # (not constructor params)
             if param_name.startswith("_"):
                 continue
 

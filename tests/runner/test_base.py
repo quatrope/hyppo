@@ -56,8 +56,7 @@ class TestBaseRunner:
         assert isinstance(result, dict)
 
     def test_subclass_without_resolve_fails(self):
-        """Test that subclass without resolve implementation cannot be instantiated."""
-
+        """Test subclass without resolve cannot be instantiated."""
         # Arrange: Define incomplete subclass
         class IncompleteRunner(BaseRunner):
             pass

@@ -18,7 +18,7 @@ class TestNDWIExtractor:
         """Test results match reference values from literature."""
         # TODO: Implement validation against reference paper results
         # Gao (1996) - NDWI for remote sensing of vegetation liquid water
-        # McFeeters (1996) - The use of NDWI for the delineation of open water features
+        # McFeeters (1996) - NDWI for delineation of open water
         pass
 
     def test_extract_basic_with_defaults(self, small_hsi):
@@ -92,6 +92,7 @@ class TestNDWIExtractor:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             result = extractor.extract(small_hsi)
+            assert "features" in result
             assert len(w) >= 1
             assert "far from target" in str(w[0].message).lower()
 
@@ -104,6 +105,7 @@ class TestNDWIExtractor:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             result = extractor.extract(small_hsi)
+            assert "features" in result
             assert len(w) >= 1
             assert "far from target" in str(w[0].message).lower()
 
@@ -115,7 +117,7 @@ class TestNDWIExtractor:
         # Act & Assert: Verify warning is raised
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            result = extractor.extract(small_hsi)
+            extractor.extract(small_hsi)
             assert len(w) >= 1
 
     def test_validate_negative_green_wavelength(self, small_hsi):
@@ -170,7 +172,7 @@ class TestNDWIExtractor:
         # Act & Assert: Verify warning is raised
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            result = extractor.extract(small_hsi)
+            extractor.extract(small_hsi)
             assert len(w) >= 1
             assert "should be less than" in str(w[0].message).lower()
 
@@ -247,7 +249,7 @@ class TestNDWIExtractor:
 
     def test_gao_variant_behavior(self, small_hsi):
         """Test that Gao NDWI variant can be approximated with NIR and SWIR."""
-        # Arrange: Use NIR wavelength for both (since we don't have SWIR in small_hsi)
+        # Arrange: Use NIR wavelength for both (no SWIR in small_hsi)
         extractor = NDWIExtractor(green_wavelength=850, nir_wavelength=800)
 
         # Act: Execute extraction

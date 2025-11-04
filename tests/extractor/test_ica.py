@@ -1,6 +1,5 @@
 """Tests for ICAExtractor."""
 
-import numpy as np
 import pytest
 
 from hyppo.extractor.ica import ICAExtractor
@@ -139,7 +138,7 @@ class TestICAExtractor:
         assert result["n_components"] == 2
 
     @pytest.mark.skip(
-        reason="Implementation bug: whiten=False causes reshape error. Check implementation."
+        reason="Implementation bug: whiten=False causes reshape error."
     )
     def test_whiten_false_behavior(self, small_hsi):
         """Test extraction with whiten=False."""
@@ -191,7 +190,7 @@ class TestICAExtractor:
         result1 = extractor1.extract(small_hsi)
         result2 = extractor2.extract(small_hsi)
 
-        # Assert: Verify results are similar (not exact due to numerical precision)
+        # Assert: Verify results are similar (not exact due to precision)
         features1 = result1["features"]
         features2 = result2["features"]
         assert features1.shape == features2.shape
@@ -227,7 +226,7 @@ class TestICAExtractor:
         # Act: Execute extraction
         result = extractor.extract(small_hsi)
 
-        # Assert: Verify mean is present (may be None depending on sklearn version)
+        # Assert: Verify mean present (may be None per sklearn version)
         assert "mean" in result
 
     def test_ica_object_stored(self, small_hsi):
@@ -238,6 +237,7 @@ class TestICAExtractor:
         # Act: Execute extraction
         result = extractor.extract(small_hsi)
 
-        # Assert: Verify ICA object is stored
+        # Assert: Verify ICA object is stored and result is valid
+        assert "features" in result
         assert extractor.ica is not None
         assert hasattr(extractor.ica, "components_")

@@ -37,7 +37,10 @@ class SAVIExtractor(Extractor):
     """
 
     def __init__(self, red_wavelength=660, nir_wavelength=850, L=0.5):
-        """Initialize SAVI extractor with target wavelengths and soil brightness correction."""
+        """Initialize SAVI extractor.
+
+        With target wavelengths and soil brightness correction.
+        """
         super().__init__()
         self.red_wavelength = red_wavelength
         self.nir_wavelength = nir_wavelength

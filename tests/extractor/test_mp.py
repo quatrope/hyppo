@@ -1,6 +1,5 @@
 """Tests for MPExtractor."""
 
-import numpy as np
 import pytest
 
 from hyppo.extractor.mp import MPExtractor

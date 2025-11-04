@@ -241,13 +241,13 @@ class TestLoadH5Specific:
 
             hsi = io.load_h5_hsi(tmp_path)
 
-            # Check mask creation - a pixel is valid only if ALL bands are valid
+            # Check mask - a pixel is valid only if ALL bands are valid
             assert isinstance(hsi, HSI)
             assert (
-                hsi.mask[0, 0] == False
+                not hsi.mask[0, 0]
             )  # First pixel should be masked (all bands null)
             assert (
-                hsi.mask[1, 1] == False
+                not hsi.mask[1, 1]
             )  # Second pixel should be masked (one band null)
             assert (
                 np.sum(hsi.mask) < spatial_shape[0] * spatial_shape[1]

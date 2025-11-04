@@ -14,8 +14,8 @@ class TestDWT3DExtractor:
     def test_paper_reference_result_1(self, sample_hsi):
         """Test results match reference values from literature."""
         # TODO: Implement validation against reference paper results
-        # Qian, Ye, and Zhou (2012): Decomposed hyperspectral images at different
-        # scales, orientations, and frequencies using 3-D wavelets.
+        # Qian, Ye, and Zhou (2012): Decomposed hyperspectral images
+        # at different scales, orientations using 3-D wavelets.
         pass
 
     @pytest.mark.skip(

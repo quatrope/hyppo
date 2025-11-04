@@ -240,7 +240,8 @@ class TestZernikeMomentExtractor:
         # Act: Execute extraction
         result = extractor.extract(small_hsi)
 
-        # Assert: Verify PCA object is stored
+        # Assert: Verify PCA object is stored and result is valid
+        assert "features" in result
         assert extractor.pca is not None
         assert hasattr(extractor.pca, "explained_variance_ratio_")
 
@@ -278,7 +279,7 @@ class TestZernikeMomentExtractor:
         result = extractor.extract(small_hsi)
 
         # Assert: Verify extraction successful
-        # Note: Actual rotation invariance would require testing with rotated images
+        # Note: Actual rotation invariance needs rotated images
         assert "features" in result
         assert result["features"].shape[0] == small_hsi.height
 

@@ -51,7 +51,7 @@ class TestSaveFeatureCollection:
     def test_save_feature_collection_invalid_extension(
         self, sample_feature_collection
     ):
-        """Test that save_feature_collection raises ValueError for invalid extension."""
+        """Test save_feature_collection raises error for invalid extension."""
         # Arrange: Create path with wrong extension
         with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as tmp:
             tmp_path = tmp.name
@@ -64,7 +64,7 @@ class TestSaveFeatureCollection:
             Path(tmp_path).unlink(missing_ok=True)
 
     def test_save_feature_collection_empty_collection(self):
-        """Test that save_feature_collection raises ValueError for empty collection."""
+        """Test save_feature_collection raises error for empty collection."""
         # Arrange: Create empty collection
         empty_collection = FeatureCollection({})
 
@@ -90,7 +90,7 @@ class TestSaveFeatureCollection:
             # Act: Save collection
             io.save_feature_collection(sample_feature_collection, tmp_path)
 
-            # Assert: Verify features group exists and contains feature datasets
+            # Assert: Verify features group and feature datasets exist
             with h5py.File(tmp_path, "r") as f:
                 assert "features" in f
                 assert "mean" in f["features"]
@@ -251,7 +251,7 @@ class TestFeatureCollectionSaveMethod:
             # Act: Call save method
             sample_feature_collection.save(tmp_path)
 
-            # Assert: Verify file structure matches save_feature_collection behavior
+            # Assert: Verify file structure matches expected behavior
             with h5py.File(tmp_path, "r") as f:
                 assert "features" in f
                 assert "metadata" in f

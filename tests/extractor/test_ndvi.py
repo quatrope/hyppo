@@ -91,6 +91,7 @@ class TestNDVIExtractor:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             result = extractor.extract(small_hsi)
+            assert "features" in result
             assert len(w) >= 1
             assert "far from target" in str(w[0].message).lower()
 
@@ -103,6 +104,7 @@ class TestNDVIExtractor:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             result = extractor.extract(small_hsi)
+            assert "features" in result
             assert len(w) >= 1
             assert "far from target" in str(w[0].message).lower()
 
@@ -114,7 +116,7 @@ class TestNDVIExtractor:
         # Act & Assert: Verify warning is raised
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            result = extractor.extract(small_hsi)
+            extractor.extract(small_hsi)
             assert len(w) >= 1
 
     def test_validate_negative_red_wavelength(self, small_hsi):
@@ -169,7 +171,7 @@ class TestNDVIExtractor:
         # Act & Assert: Verify warning is raised
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            result = extractor.extract(small_hsi)
+            extractor.extract(small_hsi)
             assert len(w) >= 1
             assert "should be less than" in str(w[0].message).lower()
 

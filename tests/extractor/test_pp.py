@@ -1,6 +1,5 @@
 """Tests for PPExtractor."""
 
-import numpy as np
 import pytest
 
 from hyppo.extractor.pp import PPExtractor

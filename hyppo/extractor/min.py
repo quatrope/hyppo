@@ -7,7 +7,10 @@ from .base import Extractor
 
 
 class MinExtractor(Extractor):
-    """Extractor that computes the minimum value across spectral bands for each pixel."""
+    """Extractor that computes minimum value across spectral bands.
+
+    Computes the minimum value across spectral bands for each pixel.
+    """
 
     def __init__(self) -> None:
         """Initialize min extractor."""

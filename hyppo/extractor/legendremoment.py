@@ -13,11 +13,11 @@ class LegendreMomentExtractor(Extractor):
     """
     Legendre Moment feature extractor for hyperspectral images (HSI).
 
-    Computes multiscale Legendre moments on the principal components of the HSI.
-    For each principal component, the image is processed with sliding windows of
-    specified sizes, and Legendre polynomials up to `max_order` are used to compute
-    orthogonal moments. The features from all scales and components are concatenated
-    into the final feature set.
+    Computes multiscale Legendre moments on the principal components of
+    the HSI. For each principal component, the image is processed with
+    sliding windows of specified sizes, and Legendre polynomials up to
+    `max_order` are used to compute orthogonal moments. The features from
+    all scales and components are concatenated into the final feature set.
 
     Parameters
     ----------
@@ -36,13 +36,13 @@ class LegendreMomentExtractor(Extractor):
         Morphological profiles based on differently shaped structuring elements
         for classification of images with very high spatial resolution.
         IEEE JSTARS, 7(12), 4644–4652.
-    Zhou, Y., & Chellappa, R. (2004). Multiscale Legendre moments for image representation.
-        Pattern Recognition, 37(7), 1387–1397.
+    Zhou, Y., & Chellappa, R. (2004). Multiscale Legendre moments for
+        image representation. Pattern Recognition, 37(7), 1387–1397.
 
     """
 
     def __init__(self, n_components=3, max_order=3, window_sizes=[3, 9, 15]):
-        """Initialize Legendre moment extractor with PCA and polynomial parameters."""
+        """Initialize Legendre moment extractor with parameters."""
         super().__init__()
         self.n_components = n_components
         self.max_order = max_order
@@ -70,9 +70,9 @@ class LegendreMomentExtractor(Extractor):
         block_size = 50_000
 
         for i in range(0, N, block_size):
-            batch = patches[i : i + block_size]
+            batch = patches[i:i + block_size]
             product = batch[:, None, :, :] * kernels[None, :, :, :]
-            moments[i : i + block_size] = product.sum(axis=(-2, -1))
+            moments[i:i + block_size] = product.sum(axis=(-2, -1))
 
         return moments
 
@@ -107,11 +107,13 @@ class LegendreMomentExtractor(Extractor):
         dict
             Dictionary containing:
                 - "features": np.ndarray, shape (H, W, n_features)
-                    Legendre moment features concatenated across scales and components.
+                    Legendre moment features concatenated across scales
+                    and components.
                 - "explained_variance_ratio": array
                     Variance ratio explained by each PCA component.
                 - "n_components": int, number of PCA components used.
-                - "window_sizes": list of int, window sizes used for multiscale computation.
+                - "window_sizes": list of int, window sizes used for
+                    multiscale computation.
                 - "max_order": int, maximum Legendre polynomial order used.
         """
         reflectance = data.reflectance

@@ -1,4 +1,4 @@
-"""Discrete Wavelet Transform (3D) feature extractor for hyperspectral images."""
+"""Discrete Wavelet Transform (3D) feature extractor for HSI."""
 
 import numpy as np
 import pywt
@@ -65,12 +65,14 @@ class DWT3DExtractor(Extractor):
         dict
             Dictionary containing:
                 - "features": np.ndarray of shape (H, W, B * n_subbands)
-                    Upsampled wavelet coefficient maps stacked along the last axis.
+                    Upsampled wavelet coefficient maps stacked along
+                    the last axis.
                 - "wavelet": str, wavelet used for decomposition
                 - "mode": str, signal extension mode
                 - "levels": int, number of decomposition levels
                 - "n_features": int, total number of features per pixel
-                - "original_shape": tuple, original shape of the HSI cube (H, W, B)
+                - "original_shape": tuple, original shape of the HSI
+                    cube (H, W, B)
         """
         reflectance = data.reflectance
         height, width, bands = reflectance.shape
@@ -85,7 +87,8 @@ class DWT3DExtractor(Extractor):
         )
 
         # coefficients[0] is the LLL approximation
-        # coefficients[1:] are dictionaries with subbands like 'aad', 'ada', ..., 'ddd'
+        # coefficients[1:] are dictionaries with subbands like
+        # 'aad', 'ada', ..., 'ddd'
         all_subbands = []
 
         # Upsample LLL

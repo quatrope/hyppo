@@ -1,4 +1,4 @@
-"""Local Binary Pattern (LBP) texture feature extractor for hyperspectral images."""
+"""Local Binary Pattern (LBP) texture feature extractor for HSI."""
 
 import numpy as np
 from skimage.feature import local_binary_pattern
@@ -11,9 +11,9 @@ class LBPExtractor(Extractor):
     """
     Local Binary Pattern (LBP) feature extractor for hyperspectral images.
 
-    Computes LBP texture features for specified bands of an HSI cube. By default,
-    all bands are processed. Each pixel's spectral neighborhood is encoded using
-    a circular pattern of points.
+    Computes LBP texture features for specified bands of an HSI cube.
+    By default, all bands are processed. Each pixel's spectral
+    neighborhood is encoded using a circular pattern of points.
 
     Parameters
     ----------
@@ -24,14 +24,15 @@ class LBPExtractor(Extractor):
     n_points : int or None
         Number of sampling points for the LBP. If None, defaults to 8 * radius.
     method : str
-        LBP computation method. Options: "default", "ror", "uniform", "nri_uniform", "var".
-        Default is "uniform".
+        LBP computation method. Options: "default", "ror", "uniform",
+        "nri_uniform", "var". Default is "uniform".
 
     References
     ----------
-    Ojala, T., & Pietikainen, M. (2002). Multiresolution gray-scale and rotation invariant
-    texture classification with local binary patterns. IEEE Transactions on Pattern Analysis
-    and Machine Intelligence, 24(7), 971–987. doi:10.1109/TPAMI.2002.1017623
+    Ojala, T., & Pietikainen, M. (2002). Multiresolution gray-scale and
+        rotation invariant texture classification with local binary
+        patterns. IEEE Transactions on Pattern Analysis and Machine
+        Intelligence, 24(7), 971–987. doi:10.1109/TPAMI.2002.1017623
 
     """
 
@@ -49,7 +50,7 @@ class LBPExtractor(Extractor):
         self.method = method
 
     def _compute_lbp_responses(self, reflectance):
-        """Compute LBP for all specified bands"""
+        """Compute LBP for all specified bands."""
         responses = {}
         if self.bands is None:
             bands_to_process = list(range(reflectance.shape[2]))
@@ -61,7 +62,8 @@ class LBPExtractor(Extractor):
             for band in bands_to_process:
                 if band < 0 or band > max_band_index:
                     raise ValueError(
-                        f"Band index {band} is out of range for input with {max_band_index + 1} bands."
+                        f"Band index {band} is out of range for input "
+                        f"with {max_band_index + 1} bands."
                     )
 
         for band_idx in bands_to_process:

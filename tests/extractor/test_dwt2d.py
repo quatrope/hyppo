@@ -14,9 +14,9 @@ class TestDWT2DExtractor:
     def test_paper_reference_result_1(self, sample_hsi):
         """Test results match reference values from literature."""
         # TODO: Implement validation against reference paper results
-        # Gormus, A., Canagarajah, C. N., & Achim, A. (2012). Hyperspectral image
-        # classification using 2-D wavelet decomposition and spatial-spectral
-        # information fusion.
+        # Gormus, A., Canagarajah, C. N., & Achim, A. (2012).
+        # Hyperspectral image classification using 2-D wavelet
+        # decomposition and spatial-spectral information fusion.
         pass
 
     @pytest.mark.skip(
@@ -25,8 +25,8 @@ class TestDWT2DExtractor:
     def test_paper_reference_result_2(self, sample_hsi):
         """Test wavelet decomposition follows established theory."""
         # TODO: Implement validation against theoretical results
-        # Quesada-Barriuso, J., Arguello, H., & Heras, P. (2014). Feature extraction
-        # from hyperspectral images using 2-D discrete wavelet transform.
+        # Quesada-Barriuso, J., Arguello, H., & Heras, P. (2014).
+        # Feature extraction from HSI using 2-D DWT.
         pass
 
     @pytest.mark.skip(

@@ -119,7 +119,8 @@ def _build_feature_space(config_dict: Dict[str, Any]) -> FeatureSpace:
     for feature_name, extractor_spec in pipeline.items():
         if not isinstance(extractor_spec, dict):
             raise ValueError(
-                f"Extractor '{feature_name}' specification must be a dictionary"
+                f"Extractor '{feature_name}' specification must be a "
+                f"dictionary"
             )
 
         if "extractor" not in extractor_spec:
@@ -138,7 +139,8 @@ def _build_feature_space(config_dict: Dict[str, Any]) -> FeatureSpace:
 
         if not isinstance(params, dict):
             raise ValueError(
-                f"Field 'params' for extractor '{feature_name}' must be a dictionary"
+                f"Field 'params' for extractor '{feature_name}' must "
+                f"be a dictionary"
             )
 
         try:

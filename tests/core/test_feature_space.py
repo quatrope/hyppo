@@ -48,7 +48,7 @@ class TestFeatureSpace:
         assert len(fs.extractors) == 2
 
     def test_feature_space_invalid_extractor_type(self):
-        """Test FeatureSpace with invalid expected types for inputs configuration."""
+        """Test FeatureSpace with invalid types for inputs config."""
         # Wrong type mapping
         pipeline_config = {
             "simple": (StdExtractor(), {}),  # std as simple
@@ -59,7 +59,7 @@ class TestFeatureSpace:
             FeatureSpace(pipeline_config)
 
     def test_from_list_simple(self, sample_hsi):
-        """Test creating FeatureSpace from a simple list without dependencies."""
+        """Test creating FeatureSpace from list without dependencies."""
         extractors = [
             hyppo.extractor.MeanExtractor(),
             hyppo.extractor.StdExtractor(),
@@ -124,7 +124,8 @@ class TestFeatureSpace:
         extractors = [
             SimpleExtractor(),  # no deps
             MediumExtractor(),  # deps: simple
-            AdvancedExtractor(),  # deps: medium, simple1, simple2 (but simple2 is optional)
+            # deps: medium, simple1, simple2 (simple2 is optional)
+            AdvancedExtractor(),
         ]
 
         fs = FeatureSpace.from_list(extractors)
@@ -172,11 +173,11 @@ class TestFeatureSpace:
         assert isinstance(extractors["simple"], SimpleExtractor)
 
     def test_from_list_ambiguous_dependency(self):
-        """Test error when multiple extractors match the same required type."""
+        """Test error when multiple extractors match same required type."""
         from tests.fixtures.extractors import MediumExtractor, SimpleExtractor
 
-        # To test ambiguous dependency, we need two DIFFERENT extractors that are both
-        # instances of the same base type. Let's use subclasses.
+        # To test ambiguous dependency, we need two DIFFERENT extractors
+        # that are both instances of the same base type. Use subclasses.
 
         class SimpleExtractorA(SimpleExtractor):
             pass
@@ -184,7 +185,8 @@ class TestFeatureSpace:
         class SimpleExtractorB(SimpleExtractor):
             pass
 
-        # MediumExtractor requires SimpleExtractor, and both A and B are instances of it
+        # MediumExtractor requires SimpleExtractor, and both A and B
+        # are instances of it
         extractors = [
             SimpleExtractorA(),
             SimpleExtractorB(),
@@ -198,7 +200,8 @@ class TestFeatureSpace:
     def test_from_list_duplicate_exact_type(self):
         """Test duplicate type check catches same type added twice."""
         # This test tries to hit line 92, but it's likely unreachable
-        # because duplicate types generate duplicate names which are caught at line 85
+        # because duplicate types generate duplicate names which are
+        # caught at line 85
         mean1 = hyppo.extractor.MeanExtractor()
         mean2 = hyppo.extractor.MeanExtractor()
 

@@ -13,9 +13,10 @@ class LocalProcessRunner(BaseRunner):
     """
     Process-based runner using shared memory for efficient HSI data sharing.
 
-    This runner distributes feature extraction tasks across multiple worker
-    processes while keeping the HSI data in shared memory to minimize RAM usage.
-    All processes access the same HSI data without copying.
+    This runner distributes feature extraction tasks across multiple
+    worker processes while keeping the HSI data in shared memory to
+    minimize RAM usage. All processes access the same HSI data without
+    copying.
     """
 
     def __init__(self, num_workers: int | None = None):
@@ -23,7 +24,8 @@ class LocalProcessRunner(BaseRunner):
         Create a LocalProcessRunner with specified number of worker processes.
 
         Args:
-            num_workers: Number of worker processes (None = use all available cores)
+            num_workers: Number of worker processes
+                        (None = use all available cores)
 
         Raises:
             ValueError: If num_workers is less than 1
@@ -43,8 +45,9 @@ class LocalProcessRunner(BaseRunner):
         """
         Resolve feature extraction using process pool with shared memory.
 
-        Executes extractors in parallel when possible, respecting dependency constraints.
-        Independent extractors are executed concurrently in the worker pool.
+        Executes extractors in parallel when possible, respecting
+        dependency constraints. Independent extractors are executed
+        concurrently in the worker pool.
 
         Args:
             data: HSI object to process
@@ -315,7 +318,8 @@ def _reconstruct_hsi_from_shared(
     )
 
     # Create HSI with shared memory arrays
-    # Note: We keep the shm objects in scope so they don't get garbage collected
+    # Note: We keep the shm objects in scope so they don't get
+    # garbage collected
     hsi = HSI(
         reflectance=reflectance,
         wavelengths=wavelengths,

@@ -7,7 +7,10 @@ from .base import Extractor
 
 
 class MeanExtractor(Extractor):
-    """Extractor that computes the mean value across spectral bands for each pixel."""
+    """Extractor that computes mean value across spectral bands.
+
+    Computes the mean value across spectral bands for each pixel.
+    """
 
     def __init__(self) -> None:
         """Initialize mean extractor."""

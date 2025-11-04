@@ -63,7 +63,8 @@ def _parse_h5_hsi(
     if null_value_name is None:
         null_value_name = "Data_Ignore_Value"
 
-    # Find reflectance and wavelength datasets using heuristics or provided paths
+    # Find reflectance and wavelength datasets using heuristics or
+    # provided paths
     ref_dataset, ref_path = _find_reflectance_dataset(file, reflectance_name)
     wave_dataset, wave_path = _find_wavelength_dataset(file, wavelength_name)
 

@@ -1,4 +1,7 @@
-"""Principal Component Analysis (PCA) feature extractor for hyperspectral images."""
+"""Principal Component Analysis (PCA) feature extractor.
+
+For hyperspectral images.
+"""
 
 import numpy as np
 from sklearn.decomposition import PCA
@@ -8,9 +11,7 @@ from .base import Extractor
 
 
 class PCAExtractor(Extractor):
-    """
-    Principal Component Analysis (PCA) feature extractor for hyperspectral
-    images.
+    """Principal Component Analysis (PCA) feature extractor.
 
     Applies PCA transformation [1]_ to reduce dimensionality while preserving
     maximum variance in the spectral data.

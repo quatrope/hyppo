@@ -1,4 +1,4 @@
-"""Discrete Wavelet Transform (2D) feature extractor for hyperspectral images."""
+"""Discrete Wavelet Transform (2D) feature extractor for HSI."""
 
 import numpy as np
 import pywt
@@ -107,7 +107,8 @@ class DWT2DExtractor(Extractor):
             )
             upsampled_maps.append(coefficients_approximation_up)
 
-            # Detail coefficients (horizontal, vertical, diagonal) at each level
+            # Detail coefficients (horizontal, vertical, diagonal)
+            # at each level
             for details in coefficients[1:]:
                 for c in details:
                     c_up = resize(

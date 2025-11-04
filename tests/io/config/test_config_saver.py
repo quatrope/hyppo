@@ -57,7 +57,7 @@ class TestSaveConfigYAML:
         assert yaml_path.exists()
 
     def test_save_config_yaml_invalid_extension(self, tmp_path):
-        """Test that save_config_yaml raises ValueError for invalid extension."""
+        """Test save_config_yaml raises ValueError for invalid extension."""
         # Arrange: Create FeatureSpace and path with wrong extension
         fs = FeatureSpace.from_list([MeanExtractor()])
         txt_path = tmp_path / "config.txt"
@@ -141,7 +141,7 @@ class TestSaveConfigYAML:
         assert yaml_path.exists()
 
     def test_save_config_yaml_roundtrip(self, tmp_path):
-        """Test that saved YAML can be loaded back to equivalent FeatureSpace."""
+        """Test saved YAML can be loaded back to equivalent FeatureSpace."""
         # Arrange: Create FeatureSpace with multiple extractors
         original_fs = FeatureSpace.from_list(
             [MeanExtractor(), StdExtractor(), MaxExtractor()]
@@ -217,7 +217,7 @@ class TestSaveConfigJSON:
         assert json_path.exists()
 
     def test_save_config_json_invalid_extension(self, tmp_path):
-        """Test that save_config_json raises ValueError for invalid extension."""
+        """Test save_config_json raises ValueError for invalid extension."""
         # Arrange: Create FeatureSpace and path with wrong extension
         fs = FeatureSpace.from_list([MeanExtractor()])
         txt_path = tmp_path / "config.txt"
@@ -289,7 +289,7 @@ class TestSaveConfigJSON:
         assert json_path.exists()
 
     def test_save_config_json_roundtrip(self, tmp_path):
-        """Test that saved JSON can be loaded back to equivalent FeatureSpace."""
+        """Test saved JSON can be loaded back to equivalent FeatureSpace."""
         # Arrange: Create FeatureSpace with multiple extractors
         original_fs = FeatureSpace.from_list(
             [MeanExtractor(), StdExtractor(), PCAExtractor(n_components=5)]

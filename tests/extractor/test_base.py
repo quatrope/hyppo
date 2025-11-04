@@ -98,7 +98,7 @@ class TestExtractor:
         assert result == {"feature": "value"}
 
     def test_validate_is_called_before_extract(self):
-        """Test that _validate() is executed before _extract() and can raise errors."""
+        """Test _validate() is executed before _extract()."""
         # Arrange: Create extractor with validation logic
         extractor = ConcreteExtractorWithValidation()
 
@@ -107,7 +107,7 @@ class TestExtractor:
             extractor.extract(None)  # type: ignore
 
     def test_validate_passes_with_valid_data(self, small_hsi):
-        """Test that _validate() allows execution to proceed with valid data."""
+        """Test _validate() allows execution with valid data."""
         # Arrange: Create extractor
         extractor = ConcreteExtractorWithValidation()
 
@@ -126,7 +126,7 @@ class TestExtractor:
         assert dependencies == {}
 
     def test_get_input_dependencies_custom(self):
-        """Test that get_input_dependencies() can be overridden to return custom dependencies."""
+        """Test get_input_dependencies() returns custom dependencies."""
         # Arrange & Act: Get custom dependencies from overridden method
         dependencies = (
             ConcreteExtractorWithDependencies.get_input_dependencies()
@@ -136,7 +136,7 @@ class TestExtractor:
         assert dependencies == {"mean": "mean", "std": "std"}
 
     def test_get_input_default_returns_none(self):
-        """Test that get_input_default() returns None by default."""
+        """Test get_input_default() returns None by default."""
         # Arrange & Act: Get default for arbitrary input name
         default = ConcreteExtractor.get_input_default("some_input")
 
@@ -144,7 +144,7 @@ class TestExtractor:
         assert default is None
 
     def test_get_input_default_custom(self):
-        """Test that get_input_default() can be overridden to return extractor instances."""
+        """Test get_input_default() can return extractor instances."""
         # Arrange & Act: Get defaults for known and unknown inputs
         default_mean = ConcreteExtractorWithDefaults.get_input_default("mean")
         default_other = ConcreteExtractorWithDefaults.get_input_default(
@@ -156,7 +156,7 @@ class TestExtractor:
         assert default_other is None
 
     def test_feature_name_with_feature_extractor_suffix(self):
-        """Test feature_name() removes 'FeatureExtractor' suffix and converts to snake_case."""
+        """Test feature_name() removes 'FeatureExtractor' suffix."""
         # Arrange & Act: Generate name from class with FeatureExtractor suffix
         name = MyFeatureExtractor.feature_name()
 
@@ -164,7 +164,7 @@ class TestExtractor:
         assert name == "my"
 
     def test_feature_name_with_extractor_suffix(self):
-        """Test feature_name() removes 'Extractor' suffix and converts to snake_case."""
+        """Test feature_name() removes 'Extractor' suffix."""
         # Arrange & Act: Generate name from class with Extractor suffix
         name = SimpleExtractor.feature_name()
 
@@ -189,7 +189,6 @@ class TestExtractor:
 
     def test_feature_name_camel_case_conversion(self):
         """Test feature_name() correctly splits CamelCase into snake_case."""
-
         # Arrange: Create class with complex CamelCase name
         class MyComplexFeatureName(Extractor):
             def _extract(self, data: HSI, **inputs) -> dict:

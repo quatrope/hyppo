@@ -39,7 +39,7 @@ class GeometricMomentExtractor(Extractor):
     """
 
     def __init__(self, n_components=3, max_order=3, window_sizes=[3, 9, 15]):
-        """Initialize geometric moment extractor with PCA and moment parameters."""
+        """Initialize geometric moment extractor."""
         super().__init__()
         self.n_components = n_components
         # Max order = 6 by the paper but it is slow # TODO! Check
@@ -75,13 +75,13 @@ class GeometricMomentExtractor(Extractor):
 
         for i in range(0, N, block_size):
             # Extract the current batch
-            batch = patches[i : i + block_size]
+            batch = patches[i:i + block_size]
 
             # Multiply each patch by the kernel
             product = batch[:, None, :, :] * kernels[None, :, :, :]
 
             # Sum the product to get the scalar moment
-            moments[i : i + block_size] = product.sum(axis=(-2, -1))
+            moments[i:i + block_size] = product.sum(axis=(-2, -1))
 
         return moments
 

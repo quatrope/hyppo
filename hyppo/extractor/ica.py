@@ -1,4 +1,4 @@
-"""Independent Component Analysis (ICA) feature extractor for hyperspectral images."""
+"""Independent Component Analysis (ICA) feature extractor for HSI."""
 
 import numpy as np
 from sklearn.decomposition import FastICA
@@ -9,15 +9,14 @@ from .base import Extractor
 
 class ICAExtractor(Extractor):
     """
-    Independent Component Analysis (ICA) feature extractor for hyperspectral
-    images.
+    Independent Component Analysis (ICA) extractor for hyperspectral images.
 
     Parameters
     ----------
     n_components : int, default=5
         Number of components to keep.
-    whiten : {'unit-variance', 'arbitrary-variance', False}, default='unit-variance'
-        Whitening strategy to apply before ICA.
+    whiten : {'unit-variance', 'arbitrary-variance', False}
+        default='unit-variance'. Whitening strategy to apply before ICA.
     random_state : int, RandomState instance or None, default=42
         Random state for reproducibility.
 

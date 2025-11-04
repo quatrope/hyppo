@@ -7,7 +7,11 @@ from .base import Extractor
 
 
 class StdExtractor(Extractor):
-    """Extractor that computes the standard deviation across spectral bands for each pixel."""
+    """Extractor that computes standard deviation.
+
+    Computes the standard deviation across spectral bands for each
+    pixel.
+    """
 
     def __init__(self) -> None:
         """Initialize standard deviation extractor."""

@@ -383,9 +383,11 @@ class TestConfigLoader:
         # Arrange: Config with params as list
         config_path = tmp_path / "config.json"
         with open(config_path, "w") as f:
-            f.write(
-                '{"pipeline": {"mean": {"extractor": "MeanExtractor", "params": [1, 2, 3]}}}'
+            json_str = (
+                '{"pipeline": {"mean": '
+                '{"extractor": "MeanExtractor", "params": [1, 2, 3]}}}'
             )
+            f.write(json_str)
 
         # Act & Assert: Verify error raised
         with pytest.raises(ValueError, match="must be a dictionary"):

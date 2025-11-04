@@ -1,4 +1,4 @@
-"""Gabor filter feature extractor for texture analysis of hyperspectral images."""
+"""Gabor filter feature extractor for texture analysis of HSI."""
 
 import numpy as np
 from scipy import ndimage

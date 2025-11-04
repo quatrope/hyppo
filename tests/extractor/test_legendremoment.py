@@ -221,12 +221,13 @@ class TestLegendreMomentExtractor:
         # Act: Execute extraction
         result = extractor.extract(small_hsi)
 
-        # Assert: Verify PCA object is stored
+        # Assert: Verify PCA object is stored and result is valid
+        assert "features" in result
         assert extractor.pca is not None
         assert hasattr(extractor.pca, "explained_variance_ratio_")
 
     def test_legendre_polynomial_normalization(self, small_hsi):
-        """Test that Legendre polynomial coordinates are normalized to [-1, 1]."""
+        """Test Legendre polynomial coordinates normalized to [-1, 1]."""
         # Arrange: Create extractor with small window
         extractor = LegendreMomentExtractor(window_sizes=[3], max_order=1)
         image = small_hsi.reflectance[:, :, 0]

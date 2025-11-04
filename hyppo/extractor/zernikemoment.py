@@ -14,11 +14,13 @@ class ZernikeMomentExtractor(Extractor):
     """
     Zernike Moment feature extractor for hyperspectral images (HSI).
 
-    Computes multiscale Zernike moments on the principal components of the HSI.
-    For each principal component, the image is processed with sliding windows of
-    specified sizes. Zernike polynomials up to a specified degree are used to
-    compute orthogonal moments within the unit disk. The magnitude of the moments
-    is used as features, which are concatenated across scales and components.
+    Computes multiscale Zernike moments on principal components.
+
+    For each principal component, the image is processed with sliding
+    windows of specified sizes. Zernike polynomials up to a specified
+    degree are used to compute orthogonal moments within the unit disk.
+    The magnitude of the moments is used as features, which are
+    concatenated across scales and components.
 
     Parameters
     ----------
@@ -31,16 +33,21 @@ class ZernikeMomentExtractor(Extractor):
 
     References
     ----------
-    Teague, M. R. (1980). Image analysis via the general theory of moments.
-        Journal of the Optical Society of America, 70(8), 920–930.
-    Khotanzad, A., & Hong, Y. H. (1990). Invariant image recognition by Zernike moments.
-        IEEE Transactions on Pattern Analysis and Machine Intelligence, 12(5), 489–497.
-    Mukundan, R., & Ramakrishnan, K. R. (1998). Moment functions in image analysis:
-        Theory and applications. World Scientific.
+    Teague, M. R. (1980). Image analysis via the general theory
+        of moments. Journal of the Optical Society of America, 70(8),
+        920–930.
+    Khotanzad, A., & Hong, Y. H. (1990). Invariant image
+        recognition by Zernike moments. IEEE Transactions on Pattern
+        Analysis and Machine Intelligence, 12(5), 489–497.
+    Mukundan, R., & Ramakrishnan, K. R. (1998). Moment functions
+        in image analysis: Theory and applications. World Scientific.
     """
 
     def __init__(self, n_components=3, window_sizes=[3, 9, 15], degree=3):
-        """Initialize Zernike moment extractor with PCA and polynomial parameters."""
+        """Initialize Zernike moment extractor.
+
+        With PCA and polynomial parameters.
+        """
         super().__init__()
         self.n_components = n_components
         self.window_sizes = window_sizes
@@ -74,7 +81,7 @@ class ZernikeMomentExtractor(Extractor):
 
         mask = (
             R <= 1.0
-        )  # define la region del disco unitario (donde se def la base de zernike)
+        )  # Define unit disk region for Zernike basis
         area = np.sum(mask)  # cant de pixels dentro del disco para normalizar
 
         # lista con todos los valores (n,m) validos segun def de zernike
@@ -102,14 +109,14 @@ class ZernikeMomentExtractor(Extractor):
 
         block_size = 50000
         for i in range(0, N, block_size):
-            batch = patches[i : i + block_size]
+            batch = patches[i:i + block_size]
             prod = (
                 batch[:, None, :, :] * kernels[None, :, :, :]
             )  # multiplica cada batch por el polinomio
             complex_moments = (
                 prod.sum(axis=(-2, -1)) / area
-            )  # suma (que seria integrarcion discreta) y normalizacion
-            moments[i : i + block_size] = np.abs(
+            )  # Sum for discrete integration and normalization
+            moments[i:i + block_size] = np.abs(
                 complex_moments
             )  # solo módulo real
 
@@ -146,12 +153,15 @@ class ZernikeMomentExtractor(Extractor):
         dict
             Dictionary containing:
                 - "features": np.ndarray, shape (H, W, n_features)
-                    Zernike moment features concatenated across scales and components.
+                    Zernike moment features concatenated across scales
+                    and components.
                 - "explained_variance_ratio": array
                     Variance ratio explained by each PCA component.
                 - "n_components": int, number of PCA components used.
-                - "window_sizes": list of int, window sizes used for multiscale computation.
-                - "degree": int, maximum degree of Zernike polynomials used.
+                - "window_sizes": list of int, window sizes used for
+                    multiscale computation.
+                - "degree": int, maximum degree of Zernike polynomials
+                    used.
         """
         X = data.reflectance
         h, w, b = X.shape

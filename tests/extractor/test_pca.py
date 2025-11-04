@@ -214,7 +214,8 @@ class TestPCAExtractor:
         # Act: Execute extraction
         result = extractor.extract(small_hsi)
 
-        # Assert: Verify PCA object is stored
+        # Assert: Verify PCA object is stored and result is valid
+        assert "features" in result
         assert extractor.pca is not None
         assert hasattr(extractor.pca, "components_")
 

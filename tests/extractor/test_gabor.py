@@ -184,8 +184,8 @@ class TestGaborExtractor:
 
     def test_kernel_size_even_adjustment(self, small_hsi):
         """Test that even kernel sizes are adjusted to odd."""
-        # Arrange: Create extractor with sigma that produces even kernel size
-        # sigma = 2.25 produces kernel_size = 10, which should be adjusted to 11
+        # Arrange: Create extractor with sigma that produces even kernel
+        # sigma = 2.25 produces kernel_size = 10, adjusted to 11
         sigma = 2.25
         extractor = GaborExtractor(sigma=sigma)
 

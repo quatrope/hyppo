@@ -24,8 +24,8 @@ class PPExtractor(Extractor):
     n_bins : int, default=50
         Number of histogram bins for divergence computation.
     pca_components : int or None, default=None
-        Number of PCA components for sphering. If None, components are auto-selected
-        to preserve 99% variance.
+        Number of PCA components for sphering. If None, components
+        are auto-selected to preserve 99% variance.
     sample_size : int, default=1000
         Number of pixels to sample when searching for projections.
     random_state : int, optional, default=42
@@ -33,8 +33,10 @@ class PPExtractor(Extractor):
 
     References
     ----------
-    .. [1] Ifarraguerri, A., & Chang, C.-I. (2000). "Independent component analysis
-           for hyperspectral image analysis." IEEE Trans. Geosci. Remote Sensing, 38(2), 677–697.
+    .. [1] Ifarraguerri, A., & Chang, C.-I. (2000).
+           "Independent component analysis for hyperspectral image
+           analysis." IEEE Trans. Geosci. Remote Sensing, 38(2),
+           677–697.
     """
 
     def __init__(
@@ -54,8 +56,8 @@ class PPExtractor(Extractor):
         self.rng = np.random.default_rng(random_state)
 
     def _compute_information_divergence(self, projection_scores):
-        """
-        Compute information divergence between projection scores and Gaussian distribution.
+        """Compute information divergence between projection and Gaussian.
+
         Following equations (4) and (5) from the paper.
         """
         # Standardize scores (mean=0, std=1)
@@ -93,7 +95,10 @@ class PPExtractor(Extractor):
         return divergence
 
     def _pca_preprocessing(self, X):
-        """Apply PCA preprocessing ("sphering") as described in Section III.A."""
+        """Apply PCA preprocessing ("sphering").
+
+        As described in Section III.A.
+        """
         # Determine number of components if not specified
         if self.pca_components is None:
             pca_temp = PCA()
@@ -108,9 +113,10 @@ class PPExtractor(Extractor):
         return X_sphered, pca
 
     def _find_best_projection(self, X, previous_projections):
-        """
-        Find best projection using the simple search strategy from Section III.B:
-        Use each pixel as candidate projection vector and select the one with highest index.
+        """Find best projection using simple search strategy.
+
+        Uses each pixel as candidate projection vector and selects the one
+        with highest index (Section III.B).
         """
         n_samples, n_features = X.shape
 

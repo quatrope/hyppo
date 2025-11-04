@@ -1,4 +1,7 @@
-"""Normalized Difference Vegetation Index (NDVI) extractor for hyperspectral images."""
+"""Normalized Difference Vegetation Index (NDVI) extractor.
+
+Provides NDVI feature extraction for hyperspectral images.
+"""
 
 import warnings
 
@@ -9,8 +12,7 @@ from .base import Extractor
 
 
 class NDVIExtractor(Extractor):
-    """
-    Normalized Difference Vegetation Index (NDVI) extractor for hyperspectral images.
+    """Normalized Difference Vegetation Index (NDVI) extractor.
 
     NDVI is a vegetation index widely used to assess vegetation health,
     computed as:

@@ -1,4 +1,0 @@
-[flake8]
-max-line-length = 79
-application-import-names = hyppo,tests
-import-order-style = google

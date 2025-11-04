@@ -43,35 +43,35 @@ class Bunch(Mapping):
         super().__setattr__("_data", data)
 
     def __getitem__(self, k):
-        """x.__getitem__(y) <==> x[y]."""
+        """Get item by key."""
         return self._data[k]
 
     def __setitem__(self, k, v):
-        """x.__setitem__(y) = z <==> x[y] = z."""
+        """Set item by key (read-only, raises AttributeError)."""
         raise AttributeError(f"Bunch {self._name!r} is read-only")
 
     def __delitem__(self, k):
-        """x.__delitem__(y) <==> del x[y]."""
+        """Delete item by key (read-only, raises AttributeError)."""
         raise AttributeError(f"Bunch {self._name!r} is read-only")
 
     def __getattr__(self, a):
-        """x.__getattr__(y) <==> x.y."""
+        """Get attribute by name."""
         try:
             return self._data[a]
         except KeyError:
             raise AttributeError(a)
 
     def __setattr__(self, a, v):
-        """x.__setattr__(a, v) <==> x.a = v."""
+        """Set attribute (read-only, raises AttributeError)."""
         raise AttributeError(f"Bunch {self._name!r} is read-only")
 
     def __copy__(self):
-        """x.__copy__() <==> copy.copy(x)."""
+        """Create a shallow copy of the Bunch."""
         cls = type(self)
         return cls(str(self._name), data=self._data)
 
     def __deepcopy__(self, memo):
-        """x.__deepcopy__() <==> copy.copy(x)."""
+        """Create a deep copy of the Bunch."""
         # extract the class
         cls = type(self)
 
@@ -88,20 +88,20 @@ class Bunch(Mapping):
         return clone
 
     def __iter__(self):
-        """x.__iter__() <==> iter(x)."""
+        """Return iterator over keys."""
         return iter(self._data)
 
     def __len__(self):
-        """x.__len__() <==> len(x)."""
+        """Return number of items."""
         return len(self._data)
 
     def __repr__(self):
-        """x.__repr__() <==> repr(x)."""
+        """Return string representation of the Bunch."""
         content = repr(set(self._data)) if self._data else "{}"
         return f"<{self._name} {content}>"
 
     def __dir__(self):
-        """x.__dir__() <==> dir(x)."""
+        """Return list of attributes and keys."""
         return super().__dir__() + list(self._data)
 
     def __setstate__(self, state):

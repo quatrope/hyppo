@@ -6,18 +6,8 @@ to verify they can successfully complete extraction without errors.
 """
 
 import numpy as np
-import pytest
 
 from hyppo.extractor import (
-    DWT1DExtractor,
-    DWT2DExtractor,
-    DWT3DExtractor,
-    GaborExtractor,
-    GeometricMomentExtractor,
-    GLCMExtractor,
-    ICAExtractor,
-    LBPExtractor,
-    LegendreMomentExtractor,
     MaxExtractor,
     MeanExtractor,
     MedianExtractor,

@@ -121,7 +121,8 @@ class GLCMExtractor(Extractor):
 
     def _auto_determine_levels(self, image):
         """
-        Auto-determine quantization levels based on image characteristics
+        Auto-determine quantization levels based on image characteristics.
+
         Following paper's recommendation: G > 24, typically 32-64
         """
         if self.levels is not None:
@@ -141,7 +142,7 @@ class GLCMExtractor(Extractor):
             return 64
 
     def _normalize_to_levels(self, band, levels):
-        """Quantizes the band to the range [0, levels-1]"""
+        """Quantizes the band to the range [0, levels-1]."""
         band_min, band_max = band.min(), band.max()
         if band_max == band_min:
             return np.zeros_like(band, dtype=np.uint8)
@@ -173,7 +174,7 @@ class GLCMExtractor(Extractor):
         # TODO! Check for parallelization opportunities
         # TODO! Improve code
         for i in range(0, N, block_size):
-            batch = patches[i : i + block_size]
+            batch = patches[i:i + block_size]
             batch_size = batch.shape[0]
 
             for j in range(batch_size):

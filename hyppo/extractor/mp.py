@@ -22,7 +22,8 @@ class MPExtractor(Extractor):
     Applies morphological operations (opening, closing, dilation, erosion)
     at multiple scales to selected bands, using differently shaped structuring
     elements. The choice of structuring element shape and radius affects the
-    extracted features, in line with the methodology proposed by Lv et al. (2014).
+    extracted features, in line with the methodology proposed by
+    Lv et al. (2014).
 
     Parameters
     ----------
@@ -139,5 +140,6 @@ class MPExtractor(Extractor):
             raise ValueError("All radii must be positive integers.")
         if self.structuring_element not in ("disk", "square", "octagon"):
             raise ValueError(
-                "structuring_element must be one of 'disk', 'square', 'octagon'."
+                "structuring_element must be one of "
+                "'disk', 'square', 'octagon'."
             )

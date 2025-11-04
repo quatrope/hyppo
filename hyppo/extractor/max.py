@@ -7,7 +7,10 @@ from .base import Extractor
 
 
 class MaxExtractor(Extractor):
-    """Extractor that computes the maximum value across spectral bands for each pixel."""
+    """Extractor that computes maximum value across spectral bands.
+
+    Computes the maximum value across spectral bands for each pixel.
+    """
 
     def __init__(self) -> None:
         """Initialize max extractor."""

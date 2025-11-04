@@ -17,14 +17,16 @@ class DaskRunner(BaseRunner):
     """
     Dask-based runner for parallel feature extraction.
 
-    Provides functionality for Dask distributed execution across different
-    backend types: thread-based, process-based (local), and SLURM cluster-based.
-    Includes cluster management, graph building, and resource cleanup.
+    Provides functionality for Dask distributed execution across
+    different backend types: thread-based, process-based (local), and
+    SLURM cluster-based. Includes cluster management, graph building,
+    and resource cleanup.
 
     Factory methods:
         - threads(): Thread-based parallelism on local machine
         - processes(): Process-based parallelism on local machine
-        - slurm(): SLURM cluster-based distributed execution (requires dask-jobqueue)
+        - slurm(): SLURM cluster-based distributed execution
+                   (requires dask-jobqueue)
     """
 
     def __init__(self, client: Client):
@@ -39,7 +41,8 @@ class DaskRunner(BaseRunner):
         Create a DaskRunner configured for thread-based parallel execution.
 
         Args:
-            num_threads: Number of threads to use (None = use all available cores)
+            num_threads: Number of threads to use
+                        (None = use all available cores)
 
         Returns:
             DaskRunner instance configured for thread-based execution
@@ -71,7 +74,8 @@ class DaskRunner(BaseRunner):
         Create a DaskRunner configured for process-based parallel execution.
 
         Args:
-            num_workers: Number of worker processes (None = use all available cores)
+            num_workers: Number of worker processes
+                        (None = use all available cores)
             threads_per_worker: Number of threads per worker process
             memory_limit: Memory limit per worker (e.g., "2GB", "auto")
 
@@ -127,8 +131,10 @@ class DaskRunner(BaseRunner):
             num_jobs: Number of SLURM jobs to spawn
             account: SLURM account to charge
             project: SLURM project name
-            job_extra_directives: Additional SBATCH directives as list of strings
-                                 (e.g., ["--constraint=haswell", "--exclusive"])
+            job_extra_directives: Additional SBATCH directives as
+                                 list of strings (e.g.,
+                                 ["--constraint=haswell",
+                                 "--exclusive"])
             **kwargs: Additional keyword arguments passed to SLURMCluster
 
         Returns:
@@ -197,7 +203,9 @@ class DaskRunner(BaseRunner):
         return cls(client)
 
     def resolve(self, data: HSI, feature_space) -> FeatureCollection:
-        """Resolve feature extraction using a complete Dask graph with distributed execution.
+        """Resolve feature extraction using a complete Dask graph.
+
+        Uses distributed execution.
 
         Args:
             data: HSI object to process
@@ -215,7 +223,9 @@ class DaskRunner(BaseRunner):
         result_keys = list(feature_graph.extractors.keys())
 
         # Execute the entire graph with distributed scheduler
-        computed_results: Iterable = self._client.get(dask_graph, result_keys)  # type: ignore
+        computed_results: Iterable = self._client.get(
+            dask_graph, result_keys
+        )  # type: ignore
 
         # Build FeatureCollection from results
         results = {}
@@ -236,7 +246,8 @@ class DaskRunner(BaseRunner):
         """
         Build a complete Dask computation graph for all extractors.
 
-        The graph structure follows Dask's requirements where each task is defined as:
+        The graph structure follows Dask's requirements where each
+        task is defined as:
         key: (function, arg1, arg2, ..., argN)
 
         Dependencies are expressed by referencing other task keys as arguments.
@@ -264,8 +275,8 @@ class DaskRunner(BaseRunner):
 
             # Add dependency results as direct references to other task keys
             for input_name, source_name in input_mapping.items():
-                # Each dependency becomes a separate argument to the function
-                # Dask will resolve these automatically before calling the function
+                # Each dependency becomes a separate argument
+                # Dask resolves these automatically before calling
                 task_args.append(source_name)
 
             # Add metadata about input names and defaults

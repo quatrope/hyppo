@@ -8,6 +8,7 @@ flake8-import-order
 flake8-black
 flake8-builtins
 flake8-docstrings
+flake8-pyproject
 
 ipython
 ipdb

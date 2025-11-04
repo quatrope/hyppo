@@ -143,7 +143,7 @@ class TestDaskRunner:
         runner._cluster.close()
 
     def test_processes_classmethod_invalid_workers(self):
-        """Test DaskRunner.processes() raises error for invalid worker count."""
+        """Test DaskRunner.processes() raises error for invalid workers."""
         # Act & Assert: Invalid worker count
         with pytest.raises(ValueError, match="Invalid number of workers"):
             DaskRunner.processes(num_workers=0)
@@ -152,7 +152,7 @@ class TestDaskRunner:
             DaskRunner.processes(num_workers=-1)
 
     def test_processes_classmethod_invalid_threads_per_worker(self):
-        """Test DaskRunner.processes() raises error for invalid threads per worker."""
+        """Test DaskRunner.processes() raises error for invalid threads."""
         # Act & Assert: Invalid threads per worker
         with pytest.raises(ValueError, match="Invalid threads per worker"):
             DaskRunner.processes(threads_per_worker=0)
@@ -351,7 +351,7 @@ class TestDaskRunner:
         runner._cluster.close()
 
     def test_slurm_classmethod_missing_dask_jobqueue(self):
-        """Test DaskRunner.slurm() raises ImportError when dask-jobqueue not installed."""
+        """Test DaskRunner.slurm() raises ImportError when missing pkg."""
         # Arrange: Mock SLURMCluster as None (simulating missing package)
         with patch("hyppo.runner.dask.SLURMCluster", None):
             # Act & Assert: Should raise ImportError
@@ -478,7 +478,8 @@ class TestDaskRunner:
                     custom_param="custom_value",
                 )
 
-                # Assert: SLURMCluster was called with all parameters
+                # Assert: Runner created and SLURMCluster called correctly
+                assert runner is not None
                 call_kwargs = mock_cluster_class.call_args[1]
                 assert call_kwargs["cores"] == 16
                 assert call_kwargs["memory"] == "64GB"
@@ -497,7 +498,7 @@ class TestDaskRunner:
                 mock_cluster_instance.scale.assert_called_once_with(jobs=20)
 
     def test_slurm_classmethod_optional_parameters(self):
-        """Test DaskRunner.slurm() omits optional parameters when not provided."""
+        """Test DaskRunner.slurm() omits optional parameters."""
         # Arrange: Create mock SLURMCluster and Client
         mock_cluster_instance = MagicMock()
         mock_cluster_class = MagicMock(return_value=mock_cluster_instance)
@@ -510,7 +511,8 @@ class TestDaskRunner:
                 # Act: Create SLURM runner without optional parameters
                 runner = DaskRunner.slurm()
 
-                # Assert: Optional parameters were not included
+                # Assert: Runner created and optional parameters not included
+                assert runner is not None
                 call_kwargs = mock_cluster_class.call_args[1]
                 assert "account" not in call_kwargs
                 assert "project" not in call_kwargs

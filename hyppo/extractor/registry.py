@@ -34,7 +34,8 @@ class ExtractorRegistry:
 
         Args:
             extractor_class: The extractor class to register
-            name: Optional custom name. If None, uses the class's feature_name()
+            name: Optional custom name. If None, uses the class's
+                  feature_name()
         """
         if not issubclass(extractor_class, Extractor):
             raise TypeError(
@@ -47,8 +48,9 @@ class ExtractorRegistry:
             existing_class = self._registry[extractor_name]
             if existing_class != extractor_class:
                 raise ValueError(
-                    f"Extractor '{extractor_name}' already registered with class "
-                    f"{existing_class.__name__}. Cannot register {extractor_class.__name__}"
+                    f"Extractor '{extractor_name}' already registered "
+                    f"with class {existing_class.__name__}. "
+                    f"Cannot register {extractor_class.__name__}"
                 )
             # If same class, just return without re-registering
             return

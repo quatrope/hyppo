@@ -7,7 +7,10 @@ from .base import Extractor
 
 
 class MedianExtractor(Extractor):
-    """Extractor that computes the median value across spectral bands for each pixel."""
+    """Extractor that computes median value across spectral bands.
+
+    Computes the median value across spectral bands for each pixel.
+    """
 
     def __init__(self) -> None:
         """Initialize median extractor."""

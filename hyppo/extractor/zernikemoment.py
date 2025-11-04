@@ -79,9 +79,7 @@ class ZernikeMomentExtractor(Extractor):
         R = np.sqrt(X**2 + Y**2)  # radio
         Theta = np.arctan2(Y, X)  # angulo en coord polares
 
-        mask = (
-            R <= 1.0
-        )  # Define unit disk region for Zernike basis
+        mask = R <= 1.0  # Define unit disk region for Zernike basis
         area = np.sum(mask)  # cant de pixels dentro del disco para normalizar
 
         # lista con todos los valores (n,m) validos segun def de zernike
@@ -109,14 +107,14 @@ class ZernikeMomentExtractor(Extractor):
 
         block_size = 50000
         for i in range(0, N, block_size):
-            batch = patches[i:i + block_size]
+            batch = patches[i : i + block_size]
             prod = (
                 batch[:, None, :, :] * kernels[None, :, :, :]
             )  # multiplica cada batch por el polinomio
             complex_moments = (
                 prod.sum(axis=(-2, -1)) / area
             )  # Sum for discrete integration and normalization
-            moments[i:i + block_size] = np.abs(
+            moments[i : i + block_size] = np.abs(
                 complex_moments
             )  # solo módulo real
 

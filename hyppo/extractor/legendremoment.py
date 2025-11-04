@@ -70,9 +70,9 @@ class LegendreMomentExtractor(Extractor):
         block_size = 50_000
 
         for i in range(0, N, block_size):
-            batch = patches[i:i + block_size]
+            batch = patches[i : i + block_size]
             product = batch[:, None, :, :] * kernels[None, :, :, :]
-            moments[i:i + block_size] = product.sum(axis=(-2, -1))
+            moments[i : i + block_size] = product.sum(axis=(-2, -1))
 
         return moments
 

@@ -58,6 +58,7 @@ class TestBaseRunner:
     def test_subclass_without_resolve_fails(self):
         """Test subclass without resolve cannot be instantiated."""
         # Arrange: Define incomplete subclass
+
         class IncompleteRunner(BaseRunner):
             pass
 

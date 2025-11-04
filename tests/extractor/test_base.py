@@ -190,6 +190,7 @@ class TestExtractor:
     def test_feature_name_camel_case_conversion(self):
         """Test feature_name() correctly splits CamelCase into snake_case."""
         # Arrange: Create class with complex CamelCase name
+
         class MyComplexFeatureName(Extractor):
             def _extract(self, data: HSI, **inputs) -> dict:
                 return {}

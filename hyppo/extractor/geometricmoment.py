@@ -75,13 +75,13 @@ class GeometricMomentExtractor(Extractor):
 
         for i in range(0, N, block_size):
             # Extract the current batch
-            batch = patches[i:i + block_size]
+            batch = patches[i : i + block_size]
 
             # Multiply each patch by the kernel
             product = batch[:, None, :, :] * kernels[None, :, :, :]
 
             # Sum the product to get the scalar moment
-            moments[i:i + block_size] = product.sum(axis=(-2, -1))
+            moments[i : i + block_size] = product.sum(axis=(-2, -1))
 
         return moments
 

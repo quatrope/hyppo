@@ -67,6 +67,7 @@ class TestFeature:
     def test_describe_with_shape_attribute(self):
         """Test describe method with non-ndarray object that has shape."""
         # Arrange: Create mock object with shape attribute
+
         class ShapeObject:
             """Mock object with shape attribute."""
 

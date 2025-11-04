@@ -61,6 +61,7 @@ namespaces = false
 [tool.black]
 line-length = 79
 
+
 [tool.isort]
 profile = "black"
 line_length = 79
@@ -77,3 +78,4 @@ per-file-ignores = [
     "hyppo/io/__init__.py:A005",
     "tests/io/__init__.py:A005"
 ]
+extend-ignore = ["E203"]

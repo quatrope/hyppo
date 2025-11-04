@@ -174,7 +174,7 @@ class GLCMExtractor(Extractor):
         # TODO! Check for parallelization opportunities
         # TODO! Improve code
         for i in range(0, N, block_size):
-            batch = patches[i:i + block_size]
+            batch = patches[i : i + block_size]
             batch_size = batch.shape[0]
 
             for j in range(batch_size):

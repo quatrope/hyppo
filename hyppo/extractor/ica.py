@@ -97,7 +97,7 @@ class ICAExtractor(Extractor):
             reconstruction_error = np.mean(
                 (reflectance_reshaped - X_reconstructed) ** 2
             )
-        except Exception:  # TODO! Specifiy proper exception
+        except ValueError:
             reconstruction_error = None
 
         return {

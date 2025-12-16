@@ -29,10 +29,9 @@ class NDWIExtractor(Extractor):
 
     References
     ----------
-    .. [1] Gao, B.-C. (1996). NDWI—a normalized difference water index for
-           remote sensing of vegetation liquid water from space. Remote Sensing
-           of Environment, 58(3), 257–266.
-           https://doi.org/10.1016/S0034-4257(96)00067-3
+    .. [1] McFeeters, S. K. (1996). The use of the Normalized Difference 
+           Water Index (NDWI) in the delineation of open water features. 
+           International Journal of Remote Sensing, 17(7), 1425-1432.
     """
 
     def __init__(self, green_wavelength=560, nir_wavelength=850):
@@ -56,7 +55,7 @@ class NDWIExtractor(Extractor):
         dict
             Dictionary containing:
 
-            - features : ndarray of shape (H, W)
+            - features : ndarray of shape (H, W, 1)
                 NDWI index values.
             - green_idx : int
                 Index of the green band used.
@@ -94,9 +93,10 @@ class NDWIExtractor(Extractor):
 
         # Calculate NDWI
         ndwi = (green - nir) / (green + nir + 1e-6)
+        features = ndwi[:, :, np.newaxis]
 
         return {
-            "features": ndwi,
+            "features": features,
             "green_idx": green_idx,
             "nir_idx": nir_idx,
             "wavelength_used": (wavelength[green_idx], wavelength[nir_idx]),

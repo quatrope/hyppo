@@ -56,7 +56,7 @@ class NDVIExtractor(Extractor):
         dict
             Dictionary containing:
 
-            - features : ndarray of shape (H, W)
+            - features : ndarray of shape (H, W, 1)
                 NDVI index values.
             - red_idx : int
                 Index of the red band used.
@@ -94,9 +94,10 @@ class NDVIExtractor(Extractor):
 
         # Calculate NDVI
         ndvi = (nir - red) / (nir + red + 1e-6)
+        features = ndvi[:, :, np.newaxis]
 
         return {
-            "features": ndvi,
+            "features": features,
             "red_idx": red_idx,
             "nir_idx": nir_idx,
             "wavelength_used": (wavelengths[red_idx], wavelengths[nir_idx]),

@@ -60,7 +60,7 @@ class SAVIExtractor(Extractor):
         dict
             Dictionary containing:
 
-            - features : ndarray of shape (H, W)
+            - features : ndarray of shape (H, W, 1)
                 SAVI index values.
             - red_idx : int
                 Index of the red band used.
@@ -100,9 +100,10 @@ class SAVIExtractor(Extractor):
 
         # Calculate SAVI
         savi = ((nir - red) * (1 + self.L)) / (nir + red + self.L)
+        features = savi[:, :, np.newaxis]
 
         return {
-            "features": savi,
+            "features": features,
             "red_idx": red_idx,
             "nir_idx": nir_idx,
             "wavelength_used": (wavelength[red_idx], wavelength[nir_idx]),

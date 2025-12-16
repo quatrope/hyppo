@@ -2,7 +2,6 @@
 
 import numpy as np
 import pywt
-from skimage.transform import resize
 
 from hyppo.core import HSI
 from .base import Extractor
@@ -10,40 +9,33 @@ from .base import Extractor
 
 class DWT3DExtractor(Extractor):
     """
-    Discrete Wavelet Transform (3D) feature extractor for hyperspectral images.
+    3D Discrete Wavelet Transform feature extractor.
 
-    Applies 3D DWT along the spatial (H, W) and spectral (B) dimensions
-    of the hyperspectral cube. Each level of decomposition produces an
-    approximation (LLL) and detail coefficients (subbands) that are
-    upsampled to the original resolution and concatenated along the
-    feature axis.
+    Applies 3D Stationary Wavelet Transform (SWT) to the hyperspectral cube
+    (Spatial + Spectral dimensions) to extract joint spectral-spatial texture features.
+
+    As described in Qian et al. (2013), 3D DWT decomposes the data into 8 subbands
+    capturing correlations across spatial and spectral domains simultaneously.
 
     Parameters
     ----------
-    wavelet : str, default='db4'
-        Mother wavelet used for decomposition.
-    mode : str, default='symmetric'
-        Signal extension mode for wavelet transform.
-    levels : int, default=1
-        Number of decomposition levels.
+    wavelet : str
+        Wavelet name to use (default: 'haar').
+    levels : int
+        Number of decomposition levels (default: 1).
 
     References
     ----------
-    Qian, Ye, and Zhou (2012): Decomposed hyperspectral images at
-        different scales, orientations, and frequencies using 3-D
-        wavelets, and applied sparse logistic regression for feature
-        selection and classification.
-    Ye et al. (2014): Extracted 3-D DWT coefficients to acquire
-        spectral–spatial information for classification, using subspace
-        division to improve class separation and reduce training samples.
-
+    Qian, Y., Ye, M., & Zhou, J. (2013). Hyperspectral Image Classification
+    Based on Structured Sparse Logistic Regression and Three-Dimensional
+    Wavelet Texture Features. *IEEE Transactions on Geoscience and Remote Sensing*,
+    51(4), 2276-2291.
     """
 
-    def __init__(self, wavelet="db4", mode="symmetric", levels=1):
+    def __init__(self, wavelet="haar", levels=1):
         """Initialize DWT3D extractor with wavelet parameters."""
         super().__init__()
         self.wavelet = wavelet
-        self.mode = mode
         self.levels = levels
 
     @classmethod
@@ -55,85 +47,96 @@ class DWT3DExtractor(Extractor):
         """
         Extract 3D DWT features from a hyperspectral image.
 
-        Parameters
-        ----------
+        Args
+        ----
         data : HSI
-            Hyperspectral image object containing reflectance data.
+            Hyperspectral image object
 
         Returns
         -------
         dict
-            Dictionary containing:
-                - "features": np.ndarray of shape (H, W, B * n_subbands)
-                    Upsampled wavelet coefficient maps stacked along
-                    the last axis.
-                - "wavelet": str, wavelet used for decomposition
-                - "mode": str, signal extension mode
-                - "levels": int, number of decomposition levels
-                - "n_features": int, total number of features per pixel
-                - "original_shape": tuple, original shape of the HSI
-                    cube (H, W, B)
+            - "features": 3D SWT coefficient maps stacked (H, W, n_features)
+            - "wavelet": Wavelet used
+            - "levels": Number of decomposition levels
+            - "n_features": Total number of features per pixel
+            - "original_shape": Original HSI shape (H, W, bands)
         """
         reflectance = data.reflectance
-        height, width, bands = reflectance.shape
-        original_shape = reflectance.shape
+        h, w, b = reflectance.shape
 
-        # Apply 3D DWT
-        coefficients = pywt.wavedecn(
-            reflectance,
-            wavelet=self.wavelet,
-            mode=self.mode,
+        # Calculate required padding for SWT
+
+        divisor = 2**self.levels
+
+        pad_h = (divisor - h % divisor) % divisor
+        pad_w = (divisor - w % divisor) % divisor
+        pad_b = (divisor - b % divisor) % divisor
+
+        needs_padding = pad_h > 0 or pad_w > 0 or pad_b > 0
+
+        # Apply padding if necessary
+        if needs_padding:
+            cube_padded = np.pad(
+                reflectance,
+                ((0, pad_h), (0, pad_w), (0, pad_b)),
+                mode="reflect",
+            )
+        else:
+            cube_padded = reflectance
+
+        # Apply 3D Stationary Wavelet Transform
+        coeffs = pywt.swtn(
+            cube_padded,
+            self.wavelet,
             level=self.levels,
+            start_level=0,
+            axes=(0, 1, 2),
         )
 
-        # coefficients[0] is the LLL approximation
-        # coefficients[1:] are dictionaries with subbands like
-        # 'aad', 'ada', ..., 'ddd'
-        all_subbands = []
+        features_list = []
 
-        # Upsample LLL
-        coefficients_approximation = coefficients[0]
-        coefficients_approximation_up = resize(
-            coefficients_approximation,
-            (height, width, bands),
-            order=1,
-            mode="reflect",
-            anti_aliasing=False,
-        )
-        all_subbands.append(coefficients_approximation_up)
+        # Reverse the order to process
+        coeffs = list(reversed(coeffs))
+        
+        # Process each decomposition level
+        for level_coeffs in coeffs:
+            # level_coeffs has keys like 'aaa', 'aad', 'ada', etc.
+            # (a=approximation/low, d=detail/high)
+            # Sort keys for deterministic output
+            subband_keys = sorted(level_coeffs.keys())
 
-        # Process detail coefficients
-        for detail_level in coefficients[1:]:
-            for coefficient in detail_level.values():
-                coefficient_up = resize(
-                    coefficient,
-                    (height, width, bands),
-                    order=1,
-                    mode="reflect",
-                    anti_aliasing=False,
-                )
-                all_subbands.append(coefficient_up)
+            for key in subband_keys:
+                subband = level_coeffs[key]
 
-        # Stack all coefficients along the feature axis (last dimension)
-        # Shape: (height, width, bands * n_subbands)
-        features = np.concatenate(all_subbands, axis=-1)
+                # Crop back to original size if padding was applied
+                if needs_padding:
+                    subband = subband[:h, :w, :b]
+
+                features_list.append(subband)
+
+        # Concatenate all subbands along the spectral axis
+        # Output shape: (H, W, bands * 8 * levels)
+        features = np.concatenate(features_list, axis=-1)
 
         return {
             "features": features,
             "wavelet": self.wavelet,
-            "mode": self.mode,
             "levels": self.levels,
             "n_features": features.shape[-1],
-            "original_shape": original_shape,
+            "original_shape": (h, w, b),
         }
 
     def _validate(self, data: HSI, **inputs):
         """Validate extractor parameters."""
         if self.wavelet not in pywt.wavelist():
-            raise ValueError(f"Wavelet '{self.wavelet}' not available")
-
-        if self.mode not in pywt.Modes.modes:
-            raise ValueError(f"Mode '{self.mode}' not available")
+            raise ValueError(
+                f"Wavelet '{self.wavelet}' not available. "
+                f"Available wavelets: {pywt.wavelist()}"
+            )
 
         if not isinstance(self.levels, int) or self.levels <= 0:
             raise ValueError("levels must be a positive integer")
+
+        # TODO: See if we can add a validation to check if the minimum
+        # dimension supports the requested level
+        # SWT requires at least 2^level samples

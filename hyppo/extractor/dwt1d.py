@@ -12,16 +12,20 @@ class DWT1DExtractor(Extractor):
     Discrete Wavelet Transform (1D) feature extractor for hyperspectral images.
 
     Applies a 1D DWT to each pixel's spectral signature to extract
-    multiscale spectral features.
+    multiscale spectral features.  Implements the approach described in
+    Bruce et al. (2002) for hyperspectral dimensionality reduction.
+
 
     Parameters
     ----------
     wavelet : str, optional
-        Wavelet name to use (default: 'db4').
+        Wavelet name to use (default: 'db4'). Lower-order wavelets like
+        'haar', 'db2', 'db4' tend to be more stable across applications.
     mode : str, optional
         Signal extension mode (default: 'symmetric').
     levels : int, optional
-        Number of decomposition levels (default: 3).
+        Number of decomposition levels (default: 3). If None, uses maximum
+        possible level based on signal length as recommended in Bruce(2002).
 
     References
     ----------
@@ -30,8 +34,14 @@ class DWT1DExtractor(Extractor):
     *IEEE Transactions on Geoscience and Remote Sensing*, 40(10),
     2331–2338. https://doi.org/10.1109/TGRS.2002.804721
 
-    Mallat, S. (1999). A Wavelet Tour of Signal Processing.
-    Academic Press.
+    Notes
+    -----
+    Decomposes each pixel's spectral signature into:
+    - cA: Approximation coefficients (low-frequency spectral info)
+    - cD_n, ..., cD_1: Detail coefficients at each level (high-frequency)
+
+    The concatenated structure is: [cA_n, cD_n, cD_n-1, ..., cD_1]
+    where n is the decomposition level.
     """
 
     def __init__(self, wavelet="db4", mode="symmetric", levels=3):
@@ -58,86 +68,80 @@ class DWT1DExtractor(Extractor):
         Returns
         -------
         dict
-            Dictionary containing:
-                - "features" : ndarray
-                    DWT-transformed array with shape (H, W, n_features).
-                - "wavelet" : str
-                    Wavelet used.
-                - "mode" : str
-                    Signal extension mode.
-                - "levels" : int
-                    Number of decomposition levels.
-                - "coeffs_lengths" : list of int
-                    Length of coefficients at each decomposition level.
-                - "n_features" : int
-                    Total number of features per pixel.
-                - "original_shape" : tuple
-                    Shape of the original HSI (H, W, bands).
+            - "features": DWT-transformed array (H, W, n_features)
+            - "wavelet": Wavelet used
+            - "mode": Signal extension mode
+            - "level": Number of decomposition levels used
+            - "n_features": Total number of features per pixel
+            - "original_shape": Original HSI shape (H, W, bands)
         """
-        # Prepare data
+
         reflectance = data.reflectance
-        height, width, bands = reflectance.shape
+        h, w, bands = reflectance.shape
+
+        # Determine decomposition level
+        if self.levels is None:
+            # Use maximum level as in Bruce et al. (2002)
+            max_level = pywt.dwt_max_level(bands, self.wavelet)
+            actual_level = max_level
+        else:
+            actual_level = self.levels
+
+        # Reshape for pixel-wise processing
         reflectance_reshaped = reflectance.reshape(-1, bands)
 
-        # Apply DWT to each pixel's spectral signature
         features_list = []
 
+        # Apply DWT to each pixel's spectral signature
         for i in range(reflectance_reshaped.shape[0]):
             pixel_spectrum = reflectance_reshaped[i, :]
 
             # Apply 1D DWT to the spectral signature
             coefficients = pywt.wavedec(
-                pixel_spectrum, self.wavelet, mode=self.mode, level=self.levels
+                pixel_spectrum,
+                self.wavelet,
+                mode=self.mode,
+                level=actual_level,
             )
 
             # Concatenate all coefficients as features
+            # The structure is: [cA_n, cD_n, cD_n-1, ..., cD_1]
             pixel_features = np.concatenate(coefficients)
             features_list.append(pixel_features)
 
         features_2d = np.array(features_list)
-        features = features_2d.reshape(height, width, -1)
-
-        # Get coefficient lengths from first pixel for reference
-        sample_coefficients = pywt.wavedec(
-            reflectance_reshaped[0, :],
-            self.wavelet,
-            mode=self.mode,
-            level=self.levels,
-        )
-        coefficients_lengths = [len(c) for c in sample_coefficients]
-
-        # TODO: Consider validating max_level using pywt.dwt_max_level()
+        features = features_2d.reshape(h, w, -1)
 
         return {
             "features": features,
             "wavelet": self.wavelet,
             "mode": self.mode,
             "levels": self.levels,
-            "coeffs_lengths": coefficients_lengths,
             "n_features": features.shape[1],
-            "original_shape": (height, width, bands),
+            "original_shape": (h, w, bands),
         }
 
     def _validate(self, data: HSI, **inputs):
         """Validate extractor parameters."""
         if self.wavelet not in pywt.wavelist():
-            raise ValueError(f"Wavelet '{self.wavelet}' not available")
+            raise ValueError(
+                f"Wavelet '{self.wavelet}' not available. "
+                f"Available wavelets: {pywt.wavelist()}"
+            )
 
         if self.mode not in pywt.Modes.modes:
             raise ValueError(f"Mode '{self.mode}' not available")
 
-        if not isinstance(self.levels, int) or self.levels <= 0:
-            raise ValueError("levels must be a positive integer")
+        if self.levels is not None:
+            if not isinstance(self.levels, int) or self.levels <= 0:
+                raise ValueError("levels must be a positive integer or None")
 
-
-# Wavelet selection affects sensitivity and decomposition:
-# - 'haar': detects abrupt changes and jumps in spectrum (ideal for edges).
-# - 'db4': captures smooth variations between absorption bands.
-# - 'sym5': good balance between smoothness and symmetry.
-# - 'coif2': models smooth complex shapes (more computationally costly).
-#
-# Decomposition level determines signal analysis depth:
-# Max level depends on signal length and wavelet filter.
-# Can be obtained with pywt.dwt_max_level().
-# For signal length 107 and 'db4' (filter length 8),
-# max level is 3, which we use.
+            # Validate that levels don't exceed maximum
+            max_level = pywt.dwt_max_level(
+                data.reflectance.shape[2], self.wavelet
+            )
+            if self.levels > max_level:
+                raise ValueError(
+                    f"levels={self.levels} exceeds maximum level {max_level} "
+                    f"for signal length {data.reflectance.shape[2]} and wavelet '{self.wavelet}'"
+                )

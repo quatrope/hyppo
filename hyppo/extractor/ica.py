@@ -37,6 +37,11 @@ class ICAExtractor(Extractor):
         self.random_state = random_state
         self.ica = None
 
+    @classmethod
+    def feature_name(cls) -> str:
+        """Return the feature name."""
+        return "ica"
+
     def _extract(self, data: HSI, **inputs):
         """
         Extract ICA features from a hyperspectral image.

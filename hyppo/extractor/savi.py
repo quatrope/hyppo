@@ -46,6 +46,11 @@ class SAVIExtractor(Extractor):
         self.nir_wavelength = nir_wavelength
         self.L = L
 
+    @classmethod
+    def feature_name(cls) -> str:
+        """Return the feature name."""
+        return "savi"
+
     def _extract(self, data: HSI, **inputs):
         """Compute the SAVI index from a hyperspectral image.
 

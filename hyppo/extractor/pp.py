@@ -54,6 +54,11 @@ class PPExtractor(Extractor):
         self.sample_size = sample_size
         self.rng = np.random.default_rng(random_state)
 
+    @classmethod
+    def feature_name(cls) -> str:
+        """Return the feature name."""
+        return "pp"
+
     def _compute_information_divergence(self, projection_scores):
         """Symmetric KL divergence from standard Gaussian."""
         # Standardize scores (mean=0, std=1)

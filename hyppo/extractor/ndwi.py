@@ -40,6 +40,11 @@ class NDWIExtractor(Extractor):
         self.green_wavelength = green_wavelength
         self.nir_wavelength = nir_wavelength
 
+    @classmethod
+    def feature_name(cls) -> str:
+        """Return the feature name."""
+        return "ndwi"
+    
     def _extract(self, data: HSI, **inputs):
         """
         Compute NDWI from a hyperspectral image.

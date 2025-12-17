@@ -21,7 +21,7 @@ class PPExtractor(Extractor):
     ----------
     n_projections : int, default=10
         Number of projections to keep.
-    n_bins : int, default=50
+    n_bins : int, default=128
         Number of histogram bins for divergence computation.
     pca_components : int or None, default=None
         Number of PCA components for sphering. If None, components
@@ -33,16 +33,15 @@ class PPExtractor(Extractor):
 
     References
     ----------
-    .. [1] Ifarraguerri, A., & Chang, C.-I. (2000).
-           "Independent component analysis for hyperspectral image
-           analysis." IEEE Trans. Geosci. Remote Sensing, 38(2),
-           677–697.
+    .. [1] Ifarraguerri, A., & Chang, C. I. (2000). Unsupervised hyperspectral
+    image analysis with projection pursuit. IEEE Transactions on Geoscience
+    and Remote Sensing, 38(6), 2529-2538.
     """
 
     def __init__(
         self,
         n_projections=10,
-        n_bins=50,
+        n_bins=128,
         pca_components=None,  # If None, auto-select based on 99% variance
         sample_size=1000,  # Number of pixels to sample for efficiency
         random_state=42,
@@ -56,17 +55,16 @@ class PPExtractor(Extractor):
         self.rng = np.random.default_rng(random_state)
 
     def _compute_information_divergence(self, projection_scores):
-        """Compute information divergence between projection and Gaussian.
-
-        Following equations (4) and (5) from the paper.
-        """
+        """Symmetric KL divergence from standard Gaussian."""
         # Standardize scores (mean=0, std=1)
         scores_std = (projection_scores - np.mean(projection_scores)) / (
             np.std(projection_scores) + 1e-10
         )
 
-        # Create histogram with fixed range to cover Gaussian shape
-        hist_range = (-4, 4)  # Covers ~99.99% of standard Gaussian
+        # Create histogram
+        max_abs = np.max(np.abs(scores_std))
+        limit = np.maximum(4.0, max_abs + 0.5)
+        hist_range = (-limit, limit)
         hist, bin_edges = np.histogram(
             scores_std, bins=self.n_bins, range=hist_range, density=True
         )
@@ -74,53 +72,46 @@ class PPExtractor(Extractor):
         # Normalize histogram to get probability distribution p
         bin_width = bin_edges[1] - bin_edges[0]
         p = hist * bin_width
-        p = p / np.sum(p)  # Ensure normalization
+        p = p / (np.sum(p) + 1e-10)
 
         # Create corresponding Gaussian distribution q
         bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
         q = np.exp(-0.5 * bin_centers**2) / np.sqrt(2 * np.pi)
         q = q * bin_width
-        q = q / np.sum(q)  # Normalize
+        q = q / (np.sum(q) + 1e-10)
 
-        # Replace zeros with small values to avoid log(0)
-        small_val = 1e-10
-        p = np.where(p < small_val, small_val, p)
-        q = np.where(q < small_val, small_val, q)
+        # Compute divergence (Symmetric Kullback-Leibler)
+        p = np.clip(p, 1e-10, None)
+        q = np.clip(q, 1e-10, None)
 
-        # Compute symmetric information divergence (equation 5)
-        div_pq = np.sum(p * np.log(p / q))
-        div_qp = np.sum(q * np.log(q / p))
-        divergence = div_pq + div_qp
+        divergence = np.sum(p * np.log(p / q)) + np.sum(q * np.log(q / p))
 
         return divergence
 
     def _pca_preprocessing(self, X):
-        """Apply PCA preprocessing ("sphering").
+        """Apply PCA + whitening preprocessing ("sphering")."""
+        pca_components = self.pca_components
 
-        As described in Section III.A.
-        """
         # Determine number of components if not specified
-        if self.pca_components is None:
+        if pca_components is None:
             pca_temp = PCA()
             pca_temp.fit(X)
             cumvar = np.cumsum(pca_temp.explained_variance_ratio_)
-            self.pca_components = np.argmax(cumvar >= 0.99) + 1
+            pca_components = np.argmax(cumvar >= 0.99) + 1
 
         # Apply PCA with sphering
-        pca = PCA(n_components=self.pca_components, whiten=True)
+        pca = PCA(n_components=pca_components, whiten=True)
         X_sphered = pca.fit_transform(X)
 
-        return X_sphered, pca
+        return X_sphered, pca, pca_components
 
-    def _find_best_projection(self, X, previous_projections):
-        """Find best projection using simple search strategy.
-
-        Uses each pixel as candidate projection vector and selects the one
-        with highest index (Section III.B).
+    def _find_best_projection(self, X):
+        """
+        Find projection vector maximizing information divergence.
+        Candidate vectors are sampled directly from the data points.
         """
         n_samples, n_features = X.shape
 
-        # Sample pixels for efficiency (as mentioned in paper)
         if n_samples > self.sample_size:
             sample_indices = self.rng.choice(
                 n_samples, size=self.sample_size, replace=False
@@ -136,24 +127,11 @@ class PPExtractor(Extractor):
 
         # Test each pixel as a candidate projection vector
         for i, candidate_vector in enumerate(X_sample):
-            # Normalize candidate vector
-            candidate_vector = candidate_vector / (
-                np.linalg.norm(candidate_vector) + 1e-10
-            )
-
-            # Orthogonalize against previous projections
-            for prev_proj in previous_projections:
-                candidate_vector -= (
-                    np.dot(candidate_vector, prev_proj) * prev_proj
-                )
-
-            # Renormalize after orthogonalization
             norm = np.linalg.norm(candidate_vector)
             if norm < 1e-10:
-                continue  # Skip if vector becomes zero after orthogonalization
-            candidate_vector = candidate_vector / norm
+                continue
 
-            # Compute projection scores for all data
+            candidate_vector = candidate_vector / norm
             projection_scores = X @ candidate_vector
 
             # Compute information divergence
@@ -162,26 +140,15 @@ class PPExtractor(Extractor):
                 if score > best_score:
                     best_score = score
                     best_projection = candidate_vector.copy()
-                    best_pixel_idx = (
-                        sample_indices[i]
-                        if n_samples > self.sample_size
-                        else i
-                    )
+                    best_pixel_idx = sample_indices[i]
             except Exception:
                 continue  # Skip if divergence computation fails
 
         if best_projection is None:
-            # Fallback to random orthogonal vector
-            warnings.warn(
-                "No valid projection found, using random orthogonal vector"
-            )
-            best_projection = self.rng.standard_normal(n_features)
-            for prev_proj in previous_projections:
-                best_projection -= (
-                    np.dot(best_projection, prev_proj) * prev_proj
-                )
-            best_projection = best_projection / (
-                np.linalg.norm(best_projection) + 1e-10
+            warnings.warn("PP: fallback to random projection vector")
+            candidate_vector = self.rng.standard_normal(n_features)
+            best_projection = candidate_vector / (
+                np.linalg.norm(candidate_vector) + 1e-10
             )
             best_score = 0.0
             best_pixel_idx = -1
@@ -232,7 +199,10 @@ class PPExtractor(Extractor):
             raise ValueError("No valid pixels found in the data")
 
         # Step 1: PCA preprocessing (sphering)
-        X_sphered, pca = self._pca_preprocessing(X_clean)
+        X_sphered, pca, pca_components_used = self._pca_preprocessing(X_clean)
+
+        # Working copy for deflation (paper eq. 9–10)
+        X_work = X_sphered.copy()
 
         # Step 2: Iterative projection pursuit
         projection_vectors = []
@@ -241,9 +211,9 @@ class PPExtractor(Extractor):
         pixel_indices = []
 
         for i in range(self.n_projections):
-            # Find best projection orthogonal to previous ones
+            # Find best projection in deflated space
             proj_vector, div_score, pixel_idx = self._find_best_projection(
-                X_sphered, projection_vectors
+                X_work
             )
 
             # Store results
@@ -255,7 +225,12 @@ class PPExtractor(Extractor):
             proj_scores = X_sphered @ proj_vector
             projection_scores_list.append(proj_scores)
 
-        # Reconstruct full projection scores including invalid pixels
+            # Deflation: project X onto orthogonal subspace
+            # Deflation: X <- (I - vvᵀ) X
+            projection_component = np.outer(X_work @ proj_vector, proj_vector)
+            X_work = X_work - projection_component
+
+        # Reconstruct image
         full_projections = np.zeros((len(X_flat), self.n_projections))
         for i, proj_scores in enumerate(projection_scores_list):
             full_projections[valid_mask, i] = proj_scores
@@ -269,7 +244,7 @@ class PPExtractor(Extractor):
             "original_shape": (h, w, b),
             "projection_vectors": np.array(projection_vectors),
             "divergence_scores": divergence_scores,
-            "pca_components_used": self.pca_components,
+            "pca_components_used": pca_components_used,
             "pca_model": pca,
             "selected_pixel_indices": pixel_indices,
             "valid_pixel_mask": valid_mask.reshape(h, w),

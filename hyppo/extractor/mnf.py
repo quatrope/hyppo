@@ -40,7 +40,7 @@ class MNFExtractor(Extractor):
     def feature_name(cls) -> str:
         """Return the feature name."""
         return "mnf"
-    
+
     def _extract(self, data: HSI, **inputs):
         """
         Extract MNF features from a hyperspectral image.

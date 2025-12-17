@@ -97,7 +97,7 @@ class DWT3DExtractor(Extractor):
 
         # Reverse the order to process
         coeffs = list(reversed(coeffs))
-        
+
         # Process each decomposition level
         for level_coeffs in coeffs:
             # level_coeffs has keys like 'aaa', 'aad', 'ada', etc.

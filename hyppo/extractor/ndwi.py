@@ -29,8 +29,8 @@ class NDWIExtractor(Extractor):
 
     References
     ----------
-    .. [1] McFeeters, S. K. (1996). The use of the Normalized Difference 
-           Water Index (NDWI) in the delineation of open water features. 
+    .. [1] McFeeters, S. K. (1996). The use of the Normalized Difference
+           Water Index (NDWI) in the delineation of open water features.
            International Journal of Remote Sensing, 17(7), 1425-1432.
     """
 
@@ -44,7 +44,7 @@ class NDWIExtractor(Extractor):
     def feature_name(cls) -> str:
         """Return the feature name."""
         return "ndwi"
-    
+
     def _extract(self, data: HSI, **inputs):
         """
         Compute NDWI from a hyperspectral image.

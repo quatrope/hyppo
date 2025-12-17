@@ -37,7 +37,7 @@ class PCAExtractor(Extractor):
         self.whiten = whiten
         self.random_state = random_state
         self.pca = None
-    
+
     @classmethod
     def feature_name(cls) -> str:
         """Return the feature name."""

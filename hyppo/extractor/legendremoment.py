@@ -23,25 +23,23 @@ class LegendreMomentExtractor(Extractor):
     ----------
     n_components : int, default=3
         Number of PCA components to retain before computing Legendre moments.
-    max_order : int, default=3
+    max_order : int, default=6
         Maximum order of Legendre polynomials used to compute moments.
     window_sizes : list of int, default=[3, 9, 15]
         List of odd window sizes for multiscale moment computation.
 
     References
     ----------
+    Mirzapour, A., & Ghassemian, H. (2016). Comparison of geometric,
+        Zernike, and Legendre moments for hyperspectral images.
     Teague, M. R. (1980). Image analysis via the general theory of moments.
         Journal of the Optical Society of America, 70(8), 920–930.
-    Lv, Z. Y., Zhang, P., Benediktsson, J. A., & Shi, W. Z. (2014).
-        Morphological profiles based on differently shaped structuring elements
-        for classification of images with very high spatial resolution.
-        IEEE JSTARS, 7(12), 4644–4652.
     Zhou, Y., & Chellappa, R. (2004). Multiscale Legendre moments for
         image representation. Pattern Recognition, 37(7), 1387–1397.
 
     """
 
-    def __init__(self, n_components=3, max_order=3, window_sizes=[3, 9, 15]):
+    def __init__(self, n_components=3, max_order=6, window_sizes=[3, 9, 15]):
         """Initialize Legendre moment extractor with parameters."""
         super().__init__()
         self.n_components = n_components
@@ -52,27 +50,41 @@ class LegendreMomentExtractor(Extractor):
         """Compute Legendre moments for a set of patches."""
         N, height, width = patches.shape
 
-        # Crear coordenadas normalizadas en [-1, 1]
+        # Create normalized coordinates in [-1, 1] for the unit square
         x = np.linspace(-1, 1, width)
         y = np.linspace(-1, 1, height)
 
-        # Construir base de polinomios de Legendre
-        kernels = [
-            np.outer(legendre(p)(x), legendre(q)(y)).T
-            for p in range(self.max_order + 1)
-            for q in range(self.max_order + 1 - p)
-        ]
+        # Pre-compute 1D Legendre polynomials
+        poly_x = [legendre(p)(x) for p in range(self.max_order + 1)]
+        poly_y = [legendre(q)(y) for q in range(self.max_order + 1)]
+
+        # Build 2D orthonormal kernels:
+        # h_pq(x,y) = sqrt((2p+1)(2q+1)/4) * P_p(x) * P_q(y)
+        kernels = []
+        for p in range(self.max_order + 1):
+            for q in range(self.max_order + 1 - p):
+                # Normalization factor
+                norm_factor = np.sqrt((2 * p + 1) * (2 * q + 1)) / 2.0
+
+                # 2D Legendre polynomial: L_pq(x,y) = P_p(x) * P_q(y)
+                L_pq = np.outer(poly_y[q], poly_x[p])
+
+                # Apply normalization to get orthonormal basis
+                h_pq = norm_factor * L_pq
+                kernels.append(h_pq)
+
         kernels = np.stack(kernels, axis=0)  # (M, h, w)
         M = kernels.shape[0]
 
-        # Calcular momentos por bloques
+        # Compute moments
         moments = np.zeros((N, M))
-        block_size = 50_000
+        block_size = 50000
 
         for i in range(0, N, block_size):
             batch = patches[i : i + block_size]
-            product = batch[:, None, :, :] * kernels[None, :, :, :]
-            moments[i : i + block_size] = product.sum(axis=(-2, -1))
+            moments[i : i + block_size] = np.einsum(
+                "bij, kij -> bk", batch, kernels
+            )
 
         return moments
 
@@ -81,16 +93,21 @@ class LegendreMomentExtractor(Extractor):
         height, width = image.shape
         all_scales = []
 
-        for window_size in self.window_sizes:
-            pad = window_size // 2
+        for w in self.window_sizes:
+            # Add reflective padding
+            pad = w // 2
             padded = np.pad(image, pad, mode="reflect")
-            windows = view_as_windows(padded, (window_size, window_size))
-            patches = windows.reshape(-1, window_size, window_size)
 
+            # Extract sliding windows
+            windows = view_as_windows(padded, (w, w))
+            patches = windows.reshape(-1, w, w)
+
+            # Compute Legendre moments
             moments = self._legendre_moments(patches)
             moments = moments.reshape(height, width, -1)
             all_scales.append(moments)
 
+        # Concatenate all scales
         return np.concatenate(all_scales, axis=-1)
 
     def _extract(self, data: HSI, **inputs):
@@ -120,17 +137,18 @@ class LegendreMomentExtractor(Extractor):
         height, width, bands = reflectance.shape
         reflectance_reshaped = reflectance.reshape(-1, bands)
 
-        # Reducción espectral con PCA
+        # Apply PCA for spectral reduction
         self.pca = PCA(n_components=self.n_components)
         pcs = self.pca.fit_transform(reflectance_reshaped)
         pcs = pcs.reshape(height, width, self.n_components)
 
-        # Extraer momentos para cada componente principal
+        # Extract moments for each principal component
         all_features = []
         for i in range(self.n_components):
             feats = self._extract_moments_multiscale(pcs[..., i])
             all_features.append(feats)
 
+        # Concatenate features from all components
         features = np.concatenate(all_features, axis=-1)
 
         return {
@@ -160,3 +178,8 @@ class LegendreMomentExtractor(Extractor):
                 raise ValueError(
                     f"Each window size must be an odd integer ≥ 3. Got: {w}"
                 )
+        if data.reflectance.shape[-1] < self.n_components:
+            raise ValueError(
+                f"Number of spectral bands ({data.reflectance.shape[-1]}) "
+                f"is less than n_components ({self.n_components})."
+            )

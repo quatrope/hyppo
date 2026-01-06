@@ -23,65 +23,79 @@ class GeometricMomentExtractor(Extractor):
     ----------
     n_components : int, default=3
         Number of PCA components to retain before computing geometric moments.
-    window_sizes : list of int, default=[3, 9, 15]
-        List of odd window sizes for multiscale moment computation.
-    max_order : int, default=3
+    max_order : int, default=6
         Maximum order of geometric moments to compute.
+    window_sizes : list of int, default=[3, 9, 15, 27]
+        List of odd window sizes for multiscale moment computation.
+    normalize_coords : bool, default=True
+        If True, normalize pixel coordinates to [-1, 1] range for numerical
+        stability (recommended by literature).
 
     References
     ----------
-    Kumar, A., & Dikshit, O. (2015a). Geometric moment features for
-        hyperspectral image classification.
     Mirzapour, A., & Ghassemian, H. (2016). Comparison of geometric,
         Zernike, and Legendre moments for hyperspectral images.
     Hu, M. K. (1962). Visual pattern recognition by moment invariants.
         IRE Transactions on Information Theory, 8(2), 179–187.
     """
 
-    def __init__(self, n_components=3, max_order=3, window_sizes=[3, 9, 15]):
+    def __init__(
+        self,
+        n_components=3,
+        max_order=6,
+        window_sizes=[3, 9, 15],
+        normalize_coords=True,
+    ):
         """Initialize geometric moment extractor."""
         super().__init__()
         self.n_components = n_components
-        # Max order = 6 by the paper but it is slow # TODO! Check
         self.max_order = max_order
         self.window_sizes = window_sizes
+        self.normalize_coords = normalize_coords
 
     def _geometric_moments(self, patches):
         """Compute geometric moments for a set of patches."""
         N, height, width = patches.shape
 
-        # Precompute X^p * Y^q
-        x = np.arange(width)
-        y = np.arange(height)
+        # Create coordinate grids
+        x = np.arange(width, dtype=np.float64)
+        y = np.arange(height, dtype=np.float64)
+
+        # Normalize coordinates to [-1, 1] for numerical stability
+        if self.normalize_coords:
+            if width > 1:
+                x = 2 * (x - x.mean()) / (width - 1)
+            if height > 1:
+                y = 2 * (y - y.mean()) / (height - 1)
+
         # Matrices with the coordinates of each pixel within the window
-        # Shape: (height, width)
         X, Y = np.meshgrid(x, y)
 
+        # Pre-compute powers of X and Y to avoid redundant calculations
+        x_powers = [X**p for p in range(self.max_order + 1)]
+        y_powers = [Y**q for q in range(self.max_order + 1)]
+
         # Kernels list with the monomials X^p * Y^q for p + q <= max_order
-        # It is the spatial polynomial basis
+        # This is the spatial polynomial basis
         kernels = [
-            (X**p) * (Y**q)
+            x_powers[p] * y_powers[q]
             for p in range(self.max_order + 1)
             for q in range(self.max_order + 1 - p)
         ]
-        # Stack the kernels in a single matrix
-        # Shape: (moments_count, height, width)
-        kernels = np.stack(kernels, axis=0)
 
+        # Stack the kernels in a single matrix
+        kernels = np.stack(kernels, axis=0)
         moments_count = kernels.shape[0]
 
-        moments = np.zeros((N, moments_count))
+        moments = np.zeros((N, moments_count), dtype=np.float64)
         block_size = 50000
 
         for i in range(0, N, block_size):
             # Extract the current batch
             batch = patches[i : i + block_size]
 
-            # Multiply each patch by the kernel
-            product = batch[:, None, :, :] * kernels[None, :, :, :]
-
-            # Sum the product to get the scalar moment
-            moments[i : i + block_size] = product.sum(axis=(-2, -1))
+            # Compute moments: m_pq = Σ h_pq(x,y) * f(x,y)
+            moments[i : i + block_size] = np.einsum('bij, kij -> bk', batch, kernels)
 
         return moments
 
@@ -94,15 +108,14 @@ class GeometricMomentExtractor(Extractor):
             # Adds padding to the image
             pad = w // 2
             padded = np.pad(image, pad, mode="reflect")
-            # Extract all windows
-            # (height, width, w, w)
+            
+            # Extract all windows using sliding window
             windows = view_as_windows(padded, (w, w))
+
             # Reshape windows to patches
-            # (height * width, w, w)
             patches = windows.reshape(-1, w, w)
 
             # Compute geometric moments
-            # (height * width, M)
             moments = self._geometric_moments(patches)
 
             # Reshape moments to original shape
@@ -137,24 +150,25 @@ class GeometricMomentExtractor(Extractor):
                     multiscale computation.
                 - "max_order": int, maximum order of geometric moments used.
         """
+
         reflectance = data.reflectance
         height, width, bands = reflectance.shape
         reflectance_reshaped = reflectance.reshape(-1, bands)
 
-        # PCA para reducción espectral
+        # Apply PCA for spectral reduction
         self.pca = PCA(n_components=self.n_components)
         pcs = self.pca.fit_transform(reflectance_reshaped)
         pcs = pcs.reshape(height, width, self.n_components)
 
-        # Extraer momentos para cada PC y escala
+        # Extract moments for each PC across all scales
         all_features = []
         for i in range(self.n_components):
             pc_img = pcs[..., i]
-            # Calculates the geometric moments over that img
+            # Calculate geometric moment for this PC at all scales
             feats = self._extract_moments_multiscale(pc_img)
             all_features.append(feats)
 
-        # Shape: (height, width, features)
+        # Concatenate features from all PCs
         features = np.concatenate(all_features, axis=-1)
 
         return {
@@ -183,3 +197,8 @@ class GeometricMomentExtractor(Extractor):
                 raise ValueError(
                     f"Each window size must be an odd integer ≥ 3. Got: {w}"
                 )
+        if data.reflectance.shape[-1] < self.n_components:
+            raise ValueError(
+                f"Number of spectral bands ({data.reflectance.shape[-1]}) "
+                f"is less than n_components ({self.n_components})."
+            )

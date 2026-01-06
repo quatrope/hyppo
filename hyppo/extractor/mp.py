@@ -3,14 +3,15 @@
 import numpy as np
 from skimage.morphology import (
     closing,
+    diamond,
     dilation,
     disk,
     erosion,
-    octagon,
+    footprint_rectangle,
     opening,
-    square,
+    reconstruction as morph_reconstruction,
 )
-
+from sklearn.decomposition import PCA
 from hyppo.core import HSI
 from .base import Extractor
 
@@ -19,20 +20,25 @@ class MPExtractor(Extractor):
     """
     Morphological Profile (MP) feature extractor for hyperspectral images.
 
-    Applies morphological operations (opening, closing, dilation, erosion)
-    at multiple scales to selected bands, using differently shaped structuring
-    elements. The choice of structuring element shape and radius affects the
-    extracted features, in line with the methodology proposed by
-    Lv et al. (2014).
+    Implements morphological profiles based on differently shaped structuring
+    elements as proposed by Lv et al. (2014). For each principal component,
+    applies opening and closing operations using multiple SE shapes at multiple
+    scales, creating a rich feature representation that captures structural
+    information at different scales and orientations.
 
     Parameters
     ----------
-    bands : list of int or None, optional
-        Bands to process. If None, all bands are used.
-    radii : list of int, optional
-        List of structuring element radii to apply. Default is [1, 3, 5].
-    structuring_element : {'disk', 'square', 'octagon'}, optional
-        Type of structuring element to use. Default is 'disk'.
+    n_components : int, default=3
+        Number of PCA components to retain before computing MPs.
+    radii : list of int, default=[2, 4, 6, 8]
+        Radii (or sizes) of structuring elements to apply. Each radius creates
+        one opening and one closing operation per shape.
+    shapes : list of str, default=['disk', 'square', 'diamond']
+        List of structuring element shapes to use. Supported shapes:
+        'disk', 'square', 'diamond', 'line'.
+    use_reconstruction : bool, default=False
+        If True, use opening/closing by reconstruction (preserves edges better).
+        If False, use standard opening/closing operations.
 
     References
     ----------
@@ -43,25 +49,105 @@ class MPExtractor(Extractor):
     Remote Sensing, 7(12), 4644–4652. doi:10.1109/JSTARS.2014.2328618
     """
 
-    def __init__(self, bands=None, radii=None, structuring_element="disk"):
+    def __init__(
+        self,
+        n_components=3,
+        radii=[2, 4, 6, 8],
+        shapes=["disk", "square", "diamond"],
+        use_reconstruction=False,
+    ):
         """Initialize MP extractor with morphological operation parameters."""
         super().__init__()
-        self.bands = bands
-        self.radii = radii if radii is not None else [1, 3, 5]
-        self.structuring_element = structuring_element
+        self.n_components = n_components
+        self.radii = sorted(radii)
+        self.shapes = shapes
+        self.use_reconstruction = use_reconstruction
 
-    def _get_structuring_element(self, r):
-        """Return a structuring element of specified shape and radius."""
-        if self.structuring_element == "disk":
-            return disk(r)
-        elif self.structuring_element == "square":
-            return square(2 * r + 1)
-        elif self.structuring_element == "octagon":
-            return octagon(r, r)
+    def _get_structuring_element(self, shape, radius):
+        """Returns the structuring element based on shape and radius."""
+        if shape == "disk":
+            return disk(radius)
+        elif shape == "square":
+            return footprint_rectangle((2 * radius + 1, 2 * radius + 1))
+        elif shape == "diamond":
+            return diamond(radius)
+        elif shape == "line":
+            # Horizontal line SE
+            return footprint_rectangle((1, 2 * radius + 1))
         else:
             raise ValueError(
-                f"Unknown structuring element: {self.structuring_element}"
+                f"Unsupported shape '{shape}'. "
+                f"Choose from: 'disk', 'square', 'diamond', 'line'."
             )
+
+    def _opening_by_reconstruction(self, img, se):
+        """Opening by reconstruction (geodesic opening). Removes bright
+        structures smaller than SE while preserving edges of remaining
+        structures better than standard opening."""
+        # Erosion followed by dilation reconstruction
+        eroded = erosion(img, se)
+        return morph_reconstruction(eroded, img, method="dilation")
+
+    def _closing_by_reconstruction(self, img, se):
+        """Closing by reconstruction (geodesic closing).
+        Fills dark structures smaller than SE while preserving edges."""
+        # Dilation followed by erosion reconstruction
+        dilated = dilation(img, se)
+        return morph_reconstruction(dilated, img, method="erosion")
+
+    def _compute_morphological_profile(self, image, shape):
+        """
+        Compute morphological profile for a single image and shape.
+
+        The profile is structured as:
+        [Opening_n, ..., Opening_1, Original, Closing_1, ..., Closing_n]
+
+        Parameters
+        ----------
+        image : np.ndarray, shape (H, W)
+            Input grayscale image (e.g., one principal component).
+        shape : str
+            Structuring element shape to use.
+
+        Returns
+        -------
+        profile : np.ndarray, shape (H, W, 2*n_radii + 1)
+            Morphological profile with openings, original, and closings.
+        """
+        h, w = image.shape
+        n_radii = len(self.radii)
+        profile_length = 2 * n_radii + 1
+
+        profile = np.zeros((h, w, profile_length), dtype=np.float32)
+
+        # Apply opening operations (from largest to smallest radius)
+        # Store in reverse order: [Opening_n, ..., Opening_1]
+        for i, radius in enumerate(reversed(self.radii)):
+            se = self._get_structuring_element(shape, radius)
+
+            if self.use_reconstruction:
+                opened = self._opening_by_reconstruction(image, se)
+            else:
+                opened = opening(image, se)
+
+            profile[:, :, i] = opened
+
+        # Original image at center
+        profile[:, :, n_radii] = image
+
+        # Apply closing operations (from smallest to largest radius)
+        # [Closing_1, ..., Closing_n]
+        for i, radius in enumerate(self.radii):
+            se = self._get_structuring_element(shape, radius)
+
+            if self.use_reconstruction:
+                closed = self._closing_by_reconstruction(image, se)
+            else:
+                closed = closing(image, se)
+
+            profile[:, :, n_radii + 1 + i] = closed
+
+        return profile
 
     def _extract(self, data: HSI, **inputs):
         """
@@ -76,70 +162,85 @@ class MPExtractor(Extractor):
         -------
         dict
             Dictionary containing:
-            - features : ndarray of shape (H, W, n_features)
-                Stacked morphological features for each band and scale.
-            - bands_used : list of int
-                Bands actually used in extraction.
-            - radii : list of int
-                Radii of structuring elements applied.
-            - structuring_element : str
-                Type of structuring element used.
-            - n_features : int
-                Total number of features extracted.
-            - original_shape : tuple of int
+                - "features": np.ndarray, shape (H, W, n_features)
+                    Stacked morphological profiles from all shapes and PCs.
+                - "explained_variance_ratio": array
+                    Variance ratio explained by each PCA component.
+                - "n_components": int
+                    Number of PCA components used.
+                - "shapes": list of str
+                    Shapes of structuring elements used.
+                - "radii": list of int
+                    Radii of structuring elements used.
+                - "n_features": int
+                    Total number of features extracted.
+                - "use_reconstruction": bool
+                    Whether reconstruction was used.
                 Original spatial shape of the image (H, W).
         """
-        X = data.reflectance  # (H, W, B)
-        h, w, b = X.shape
+        reflectance = data.reflectance
+        height, width, bands = reflectance.shape
+        reflectance_reshaped = reflectance.reshape(-1, bands)
 
-        bands_to_use = self.bands if self.bands is not None else range(b)
+        pca = PCA(n_components=self.n_components)
+        pcs = pca.fit_transform(reflectance_reshaped)
+        pcs = pcs.reshape(height, width, self.n_components)
 
-        features_list = []
+        # Extract morphological profiles for each PC and shape
+        all_profiles = []
 
-        for band_idx in bands_to_use:
-            band = X[:, :, band_idx]
-            for r in self.radii:
-                elem = self._get_structuring_element(r)
-                # Opening
-                opened = opening(band, elem)
-                features_list.append(opened)
-                # Closing
-                closed = closing(band, elem)
-                features_list.append(closed)
-                # Dilation
-                dilated = dilation(band, elem)
-                features_list.append(dilated)
-                # Erosion
-                eroded = erosion(band, elem)
-                features_list.append(eroded)
-        # Stack features: shape (H, W, n_features)
-        features = np.stack(features_list, axis=-1)
+        # construccion del perfil
+        for i in range(self.n_components):
+            pc_img = pcs[:, :, i]
+
+            for shape in self.shapes:
+                # Compute profile for this PC and shape
+                profile = self._compute_morphological_profile(pc_img, shape)
+                all_profiles.append(profile)
+
+        # Concatenate all profiles along feature dimension
+        features = np.concatenate(all_profiles, axis=-1)
+
+        # Calculate total number of features
+        n_features_per_profile = 2 * len(self.radii) + 1
+        n_total_features = (
+            self.n_components * len(self.shapes) * n_features_per_profile
+        )
 
         return {
             "features": features,
-            "bands_used": list(bands_to_use),
+            "explained_variance_ratio": pca.explained_variance_ratio_,
+            "n_components": self.n_components,
+            "shapes": self.shapes,
             "radii": self.radii,
-            "structuring_element": self.structuring_element,
-            "n_features": features.shape[-1],
-            "original_shape": (h, w),
+            "n_features": n_total_features,
+            "use_reconstruction": self.use_reconstruction,
         }
 
     def _validate(self, data: HSI, **inputs):
         """Validate extractor parameters."""
-        if self.bands is not None and (
-            not isinstance(self.bands, (list, tuple)) or not self.bands
-        ):
-            raise ValueError(
-                "bands must be None or a non-empty list/tuple of integers."
-            )
-        if not isinstance(self.radii, (list, tuple)) or not self.radii:
-            raise ValueError(
-                "radii must be a non-empty list/tuple of positive integers."
-            )
-        if any(r <= 0 for r in self.radii):
+        if not isinstance(self.n_components, int) or self.n_components <= 0:
+            raise ValueError("n_components must be a positive integer.")
+
+        if not isinstance(self.radii, (list, tuple)) or len(self.radii) == 0:
+            raise ValueError("radii must be a non-empty list or tuple.")
+
+        if any(not isinstance(r, int) or r <= 0 for r in self.radii):
             raise ValueError("All radii must be positive integers.")
-        if self.structuring_element not in ("disk", "square", "octagon"):
+
+        if not isinstance(self.shapes, (list, tuple)) or len(self.shapes) == 0:
+            raise ValueError("shapes must be a non-empty list or tuple.")
+
+        valid_shapes = {"disk", "square", "diamond", "line"}
+        for shape in self.shapes:
+            if shape not in valid_shapes:
+                raise ValueError(
+                    f"Invalid shape '{shape}'. "
+                    f"Valid shapes: {valid_shapes}"
+                )
+
+        if data.reflectance.shape[-1] < self.n_components:
             raise ValueError(
-                "structuring_element must be one of "
-                "'disk', 'square', 'octagon'."
+                f"Number of spectral bands ({data.reflectance.shape[-1]}) "
+                f"is less than n_components ({self.n_components})."
             )

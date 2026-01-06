@@ -25,7 +25,7 @@ class ZernikeMomentExtractor(Extractor):
     ----------
     n_components : int, default=3
         Number of PCA components to retain before computing Zernike moments.
-    max_order : int, default=3
+    max_order : int, default=6
         Maximum order (degree) of Zernike polynomials to compute.
     window_sizes : list of int, default=[3, 9, 15]
         List of odd window sizes for multiscale moment computation.

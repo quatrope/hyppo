@@ -95,7 +95,9 @@ class GeometricMomentExtractor(Extractor):
             batch = patches[i : i + block_size]
 
             # Compute moments: m_pq = Σ h_pq(x,y) * f(x,y)
-            moments[i : i + block_size] = np.einsum('bij, kij -> bk', batch, kernels)
+            moments[i : i + block_size] = np.einsum(
+                "bij, kij -> bk", batch, kernels
+            )
 
         return moments
 
@@ -108,7 +110,7 @@ class GeometricMomentExtractor(Extractor):
             # Adds padding to the image
             pad = w // 2
             padded = np.pad(image, pad, mode="reflect")
-            
+
             # Extract all windows using sliding window
             windows = view_as_windows(padded, (w, w))
 
@@ -149,6 +151,8 @@ class GeometricMomentExtractor(Extractor):
                 - "window_sizes": list of int, window sizes used for
                     multiscale computation.
                 - "max_order": int, maximum order of geometric moments used.
+                - "n_moments_per_scale": int
+                    Number of moments computed per scale/component.
         """
 
         reflectance = data.reflectance
@@ -171,12 +175,20 @@ class GeometricMomentExtractor(Extractor):
         # Concatenate features from all PCs
         features = np.concatenate(all_features, axis=-1)
 
+        # Calculate number of moments per scale
+        n_moments_per_scale = sum(
+            1
+            for p in range(self.max_order + 1)
+            for q in range(self.max_order + 1 - p)
+        )
+
         return {
             "features": features,
             "explained_variance_ratio": self.pca.explained_variance_ratio_,
             "n_components": self.n_components,
             "window_sizes": self.window_sizes,
             "max_order": self.max_order,
+            "n_moments_per_scale": n_moments_per_scale,
         }
 
     def _validate(self, data: HSI, **inputs):

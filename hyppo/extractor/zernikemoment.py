@@ -164,7 +164,7 @@ class ZernikeMomentExtractor(Extractor):
         dict
             Dictionary containing:
                 - "features": np.ndarray, shape (H, W, n_features)
-                    Zernike moment features (magnitudes) concatenated 
+                    Zernike moment features (magnitudes) concatenated
                     across scales and components.
                 - "explained_variance_ratio": array
                     Variance ratio explained by each PCA component.

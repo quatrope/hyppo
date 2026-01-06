@@ -124,14 +124,18 @@ class LegendreMomentExtractor(Extractor):
         dict
             Dictionary containing:
                 - "features": np.ndarray, shape (H, W, n_features)
-                    Legendre moment features concatenated across scales
+                    Geometric moment features concatenated across scales
                     and components.
                 - "explained_variance_ratio": array
                     Variance ratio explained by each PCA component.
-                - "n_components": int, number of PCA components used.
-                - "window_sizes": list of int, window sizes used for
-                    multiscale computation.
-                - "max_order": int, maximum Legendre polynomial order used.
+                - "n_components": int
+                    Number of PCA components used.
+                - "window_sizes": list of int
+                    Window sizes used for multiscale computation.
+                - "max_order": int
+                    Maximum order of geometric moments used.
+                - "n_moments_per_scale": int
+                    Number of moments computed per scale/component.
         """
         reflectance = data.reflectance
         height, width, bands = reflectance.shape
@@ -151,12 +155,20 @@ class LegendreMomentExtractor(Extractor):
         # Concatenate features from all components
         features = np.concatenate(all_features, axis=-1)
 
+        # Calculate number of moments per scale
+        n_moments_per_scale = sum(
+            1
+            for p in range(self.max_order + 1)
+            for q in range(self.max_order + 1 - p)
+        )
+
         return {
             "features": features,
             "explained_variance_ratio": self.pca.explained_variance_ratio_,
             "n_components": self.n_components,
             "window_sizes": self.window_sizes,
             "max_order": self.max_order,
+            "n_moments_per_scale": n_moments_per_scale,
         }
 
     def _validate(self, data: HSI, **inputs):

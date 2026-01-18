@@ -8,10 +8,6 @@ to verify they can successfully complete extraction without errors.
 import numpy as np
 
 from hyppo.extractor import (
-    MaxExtractor,
-    MeanExtractor,
-    MedianExtractor,
-    MinExtractor,
     MNFExtractor,
     MPExtractor,
     NDVIExtractor,
@@ -19,77 +15,8 @@ from hyppo.extractor import (
     PCAExtractor,
     PPExtractor,
     SAVIExtractor,
-    StdExtractor,
     ZernikeMomentExtractor,
 )
-
-
-class TestMaxExtractor:
-    """Test cases for MaxExtractor."""
-
-    def test_extract_basic(self, sample_hsi):
-        """Test that Max extraction completes successfully."""
-        # Arrange: Create extractor
-        extractor = MaxExtractor()
-
-        # Act: Execute extraction
-        result = extractor.extract(sample_hsi)
-
-        # Assert: Verify required keys
-        assert "features" in result
-        assert isinstance(result["features"], np.ndarray)
-        assert set(result.keys()) == {"features"}
-
-
-class TestMeanExtractor:
-    """Test cases for MeanExtractor."""
-
-    def test_extract_basic(self, sample_hsi):
-        """Test that Mean extraction completes successfully."""
-        # Arrange: Create extractor
-        extractor = MeanExtractor()
-
-        # Act: Execute extraction
-        result = extractor.extract(sample_hsi)
-
-        # Assert: Verify required keys
-        assert "features" in result
-        assert isinstance(result["features"], np.ndarray)
-        assert set(result.keys()) == {"features"}
-
-
-class TestMedianExtractor:
-    """Test cases for MedianExtractor."""
-
-    def test_extract_basic(self, sample_hsi):
-        """Test that Median extraction completes successfully."""
-        # Arrange: Create extractor
-        extractor = MedianExtractor()
-
-        # Act: Execute extraction
-        result = extractor.extract(sample_hsi)
-
-        # Assert: Verify required keys
-        assert "features" in result
-        assert isinstance(result["features"], np.ndarray)
-        assert set(result.keys()) == {"features"}
-
-
-class TestMinExtractor:
-    """Test cases for MinExtractor."""
-
-    def test_extract_basic(self, sample_hsi):
-        """Test that Min extraction completes successfully."""
-        # Arrange: Create extractor
-        extractor = MinExtractor()
-
-        # Act: Execute extraction
-        result = extractor.extract(sample_hsi)
-
-        # Assert: Verify required keys
-        assert "features" in result
-        assert isinstance(result["features"], np.ndarray)
-        assert set(result.keys()) == {"features"}
 
 
 class TestMNFExtractor:
@@ -265,23 +192,6 @@ class TestSAVIExtractor:
             "brightness_correction",
             "original_shape",
         }
-
-
-class TestStdExtractor:
-    """Test cases for StdExtractor."""
-
-    def test_extract_basic(self, sample_hsi):
-        """Test that Std extraction completes successfully."""
-        # Arrange: Create extractor
-        extractor = StdExtractor()
-
-        # Act: Execute extraction
-        result = extractor.extract(sample_hsi)
-
-        # Assert: Verify required keys
-        assert "features" in result
-        assert isinstance(result["features"], np.ndarray)
-        assert set(result.keys()) == {"features"}
 
 
 class TestZernikeMomentExtractor:

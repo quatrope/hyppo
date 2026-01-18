@@ -210,12 +210,16 @@ class TestDaskRunner:
 
     def test_resolve_complex_pipeline(self, small_hsi):
         """Test complex pipeline with multiple extractors."""
-        # Arrange: Import real extractors and create pipeline
-        from hyppo.extractor import MeanExtractor, PCAExtractor, StdExtractor
+        # Arrange: Create pipeline with test extractors
+        from tests.fixtures.extractors import (
+            AdvancedExtractor,
+            MediumExtractor,
+            SimpleExtractor,
+        )
 
         runner = DaskThreadsRunner(num_threads=2)
         fs = FeatureSpace.from_list(
-            [MeanExtractor(), StdExtractor(), PCAExtractor()]
+            [SimpleExtractor(), MediumExtractor(), AdvancedExtractor()]
         )
 
         # Act: Execute extraction
@@ -223,9 +227,9 @@ class TestDaskRunner:
 
         # Assert: All extractors produced results
         assert len(results) == 3
-        assert "mean" in results
-        assert "std" in results
-        assert "p_c_a" in results
+        assert "simple" in results
+        assert "medium" in results
+        assert "advanced" in results
 
         # Cleanup
         runner._client.close()
@@ -280,19 +284,19 @@ class TestDaskRunner:
     def test_graph_execution_order_independence(self, small_hsi):
         """Test that graph execution works regardless of definition order."""
         # Arrange: Define extractors in non-topological order
-        from hyppo.extractor import MeanExtractor, StdExtractor
+        from tests.fixtures.extractors import MediumExtractor, SimpleExtractor
 
         runner = DaskThreadsRunner(num_threads=2)
-        # Add in reverse dependency order
-        fs = FeatureSpace.from_list([StdExtractor(), MeanExtractor()])
+        # Add in reverse dependency order (Medium depends on Simple)
+        fs = FeatureSpace.from_list([MediumExtractor(), SimpleExtractor()])
 
         # Act: Execute extraction
         results = runner.resolve(small_hsi, fs)
 
         # Assert: Both executed successfully
         assert len(results) == 2
-        assert "mean" in results
-        assert "std" in results
+        assert "simple" in results
+        assert "medium" in results
 
         # Cleanup
         runner._client.close()
@@ -301,18 +305,18 @@ class TestDaskRunner:
     def test_integration_with_feature_space_extract(self, small_hsi):
         """Test using DaskRunner through FeatureSpace.extract()."""
         # Arrange: Create runner and feature space
-        from hyppo.extractor import MeanExtractor, StdExtractor
+        from tests.fixtures.extractors import MediumExtractor, SimpleExtractor
 
         runner = DaskThreadsRunner(num_threads=2)
-        fs = FeatureSpace.from_list([MeanExtractor(), StdExtractor()])
+        fs = FeatureSpace.from_list([SimpleExtractor(), MediumExtractor()])
 
         # Act: Call through FeatureSpace.extract()
         results = fs.extract(small_hsi, runner)
 
         # Assert: Results produced
         assert len(results) == 2
-        assert "mean" in results
-        assert "std" in results
+        assert "simple" in results
+        assert "medium" in results
 
         # Cleanup
         runner._client.close()

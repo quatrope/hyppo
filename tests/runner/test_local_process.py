@@ -252,12 +252,16 @@ class TestLocalProcessRunner:
 
     def test_resolve_complex_pipeline(self, small_hsi):
         """Test complex pipeline with multiple extractors."""
-        # Arrange: Import real extractors and create pipeline
-        from hyppo.extractor import MeanExtractor, PCAExtractor, StdExtractor
+        # Arrange: Create pipeline with test extractors
+        from tests.fixtures.extractors import (
+            AdvancedExtractor,
+            MediumExtractor,
+            SimpleExtractor,
+        )
 
         runner = LocalProcessRunner(num_workers=2)
         fs = FeatureSpace.from_list(
-            [MeanExtractor(), StdExtractor(), PCAExtractor()]
+            [SimpleExtractor(), MediumExtractor(), AdvancedExtractor()]
         )
 
         # Act: Execute extraction
@@ -265,9 +269,9 @@ class TestLocalProcessRunner:
 
         # Assert: All extractors produced results
         assert len(results) == 3
-        assert "mean" in results
-        assert "std" in results
-        assert "p_c_a" in results
+        assert "simple" in results
+        assert "medium" in results
+        assert "advanced" in results
 
         # Cleanup
         runner._pool.close()
@@ -331,18 +335,18 @@ class TestLocalProcessRunner:
     def test_integration_with_feature_space_extract(self, small_hsi):
         """Test using LocalProcessRunner through FeatureSpace.extract()."""
         # Arrange: Create runner and feature space
-        from hyppo.extractor import MeanExtractor, StdExtractor
+        from tests.fixtures.extractors import MediumExtractor, SimpleExtractor
 
         runner = LocalProcessRunner(num_workers=2)
-        fs = FeatureSpace.from_list([MeanExtractor(), StdExtractor()])
+        fs = FeatureSpace.from_list([SimpleExtractor(), MediumExtractor()])
 
         # Act: Call through FeatureSpace.extract()
         results = fs.extract(small_hsi, runner)
 
         # Assert: Results produced
         assert len(results) == 2
-        assert "mean" in results
-        assert "std" in results
+        assert "simple" in results
+        assert "medium" in results
 
         # Cleanup
         runner._pool.close()

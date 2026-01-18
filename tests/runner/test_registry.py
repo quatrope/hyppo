@@ -165,3 +165,131 @@ class TestCreateRunner:
         """Should handle empty params dict."""
         runner = registry.get("sequential", {})
         assert isinstance(runner, SequentialRunner)
+
+
+class TestRunnerRegistryRegister:
+    """Tests for register method."""
+
+    @pytest.fixture(autouse=True)
+    def setup_registry(self):
+        """Save and restore registry state."""
+        original = registry._registry.copy()
+        yield
+        registry._registry.clear()
+        registry._registry.update(original)
+
+    def test_register_non_baserunner_raises_error(self):
+        """Test registering non-BaseRunner class raises TypeError."""
+        class NotARunner:
+            pass
+
+        with pytest.raises(TypeError, match="must inherit from BaseRunner"):
+            registry.register("not-runner", NotARunner)
+
+    def test_register_same_name_different_class_raises_error(self):
+        """Test registering different class with same name raises ValueError."""
+        class AnotherSequential(BaseRunner):
+            def resolve(self, data, feature_space):
+                pass
+
+        with pytest.raises(ValueError, match="already registered"):
+            registry.register("sequential", AnotherSequential)
+
+    def test_register_same_class_twice_succeeds(self):
+        """Test re-registering the same class succeeds silently."""
+        registry.register("sequential", SequentialRunner)
+        assert "sequential" in registry
+
+
+class TestRunnerRegistryGetName:
+    """Tests for get_name method."""
+
+    def test_get_name_registered_class(self):
+        """Test get_name returns name for registered class."""
+        name = registry.get_name(SequentialRunner)
+        assert name == "sequential"
+
+    def test_get_name_unregistered_class(self):
+        """Test get_name returns None for unregistered class."""
+        class UnregisteredRunner(BaseRunner):
+            def resolve(self, data, feature_space):
+                pass
+
+        name = registry.get_name(UnregisteredRunner)
+        assert name is None
+
+
+class TestRunnerRegistryIsRegistered:
+    """Tests for is_registered method."""
+
+    def test_is_registered_true(self):
+        """Test is_registered returns True for registered name."""
+        assert registry.is_registered("sequential") is True
+
+    def test_is_registered_false(self):
+        """Test is_registered returns False for unregistered name."""
+        assert registry.is_registered("nonexistent") is False
+
+
+class TestRunnerRegistryUnregister:
+    """Tests for unregister method."""
+
+    @pytest.fixture(autouse=True)
+    def setup_registry(self):
+        """Save and restore registry state."""
+        original = registry._registry.copy()
+        yield
+        registry._registry.clear()
+        registry._registry.update(original)
+
+    def test_unregister_removes_runner(self):
+        """Test unregister removes the runner."""
+        # Arrange: Verify sequential is registered
+        assert "sequential" in registry
+
+        # Act: Unregister
+        registry.unregister("sequential")
+
+        # Assert: Removed
+        assert "sequential" not in registry
+
+    def test_unregister_nonexistent_raises_keyerror(self):
+        """Test unregister raises KeyError for non-existent name."""
+        with pytest.raises(KeyError, match="not found in registry"):
+            registry.unregister("nonexistent-runner")
+
+
+class TestRunnerRegistryClear:
+    """Tests for clear method."""
+
+    @pytest.fixture(autouse=True)
+    def setup_registry(self):
+        """Save and restore registry state."""
+        original = registry._registry.copy()
+        yield
+        registry._registry.clear()
+        registry._registry.update(original)
+
+    def test_clear_removes_all_runners(self):
+        """Test clear removes all runners."""
+        assert len(registry) > 0
+        registry.clear()
+        assert len(registry) == 0
+
+
+class TestRunnerRegistryDunderMethods:
+    """Tests for dunder methods."""
+
+    def test_contains_registered(self):
+        """Test __contains__ returns True for registered name."""
+        assert "sequential" in registry
+
+    def test_contains_unregistered(self):
+        """Test __contains__ returns False for unregistered name."""
+        assert "nonexistent" not in registry
+
+    def test_iter_yields_names(self):
+        """Test __iter__ yields runner names."""
+        names = list(registry)
+        assert "sequential" in names
+        assert isinstance(names[0], str)

@@ -5,7 +5,7 @@ import pytest
 
 from hyppo.core import FeatureDependencyGraph
 from hyppo.extractor.base import Extractor
-from hyppo.extractor.std import StdExtractor
+from hyppo.extractor.savi import SAVIExtractor
 from tests.fixtures.extractors import (
     AdvancedExtractor,
     MediumExtractor,
@@ -59,10 +59,10 @@ class TestFeatureDependencyGraph:
         graph = FeatureDependencyGraph()
 
         # Add wrong type of extractor
-        std = StdExtractor()
+        std = SAVIExtractor()
         graph.add_extractor("mean", std, {})  # std as mean
 
-        # Add medium that expects SimpleExtractor but gets StdExtractor
+        # Add medium that expects SimpleExtractor but gets SAVIExtractor
         medium = MediumExtractor()
         graph.add_extractor("medium", medium, {"simple_input": "mean"})
 

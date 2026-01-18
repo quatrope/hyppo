@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from hyppo.core import Feature, FeatureCollection
-from hyppo.extractor.mean import MeanExtractor
+from hyppo.extractor.ndvi import NDVIExtractor
 
 
 class TestFeature:
@@ -12,7 +12,7 @@ class TestFeature:
 
     def test_feature_result_creation(self):
         """Test creating Feature from dictionary."""
-        data = {"mean": [1, 2, 3], "std": [0.1, 0.2, 0.3]}
+        data = {"n_d_v_i": [1, 2, 3], "s_a_v_i": [0.1, 0.2, 0.3]}
         result = Feature(data, extractor=None, inputs_used=[])
 
         assert result.to_dict() == {
@@ -94,8 +94,8 @@ class TestFeatureCollection:
 
     def test_add_result(self):
         """Test adding results to collection."""
-        extractor = MeanExtractor()
-        data = {"mean": np.array([1, 2, 3])}
+        extractor = NDVIExtractor()
+        data = {"n_d_v_i": np.array([1, 2, 3])}
 
         collection = FeatureCollection.from_features(
             {"mean_extractor": Feature(data, extractor, ["input1"])}
@@ -110,35 +110,35 @@ class TestFeatureCollection:
         """Test extracting all feature data."""
         collection = FeatureCollection.from_features(
             {
-                "mean_ext": Feature({"mean": [1, 2, 3]}, None, []),
-                "std_ext": Feature({"std": [0.1, 0.2, 0.3]}, None, []),
+                "mean_ext": Feature({"n_d_v_i": [1, 2, 3]}, None, []),
+                "std_ext": Feature({"s_a_v_i": [0.1, 0.2, 0.3]}, None, []),
             }
         )
 
         features = collection.get_all_features()
-        expected = {"mean": [1, 2, 3], "std": [0.1, 0.2, 0.3]}
+        expected = {"n_d_v_i": [1, 2, 3], "s_a_v_i": [0.1, 0.2, 0.3]}
         assert features == expected
 
     def test_get_metadata(self):
         """Test extracting metadata."""
-        extractor = MeanExtractor()
+        extractor = NDVIExtractor()
 
         collection = FeatureCollection.from_features(
-            {"mean_ext": Feature({"mean": [1, 2, 3]}, extractor, ["input1"])}
+            {"mean_ext": Feature({"n_d_v_i": [1, 2, 3]}, extractor, ["input1"])}
         )
 
         metadata = collection.get_metadata()
         assert "mean_ext" in metadata
-        assert metadata["mean_ext"]["extractor_type"] == "MeanExtractor"
+        assert metadata["mean_ext"]["extractor_type"] == "NDVIExtractor"
         assert metadata["mean_ext"]["inputs_used"] == ["input1"]
-        assert metadata["mean_ext"]["feature_keys"] == ["mean"]
+        assert metadata["mean_ext"]["feature_keys"] == ["n_d_v_i"]
 
     def test_get_extractor_names(self):
         """Test getting list of extractor names."""
         collection = FeatureCollection.from_features(
             {
-                "mean_ext": Feature({"mean": [1, 2, 3]}, None, []),
-                "std_ext": Feature({"std": [0.1, 0.2, 0.3]}, None, []),
+                "mean_ext": Feature({"n_d_v_i": [1, 2, 3]}, None, []),
+                "std_ext": Feature({"s_a_v_i": [0.1, 0.2, 0.3]}, None, []),
             }
         )
 
@@ -150,8 +150,8 @@ class TestFeatureCollection:
         # Arrange: Create collection with results
         collection = FeatureCollection.from_features(
             {
-                "mean_ext": Feature({"mean": [1, 2, 3]}, None, []),
-                "std_ext": Feature({"std": [0.1, 0.2, 0.3]}, None, []),
+                "mean_ext": Feature({"n_d_v_i": [1, 2, 3]}, None, []),
+                "std_ext": Feature({"s_a_v_i": [0.1, 0.2, 0.3]}, None, []),
             }
         )
 

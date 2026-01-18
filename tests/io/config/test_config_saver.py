@@ -9,10 +9,10 @@ import yaml
 from hyppo import io
 from hyppo.core import FeatureSpace, HSI
 from hyppo.extractor import (
-    MaxExtractor,
-    MeanExtractor,
     PCAExtractor,
-    StdExtractor,
+    NDVIExtractor,
+    PCAExtractor,
+    SAVIExtractor,
 )
 from hyppo.extractor.base import Extractor
 
@@ -47,7 +47,7 @@ class TestSaveConfigYAML:
     def test_save_config_yaml_creates_file(self, tmp_path):
         """Test that save_config_yaml creates a YAML file."""
         # Arrange: Create FeatureSpace
-        fs = FeatureSpace.from_list([MeanExtractor(), StdExtractor()])
+        fs = FeatureSpace.from_list([NDVIExtractor(), SAVIExtractor()])
         yaml_path = tmp_path / "config.yaml"
 
         # Act: Save configuration
@@ -59,7 +59,7 @@ class TestSaveConfigYAML:
     def test_save_config_yaml_invalid_extension(self, tmp_path):
         """Test save_config_yaml raises ValueError for invalid extension."""
         # Arrange: Create FeatureSpace and path with wrong extension
-        fs = FeatureSpace.from_list([MeanExtractor()])
+        fs = FeatureSpace.from_list([NDVIExtractor()])
         txt_path = tmp_path / "config.txt"
 
         # Act & Assert: Verify ValueError is raised
@@ -69,7 +69,7 @@ class TestSaveConfigYAML:
     def test_save_config_yaml_simple_pipeline(self, tmp_path):
         """Test saving simple pipeline to YAML."""
         # Arrange: Create FeatureSpace with simple extractors
-        fs = FeatureSpace.from_list([MeanExtractor(), StdExtractor()])
+        fs = FeatureSpace.from_list([NDVIExtractor(), SAVIExtractor()])
         yaml_path = tmp_path / "config.yaml"
 
         # Act: Save configuration
@@ -80,10 +80,10 @@ class TestSaveConfigYAML:
             config = yaml.safe_load(f)
 
         assert "pipeline" in config
-        assert "mean" in config["pipeline"]
-        assert "std" in config["pipeline"]
-        assert config["pipeline"]["mean"]["extractor"] == "MeanExtractor"
-        assert config["pipeline"]["std"]["extractor"] == "StdExtractor"
+        assert "n_d_v_i" in config["pipeline"]
+        assert "s_a_v_i" in config["pipeline"]
+        assert config["pipeline"]["n_d_v_i"]["extractor"] == "NDVIExtractor"
+        assert config["pipeline"]["s_a_v_i"]["extractor"] == "SAVIExtractor"
 
     def test_save_config_yaml_with_parameters(self, tmp_path):
         """Test saving extractors with parameters."""
@@ -107,7 +107,7 @@ class TestSaveConfigYAML:
     def test_save_config_yaml_accepts_yml_extension(self, tmp_path):
         """Test that save_config_yaml accepts .yml extension."""
         # Arrange: Create FeatureSpace
-        fs = FeatureSpace.from_list([MeanExtractor()])
+        fs = FeatureSpace.from_list([NDVIExtractor()])
         yml_path = tmp_path / "config.yml"
 
         # Act: Save configuration
@@ -119,7 +119,7 @@ class TestSaveConfigYAML:
     def test_save_config_yaml_accepts_string_path(self, tmp_path):
         """Test that save_config_yaml accepts string paths."""
         # Arrange: Create FeatureSpace and string path
-        fs = FeatureSpace.from_list([MeanExtractor()])
+        fs = FeatureSpace.from_list([NDVIExtractor()])
         yaml_path = str(tmp_path / "config.yaml")
 
         # Act: Save configuration
@@ -131,7 +131,7 @@ class TestSaveConfigYAML:
     def test_save_config_yaml_accepts_path_object(self, tmp_path):
         """Test that save_config_yaml accepts Path objects."""
         # Arrange: Create FeatureSpace and Path object
-        fs = FeatureSpace.from_list([MeanExtractor()])
+        fs = FeatureSpace.from_list([NDVIExtractor()])
         yaml_path = Path(tmp_path / "config.yaml")
 
         # Act: Save configuration
@@ -144,7 +144,7 @@ class TestSaveConfigYAML:
         """Test saved YAML can be loaded back to equivalent FeatureSpace."""
         # Arrange: Create FeatureSpace with multiple extractors
         original_fs = FeatureSpace.from_list(
-            [MeanExtractor(), StdExtractor(), MaxExtractor()]
+            [NDVIExtractor(), SAVIExtractor(), PCAExtractor()]
         )
         yaml_path = tmp_path / "config.yaml"
 
@@ -207,7 +207,7 @@ class TestSaveConfigJSON:
     def test_save_config_json_creates_file(self, tmp_path):
         """Test that save_config_json creates a JSON file."""
         # Arrange: Create FeatureSpace
-        fs = FeatureSpace.from_list([MeanExtractor(), StdExtractor()])
+        fs = FeatureSpace.from_list([NDVIExtractor(), SAVIExtractor()])
         json_path = tmp_path / "config.json"
 
         # Act: Save configuration
@@ -219,7 +219,7 @@ class TestSaveConfigJSON:
     def test_save_config_json_invalid_extension(self, tmp_path):
         """Test save_config_json raises ValueError for invalid extension."""
         # Arrange: Create FeatureSpace and path with wrong extension
-        fs = FeatureSpace.from_list([MeanExtractor()])
+        fs = FeatureSpace.from_list([NDVIExtractor()])
         txt_path = tmp_path / "config.txt"
 
         # Act & Assert: Verify ValueError is raised
@@ -229,7 +229,7 @@ class TestSaveConfigJSON:
     def test_save_config_json_simple_pipeline(self, tmp_path):
         """Test saving simple pipeline to JSON."""
         # Arrange: Create FeatureSpace with simple extractors
-        fs = FeatureSpace.from_list([MeanExtractor(), StdExtractor()])
+        fs = FeatureSpace.from_list([NDVIExtractor(), SAVIExtractor()])
         json_path = tmp_path / "config.json"
 
         # Act: Save configuration
@@ -240,10 +240,10 @@ class TestSaveConfigJSON:
             config = json.load(f)
 
         assert "pipeline" in config
-        assert "mean" in config["pipeline"]
-        assert "std" in config["pipeline"]
-        assert config["pipeline"]["mean"]["extractor"] == "MeanExtractor"
-        assert config["pipeline"]["std"]["extractor"] == "StdExtractor"
+        assert "n_d_v_i" in config["pipeline"]
+        assert "s_a_v_i" in config["pipeline"]
+        assert config["pipeline"]["n_d_v_i"]["extractor"] == "NDVIExtractor"
+        assert config["pipeline"]["s_a_v_i"]["extractor"] == "SAVIExtractor"
 
     def test_save_config_json_with_parameters(self, tmp_path):
         """Test saving extractors with parameters."""
@@ -267,7 +267,7 @@ class TestSaveConfigJSON:
     def test_save_config_json_accepts_string_path(self, tmp_path):
         """Test that save_config_json accepts string paths."""
         # Arrange: Create FeatureSpace and string path
-        fs = FeatureSpace.from_list([MeanExtractor()])
+        fs = FeatureSpace.from_list([NDVIExtractor()])
         json_path = str(tmp_path / "config.json")
 
         # Act: Save configuration
@@ -279,7 +279,7 @@ class TestSaveConfigJSON:
     def test_save_config_json_accepts_path_object(self, tmp_path):
         """Test that save_config_json accepts Path objects."""
         # Arrange: Create FeatureSpace and Path object
-        fs = FeatureSpace.from_list([MeanExtractor()])
+        fs = FeatureSpace.from_list([NDVIExtractor()])
         json_path = Path(tmp_path / "config.json")
 
         # Act: Save configuration
@@ -292,7 +292,7 @@ class TestSaveConfigJSON:
         """Test saved JSON can be loaded back to equivalent FeatureSpace."""
         # Arrange: Create FeatureSpace with multiple extractors
         original_fs = FeatureSpace.from_list(
-            [MeanExtractor(), StdExtractor(), PCAExtractor(n_components=5)]
+            [NDVIExtractor(), SAVIExtractor(), PCAExtractor(n_components=5)]
         )
         json_path = tmp_path / "config.json"
 
@@ -315,7 +315,7 @@ class TestConfigSaveMethod:
         # Arrange: Create Config
         from hyppo.io import Config
 
-        fs = FeatureSpace.from_list([MeanExtractor(), StdExtractor()])
+        fs = FeatureSpace.from_list([NDVIExtractor(), SAVIExtractor()])
         config = Config(feature_space=fs)
         yaml_path = tmp_path / "config.yaml"
 
@@ -333,7 +333,7 @@ class TestConfigSaveMethod:
         # Arrange: Create Config
         from hyppo.io import Config
 
-        fs = FeatureSpace.from_list([MeanExtractor()])
+        fs = FeatureSpace.from_list([NDVIExtractor()])
         config = Config(feature_space=fs)
         yml_path = tmp_path / "config.yml"
 
@@ -348,7 +348,7 @@ class TestConfigSaveMethod:
         # Arrange: Create Config
         from hyppo.io import Config
 
-        fs = FeatureSpace.from_list([MeanExtractor(), StdExtractor()])
+        fs = FeatureSpace.from_list([NDVIExtractor(), SAVIExtractor()])
         config = Config(feature_space=fs)
         json_path = tmp_path / "config.json"
 
@@ -366,7 +366,7 @@ class TestConfigSaveMethod:
         # Arrange: Create Config and path with wrong extension
         from hyppo.io import Config
 
-        fs = FeatureSpace.from_list([MeanExtractor()])
+        fs = FeatureSpace.from_list([NDVIExtractor()])
         config = Config(feature_space=fs)
         txt_path = tmp_path / "config.txt"
 
@@ -379,7 +379,7 @@ class TestConfigSaveMethod:
         # Arrange: Create Config and string path
         from hyppo.io import Config
 
-        fs = FeatureSpace.from_list([MeanExtractor()])
+        fs = FeatureSpace.from_list([NDVIExtractor()])
         config = Config(feature_space=fs)
         yaml_path = str(tmp_path / "config.yaml")
 
@@ -394,7 +394,7 @@ class TestConfigSaveMethod:
         # Arrange: Create Config
         from hyppo.io import Config
 
-        original_fs = FeatureSpace.from_list([MeanExtractor(), StdExtractor()])
+        original_fs = FeatureSpace.from_list([NDVIExtractor(), SAVIExtractor()])
         original_config = Config(feature_space=original_fs)
         yaml_path = tmp_path / "config.yaml"
 
@@ -413,7 +413,7 @@ class TestConfigSaveMethod:
         from hyppo.io import Config
 
         original_fs = FeatureSpace.from_list(
-            [MeanExtractor(), PCAExtractor(n_components=3)]
+            [NDVIExtractor(), PCAExtractor(n_components=3)]
         )
         original_config = Config(feature_space=original_fs)
         json_path = tmp_path / "config.json"
@@ -434,7 +434,7 @@ class TestFeatureSpaceSaveConfigMethod:
     def test_save_config_yaml_format(self, tmp_path):
         """Test save_config with .yaml extension."""
         # Arrange: Create FeatureSpace
-        fs = FeatureSpace.from_list([MeanExtractor(), StdExtractor()])
+        fs = FeatureSpace.from_list([NDVIExtractor(), SAVIExtractor()])
         yaml_path = tmp_path / "config.yaml"
 
         # Act: Call save_config method
@@ -449,7 +449,7 @@ class TestFeatureSpaceSaveConfigMethod:
     def test_save_config_yml_format(self, tmp_path):
         """Test save_config with .yml extension."""
         # Arrange: Create FeatureSpace
-        fs = FeatureSpace.from_list([MeanExtractor()])
+        fs = FeatureSpace.from_list([NDVIExtractor()])
         yml_path = tmp_path / "config.yml"
 
         # Act: Call save_config method
@@ -461,7 +461,7 @@ class TestFeatureSpaceSaveConfigMethod:
     def test_save_config_json_format(self, tmp_path):
         """Test save_config with .json extension."""
         # Arrange: Create FeatureSpace
-        fs = FeatureSpace.from_list([MeanExtractor(), StdExtractor()])
+        fs = FeatureSpace.from_list([NDVIExtractor(), SAVIExtractor()])
         json_path = tmp_path / "config.json"
 
         # Act: Call save_config method
@@ -476,7 +476,7 @@ class TestFeatureSpaceSaveConfigMethod:
     def test_save_config_invalid_extension(self, tmp_path):
         """Test save_config raises ValueError for invalid extension."""
         # Arrange: Create FeatureSpace and path with wrong extension
-        fs = FeatureSpace.from_list([MeanExtractor()])
+        fs = FeatureSpace.from_list([NDVIExtractor()])
         txt_path = tmp_path / "config.txt"
 
         # Act & Assert: Verify ValueError is raised
@@ -486,7 +486,7 @@ class TestFeatureSpaceSaveConfigMethod:
     def test_save_config_roundtrip_yaml(self, tmp_path):
         """Test save_config and load_config_yaml roundtrip."""
         # Arrange: Create FeatureSpace
-        original_fs = FeatureSpace.from_list([MeanExtractor(), StdExtractor()])
+        original_fs = FeatureSpace.from_list([NDVIExtractor(), SAVIExtractor()])
         yaml_path = tmp_path / "config.yaml"
 
         # Act: Save and reload
@@ -502,7 +502,7 @@ class TestFeatureSpaceSaveConfigMethod:
         """Test save_config and load_config_json roundtrip."""
         # Arrange: Create FeatureSpace
         original_fs = FeatureSpace.from_list(
-            [MeanExtractor(), PCAExtractor(n_components=3)]
+            [NDVIExtractor(), PCAExtractor(n_components=3)]
         )
         json_path = tmp_path / "config.json"
 

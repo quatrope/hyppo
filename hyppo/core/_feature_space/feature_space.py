@@ -154,7 +154,7 @@ class FeatureSpace:
             ValueError: If path doesn't have .yaml, .yml, or .json extension
 
         Example:
-            >>> fs = FeatureSpace.from_list([MeanExtractor(), StdExtractor()])
+            >>> fs = FeatureSpace.from_list([NDVIExtractor(), SAVIExtractor()])
             >>> fs.save_config("pipeline.yaml")
             >>> fs.save_config("pipeline.json")
         """

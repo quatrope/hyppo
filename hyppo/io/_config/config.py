@@ -35,7 +35,7 @@ class Config:
 
     >>> # Create Config without explicit runner (uses default)
     >>> from hyppo.core import FeatureSpace
-    >>> fs = FeatureSpace.from_list([MeanExtractor()])
+    >>> fs = FeatureSpace.from_list([NDVIExtractor()])
     >>> config = Config(feature_space=fs)
     >>> config.runner  # SequentialRunner instance
 

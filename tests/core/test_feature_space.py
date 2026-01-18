@@ -4,7 +4,7 @@ import pytest
 
 import hyppo
 from hyppo.core import FeatureSpace
-from hyppo.extractor.std import StdExtractor
+from hyppo.extractor.savi import SAVIExtractor
 from tests.fixtures.extractors import MediumExtractor, SimpleExtractor
 
 
@@ -14,9 +14,9 @@ class TestFeatureSpace:
     def test_basic_pipeline(self, sample_hsi):
         """Test basic pipeline with real extractors."""
         pipeline_config = {
-            "mean": (hyppo.extractor.MeanExtractor(), {}),
-            "std": (hyppo.extractor.StdExtractor(), {}),
-            "min_val": (hyppo.extractor.MinExtractor(), {}),
+            "mean": (hyppo.extractor.NDVIExtractor(), {}),
+            "std": (hyppo.extractor.SAVIExtractor(), {}),
+            "min_val": (hyppo.extractor.LBPExtractor(), {}),
         }
 
         fs = FeatureSpace(pipeline_config)
@@ -51,7 +51,7 @@ class TestFeatureSpace:
         """Test FeatureSpace with invalid types for inputs config."""
         # Wrong type mapping
         pipeline_config = {
-            "simple": (StdExtractor(), {}),  # std as simple
+            "simple": (SAVIExtractor(), {}),  # std as simple
             "medium": (MediumExtractor(), {"simple_input": "simple"}),
         }
 
@@ -61,9 +61,9 @@ class TestFeatureSpace:
     def test_from_list_simple(self, sample_hsi):
         """Test creating FeatureSpace from list without dependencies."""
         extractors = [
-            hyppo.extractor.MeanExtractor(),
-            hyppo.extractor.StdExtractor(),
-            hyppo.extractor.MinExtractor(),
+            hyppo.extractor.NDVIExtractor(),
+            hyppo.extractor.SAVIExtractor(),
+            hyppo.extractor.LBPExtractor(),
         ]
 
         fs = FeatureSpace.from_list(extractors)
@@ -71,9 +71,9 @@ class TestFeatureSpace:
 
         # Check that all extractors ran
         assert len(results) == 3
-        assert "mean" in results
-        assert "std" in results
-        assert "min" in results
+        assert "n_d_v_i" in results
+        assert "s_a_v_i" in results
+        assert "l_b_p" in results
 
     def test_from_list_with_dependencies(self, sample_hsi):
         """Test creating FeatureSpace from list with dependencies."""
@@ -95,8 +95,8 @@ class TestFeatureSpace:
     def test_from_list_duplicate_types_error(self):
         """Test error when list contains duplicate extractor types."""
         extractors = [
-            hyppo.extractor.MeanExtractor(),
-            hyppo.extractor.MeanExtractor(),  # Duplicate
+            hyppo.extractor.NDVIExtractor(),
+            hyppo.extractor.NDVIExtractor(),  # Duplicate
         ]
 
         with pytest.raises(ValueError, match="Duplicate extractor name"):
@@ -202,8 +202,8 @@ class TestFeatureSpace:
         # This test tries to hit line 92, but it's likely unreachable
         # because duplicate types generate duplicate names which are
         # caught at line 85
-        mean1 = hyppo.extractor.MeanExtractor()
-        mean2 = hyppo.extractor.MeanExtractor()
+        mean1 = hyppo.extractor.NDVIExtractor()
+        mean2 = hyppo.extractor.NDVIExtractor()
 
         extractors = [mean1, mean2]
 

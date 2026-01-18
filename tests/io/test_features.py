@@ -9,7 +9,7 @@ import pytest
 
 from hyppo import io
 from hyppo.core import Feature, FeatureCollection
-from hyppo.extractor import MeanExtractor, StdExtractor
+from hyppo.extractor import NDVIExtractor, SAVIExtractor
 
 
 class TestSaveFeatureCollection:
@@ -19,8 +19,8 @@ class TestSaveFeatureCollection:
     def sample_feature_collection(self, small_hsi):
         """Create a sample FeatureCollection for testing."""
         # Arrange: Create extractors and extract features
-        mean_ext = MeanExtractor()
-        std_ext = StdExtractor()
+        mean_ext = NDVIExtractor()
+        std_ext = SAVIExtractor()
 
         mean_result = mean_ext.extract(small_hsi)
         std_result = std_ext.extract(small_hsi)
@@ -29,7 +29,7 @@ class TestSaveFeatureCollection:
         mean_feature = Feature(mean_result, mean_ext, {})
         std_feature = Feature(std_result, std_ext, {})
 
-        return FeatureCollection({"mean": mean_feature, "std": std_feature})
+        return FeatureCollection({"n_d_v_i": mean_feature, "s_a_v_i": std_feature})
 
     def test_save_feature_collection_creates_file(
         self, sample_feature_collection
@@ -93,24 +93,24 @@ class TestSaveFeatureCollection:
             # Assert: Verify features group and feature datasets exist
             with h5py.File(tmp_path, "r") as f:
                 assert "features" in f
-                assert "mean" in f["features"]
-                assert "std" in f["features"]
+                assert "n_d_v_i" in f["features"]
+                assert "s_a_v_i" in f["features"]
 
-                # Verify mean feature data
-                assert "features" in f["features/mean"]
-                mean_data = f["features/mean/features"][:]
-                expected_mean = sample_feature_collection["mean"].data[
+                # Verify ndvi feature data
+                assert "features" in f["features/n_d_v_i"]
+                ndvi_data = f["features/n_d_v_i/features"][:]
+                expected_ndvi = sample_feature_collection["n_d_v_i"].data[
                     "features"
                 ]
-                np.testing.assert_array_equal(mean_data, expected_mean)
+                np.testing.assert_array_equal(ndvi_data, expected_ndvi)
 
-                # Verify std feature data
-                assert "features" in f["features/std"]
-                std_data = f["features/std/features"][:]
-                expected_std = sample_feature_collection["std"].data[
+                # Verify savi feature data
+                assert "features" in f["features/s_a_v_i"]
+                savi_data = f["features/s_a_v_i/features"][:]
+                expected_savi = sample_feature_collection["s_a_v_i"].data[
                     "features"
                 ]
-                np.testing.assert_array_equal(std_data, expected_std)
+                np.testing.assert_array_equal(savi_data, expected_savi)
         finally:
             Path(tmp_path).unlink(missing_ok=True)
 
@@ -129,31 +129,31 @@ class TestSaveFeatureCollection:
             # Assert: Verify metadata group exists
             with h5py.File(tmp_path, "r") as f:
                 assert "metadata" in f
-                assert "mean" in f["metadata"]
-                assert "std" in f["metadata"]
+                assert "n_d_v_i" in f["metadata"]
+                assert "s_a_v_i" in f["metadata"]
 
-                # Verify mean metadata
-                mean_meta = f["metadata/mean"]
-                assert "extractor_type" in mean_meta.attrs
-                assert mean_meta.attrs["extractor_type"] == "MeanExtractor"
+                # Verify ndvi metadata
+                ndvi_meta = f["metadata/n_d_v_i"]
+                assert "extractor_type" in ndvi_meta.attrs
+                assert ndvi_meta.attrs["extractor_type"] == "NDVIExtractor"
 
-                # Verify std metadata
-                std_meta = f["metadata/std"]
-                assert "extractor_type" in std_meta.attrs
-                assert std_meta.attrs["extractor_type"] == "StdExtractor"
+                # Verify savi metadata
+                savi_meta = f["metadata/s_a_v_i"]
+                assert "extractor_type" in savi_meta.attrs
+                assert savi_meta.attrs["extractor_type"] == "SAVIExtractor"
         finally:
             Path(tmp_path).unlink(missing_ok=True)
 
     def test_save_feature_collection_with_extra_data(self, small_hsi):
         """Test saving features with extra data beyond 'features' key."""
         # Arrange: Create feature with extra data
-        mean_ext = MeanExtractor()
+        mean_ext = NDVIExtractor()
         result = mean_ext.extract(small_hsi)
         result["extra_key"] = np.array([1, 2, 3])
         result["another_key"] = np.array([[4, 5], [6, 7]])
 
         feature = Feature(result, mean_ext, {})
-        collection = FeatureCollection({"mean": feature})
+        collection = FeatureCollection({"n_d_v_i": feature})
 
         with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp:
             tmp_path = tmp.name
@@ -164,14 +164,14 @@ class TestSaveFeatureCollection:
 
             # Assert: Verify extra data is saved
             with h5py.File(tmp_path, "r") as f:
-                assert "extra_key" in f["features/mean"]
-                assert "another_key" in f["features/mean"]
+                assert "extra_key" in f["features/n_d_v_i"]
+                assert "another_key" in f["features/n_d_v_i"]
 
                 np.testing.assert_array_equal(
-                    f["features/mean/extra_key"][:], [1, 2, 3]
+                    f["features/n_d_v_i/extra_key"][:], [1, 2, 3]
                 )
                 np.testing.assert_array_equal(
-                    f["features/mean/another_key"][:], [[4, 5], [6, 7]]
+                    f["features/n_d_v_i/another_key"][:], [[4, 5], [6, 7]]
                 )
         finally:
             Path(tmp_path).unlink(missing_ok=True)
@@ -218,11 +218,11 @@ class TestFeatureCollectionSaveMethod:
     def sample_feature_collection(self, small_hsi):
         """Create a sample FeatureCollection for testing."""
         # Arrange: Create extractors and extract features
-        mean_ext = MeanExtractor()
+        mean_ext = NDVIExtractor()
         mean_result = mean_ext.extract(small_hsi)
         mean_feature = Feature(mean_result, mean_ext, {})
 
-        return FeatureCollection({"mean": mean_feature})
+        return FeatureCollection({"n_d_v_i": mean_feature})
 
     def test_save_method_creates_file(self, sample_feature_collection):
         """Test that FeatureCollection.save() creates an HDF5 file."""
@@ -255,7 +255,7 @@ class TestFeatureCollectionSaveMethod:
             with h5py.File(tmp_path, "r") as f:
                 assert "features" in f
                 assert "metadata" in f
-                assert "mean" in f["features"]
+                assert "n_d_v_i" in f["features"]
         finally:
             Path(tmp_path).unlink(missing_ok=True)
 

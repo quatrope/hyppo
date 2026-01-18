@@ -10,10 +10,6 @@ from .glcm import GLCMExtractor
 from .ica import ICAExtractor
 from .lbp import LBPExtractor
 from .legendremoment import LegendreMomentExtractor
-from .max import MaxExtractor
-from .mean import MeanExtractor
-from .median import MedianExtractor
-from .min import MinExtractor
 from .mnf import MNFExtractor
 from .mp import MPExtractor
 from .ndvi import NDVIExtractor
@@ -22,7 +18,6 @@ from .pca import PCAExtractor
 from .pp import PPExtractor
 from .registry import registry
 from .savi import SAVIExtractor
-from .std import StdExtractor
 from .zernikemoment import ZernikeMomentExtractor
 
 __all__ = [
@@ -37,10 +32,6 @@ __all__ = [
     "ICAExtractor",
     "LBPExtractor",
     "LegendreMomentExtractor",
-    "MaxExtractor",
-    "MeanExtractor",
-    "MedianExtractor",
-    "MinExtractor",
     "MNFExtractor",
     "MPExtractor",
     "NDVIExtractor",
@@ -48,7 +39,6 @@ __all__ = [
     "PCAExtractor",
     "PPExtractor",
     "SAVIExtractor",
-    "StdExtractor",
     "ZernikeMomentExtractor",
 ]
 
@@ -61,10 +51,6 @@ registry.register(GLCMExtractor)
 registry.register(ICAExtractor)
 registry.register(LBPExtractor)
 registry.register(LegendreMomentExtractor)
-registry.register(MaxExtractor)
-registry.register(MeanExtractor)
-registry.register(MedianExtractor)
-registry.register(MinExtractor)
 registry.register(MNFExtractor)
 registry.register(MPExtractor)
 registry.register(NDVIExtractor)
@@ -72,5 +58,4 @@ registry.register(NDWIExtractor)
 registry.register(PCAExtractor)
 registry.register(PPExtractor)
 registry.register(SAVIExtractor)
-registry.register(StdExtractor)
 registry.register(ZernikeMomentExtractor)

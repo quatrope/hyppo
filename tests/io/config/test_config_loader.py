@@ -19,8 +19,8 @@ class TestConfigLoader:
         # Arrange: Create YAML config file
         config_data = {
             "pipeline": {
-                "mean": {"extractor": "MeanExtractor"},
-                "std": {"extractor": "StdExtractor"},
+                "n_d_v_i": {"extractor": "NDVIExtractor"},
+                "s_a_v_i": {"extractor": "SAVIExtractor"},
             }
         }
         config_path = tmp_path / "config.yaml"
@@ -35,15 +35,15 @@ class TestConfigLoader:
         assert isinstance(config.feature_space, FeatureSpace)
         assert isinstance(config.runner, BaseRunner)
         assert len(config.feature_space.extractors) == 2
-        assert "mean" in config.feature_space.extractors
-        assert "std" in config.feature_space.extractors
+        assert "n_d_v_i" in config.feature_space.extractors
+        assert "s_a_v_i" in config.feature_space.extractors
 
     def test_load_json_simple_pipeline(self, tmp_path):
         """Test loading JSON config with simple pipeline."""
         # Arrange: Create JSON config file
         config_data = {
             "pipeline": {
-                "mean": {"extractor": "MeanExtractor"},
+                "n_d_v_i": {"extractor": "NDVIExtractor"},
             }
         }
         config_path = tmp_path / "config.json"
@@ -57,16 +57,16 @@ class TestConfigLoader:
         assert isinstance(config, Config)
         assert isinstance(config.feature_space, FeatureSpace)
         assert isinstance(config.runner, BaseRunner)
-        assert "mean" in config.feature_space.extractors
+        assert "n_d_v_i" in config.feature_space.extractors
 
     def test_load_yaml_multiple_extractors(self, tmp_path):
         """Test loading YAML config with multiple extractors."""
         # Arrange: Create YAML with multiple extractors
         config_data = {
             "pipeline": {
-                "mean": {"extractor": "MeanExtractor"},
-                "std": {"extractor": "StdExtractor"},
-                "max": {"extractor": "MaxExtractor"},
+                "n_d_v_i": {"extractor": "NDVIExtractor"},
+                "s_a_v_i": {"extractor": "SAVIExtractor"},
+                "p_c_a": {"extractor": "PCAExtractor"},
             }
         }
         config_path = tmp_path / "config.yaml"
@@ -111,8 +111,8 @@ class TestConfigLoader:
         # Arrange: Config with multiple extractors and parameters
         config_data = {
             "pipeline": {
-                "mean": {"extractor": "MeanExtractor"},
-                "std": {"extractor": "StdExtractor"},
+                "n_d_v_i": {"extractor": "NDVIExtractor"},
+                "s_a_v_i": {"extractor": "SAVIExtractor"},
                 "pca": {
                     "extractor": "PCAExtractor",
                     "params": {"n_components": 10},
@@ -156,7 +156,7 @@ class TestConfigLoader:
     def test_missing_extractor_field_raises_error(self, tmp_path):
         """Test that missing extractor field raises error."""
         # Arrange: Pipeline entry without extractor field
-        config_data = {"pipeline": {"mean": {"params": {}}}}
+        config_data = {"pipeline": {"n_d_v_i": {"params": {}}}}
         config_path = tmp_path / "config.yaml"
         with open(config_path, "w") as f:
             yaml.dump(config_data, f)
@@ -184,7 +184,7 @@ class TestConfigLoader:
         # Arrange: Create file with invalid YAML
         config_path = tmp_path / "invalid.yaml"
         with open(config_path, "w") as f:
-            f.write("pipeline:\n  mean: {extractor: MeanExtractor\n")
+            f.write("pipeline:\n  mean: {extractor: NDVIExtractor\n")
 
         # Act & Assert: Verify error raised
         with pytest.raises(ValueError, match="YAML"):
@@ -195,7 +195,7 @@ class TestConfigLoader:
         # Arrange: Create file with invalid JSON
         config_path = tmp_path / "invalid.json"
         with open(config_path, "w") as f:
-            f.write('{"pipeline": {"mean": {"extractor": "MeanExtractor"')
+            f.write('{"pipeline": {"n_d_v_i": {"extractor": "NDVIExtractor"')
 
         # Act & Assert: Verify error raised
         with pytest.raises(ValueError, match="JSON"):
@@ -224,9 +224,9 @@ class TestConfigLoader:
         # Arrange: Config with multiple extractors
         config_data = {
             "pipeline": {
-                "mean": {"extractor": "MeanExtractor"},
-                "std": {"extractor": "StdExtractor"},
-                "max": {"extractor": "MaxExtractor"},
+                "n_d_v_i": {"extractor": "NDVIExtractor"},
+                "s_a_v_i": {"extractor": "SAVIExtractor"},
+                "p_c_a": {"extractor": "PCAExtractor"},
             }
         }
         config_path = tmp_path / "config.yaml"
@@ -247,8 +247,8 @@ class TestConfigLoader:
         # Arrange: Create config and load it
         config_data = {
             "pipeline": {
-                "mean": {"extractor": "MeanExtractor"},
-                "std": {"extractor": "StdExtractor"},
+                "n_d_v_i": {"extractor": "NDVIExtractor"},
+                "s_a_v_i": {"extractor": "SAVIExtractor"},
             }
         }
         config_path = tmp_path / "config.yaml"
@@ -260,8 +260,8 @@ class TestConfigLoader:
         results = config.feature_space.extract(sample_hsi)
 
         # Assert: Results contain expected features
-        assert "mean" in results
-        assert "std" in results
+        assert "n_d_v_i" in results
+        assert "s_a_v_i" in results
 
     @pytest.mark.parametrize(
         "loader,extension",
@@ -275,8 +275,8 @@ class TestConfigLoader:
         # Arrange: Same config in different formats
         config_data = {
             "pipeline": {
-                "mean": {"extractor": "MeanExtractor"},
-                "std": {"extractor": "StdExtractor"},
+                "n_d_v_i": {"extractor": "NDVIExtractor"},
+                "s_a_v_i": {"extractor": "SAVIExtractor"},
             }
         }
         config_path = tmp_path / f"config{extension}"
@@ -300,7 +300,7 @@ class TestConfigLoader:
     def test_single_extractor_pipeline(self, tmp_path):
         """Test pipeline with single extractor."""
         # Arrange: Minimal pipeline
-        config_data = {"pipeline": {"mean": {"extractor": "MeanExtractor"}}}
+        config_data = {"pipeline": {"n_d_v_i": {"extractor": "NDVIExtractor"}}}
         config_path = tmp_path / "config.yaml"
         with open(config_path, "w") as f:
             yaml.dump(config_data, f)
@@ -316,8 +316,8 @@ class TestConfigLoader:
         # Arrange: Config with special names
         config_data = {
             "pipeline": {
-                "mean_v1": {"extractor": "MeanExtractor"},
-                "std_2d": {"extractor": "StdExtractor"},
+                "mean_v1": {"extractor": "NDVIExtractor"},
+                "std_2d": {"extractor": "SAVIExtractor"},
                 "pca_3": {"extractor": "PCAExtractor"},
             }
         }
@@ -337,7 +337,7 @@ class TestConfigLoader:
         """Test extractor with empty params dict."""
         # Arrange: Config with empty params
         config_data = {
-            "pipeline": {"mean": {"extractor": "MeanExtractor", "params": {}}}
+            "pipeline": {"n_d_v_i": {"extractor": "NDVIExtractor", "params": {}}}
         }
         config_path = tmp_path / "config.yaml"
         with open(config_path, "w") as f:
@@ -356,7 +356,7 @@ class TestConfigLoader:
         # Arrange: Create YAML config
         config_data = {
             "pipeline": {
-                "mean": {"extractor": "MeanExtractor"},
+                "n_d_v_i": {"extractor": "NDVIExtractor"},
             }
         }
         config_path = tmp_path / "config.yaml"
@@ -370,12 +370,12 @@ class TestConfigLoader:
         assert isinstance(config, Config)
         assert isinstance(config.feature_space, FeatureSpace)
         assert isinstance(config.runner, BaseRunner)
-        assert "mean" in config.feature_space.extractors
+        assert "n_d_v_i" in config.feature_space.extractors
 
     def test_pipeline_not_dict_raises_error(self, tmp_path):
         """Test that pipeline as non-dict raises error."""
         # Arrange: Config with pipeline as list
-        config_data = {"pipeline": ["mean", "std"]}
+        config_data = {"pipeline": ["n_d_v_i", "s_a_v_i"]}
         config_path = tmp_path / "config.yaml"
         with open(config_path, "w") as f:
             yaml.dump(config_data, f)
@@ -389,7 +389,7 @@ class TestConfigLoader:
         # Arrange: Config with extractor spec as string
         config_path = tmp_path / "config.json"
         with open(config_path, "w") as f:
-            f.write('{"pipeline": {"mean": "MeanExtractor"}}')
+            f.write('{"pipeline": {"n_d_v_i": "NDVIExtractor"}}')
 
         # Act & Assert: Verify error raised
         with pytest.raises(ValueError, match="must be a dictionary"):
@@ -401,8 +401,8 @@ class TestConfigLoader:
         config_path = tmp_path / "config.json"
         with open(config_path, "w") as f:
             json_str = (
-                '{"pipeline": {"mean": '
-                '{"extractor": "MeanExtractor", "params": [1, 2, 3]}}}'
+                '{"pipeline": {"n_d_v_i": '
+                '{"extractor": "NDVIExtractor", "params": [1, 2, 3]}}}'
             )
             f.write(json_str)
 
@@ -415,8 +415,8 @@ class TestConfigLoader:
         # Arrange: Config with invalid params for extractor
         config_data = {
             "pipeline": {
-                "mean": {
-                    "extractor": "MeanExtractor",
+                "n_d_v_i": {
+                    "extractor": "NDVIExtractor",
                     "params": {"invalid_param": 123},
                 }
             }
@@ -444,9 +444,9 @@ class TestRunnerConfiguration:
     def test_config_without_runner_defaults_to_sequential(self):
         """Test that Config created without runner uses SequentialRunner."""
         # Arrange: Create FeatureSpace
-        from hyppo.extractor import MeanExtractor
+        from hyppo.extractor import NDVIExtractor
 
-        fs = FeatureSpace.from_list([MeanExtractor()])
+        fs = FeatureSpace.from_list([NDVIExtractor()])
 
         # Act: Create Config without providing runner
         config = Config(feature_space=fs)
@@ -458,7 +458,7 @@ class TestRunnerConfiguration:
         """Test that missing runner section defaults to SequentialRunner."""
         # Arrange: Config without runner section
         config_data = {
-            "pipeline": {"mean": {"extractor": "MeanExtractor"}}
+            "pipeline": {"n_d_v_i": {"extractor": "NDVIExtractor"}}
         }
         config_path = tmp_path / "config.yaml"
         with open(config_path, "w") as f:
@@ -474,7 +474,7 @@ class TestRunnerConfiguration:
         """Test loading config with explicit sequential runner."""
         # Arrange: Config with sequential runner
         config_data = {
-            "pipeline": {"mean": {"extractor": "MeanExtractor"}},
+            "pipeline": {"n_d_v_i": {"extractor": "NDVIExtractor"}},
             "runner": {"type": "sequential"},
         }
         config_path = tmp_path / "config.yaml"
@@ -491,7 +491,7 @@ class TestRunnerConfiguration:
         """Test loading config with local process runner."""
         # Arrange: Config with local runner
         config_data = {
-            "pipeline": {"mean": {"extractor": "MeanExtractor"}},
+            "pipeline": {"n_d_v_i": {"extractor": "NDVIExtractor"}},
             "runner": {"type": "local", "params": {"num_workers": 4}},
         }
         config_path = tmp_path / "config.yaml"
@@ -509,7 +509,7 @@ class TestRunnerConfiguration:
         """Test loading config with Dask threads runner."""
         # Arrange: Config with dask-threads runner
         config_data = {
-            "pipeline": {"mean": {"extractor": "MeanExtractor"}},
+            "pipeline": {"n_d_v_i": {"extractor": "NDVIExtractor"}},
             "runner": {"type": "dask-threads", "params": {"num_threads": 8}},
         }
         config_path = tmp_path / "config.yaml"
@@ -527,7 +527,7 @@ class TestRunnerConfiguration:
         """Test loading config with Dask processes runner."""
         # Arrange: Config with dask-processes runner
         config_data = {
-            "pipeline": {"mean": {"extractor": "MeanExtractor"}},
+            "pipeline": {"n_d_v_i": {"extractor": "NDVIExtractor"}},
             "runner": {
                 "type": "dask-processes",
                 "params": {"num_workers": 4, "threads_per_worker": 2},
@@ -548,7 +548,7 @@ class TestRunnerConfiguration:
         """Test loading config with Dask SLURM runner."""
         # Arrange: Config with dask-slurm runner
         config_data = {
-            "pipeline": {"mean": {"extractor": "MeanExtractor"}},
+            "pipeline": {"n_d_v_i": {"extractor": "NDVIExtractor"}},
             "runner": {
                 "type": "dask-slurm",
                 "params": {
@@ -573,7 +573,7 @@ class TestRunnerConfiguration:
         """Test that runner config without type raises error."""
         # Arrange: Config with runner but no type
         config_data = {
-            "pipeline": {"mean": {"extractor": "MeanExtractor"}},
+            "pipeline": {"n_d_v_i": {"extractor": "NDVIExtractor"}},
             "runner": {"params": {"num_workers": 4}},
         }
         config_path = tmp_path / "config.yaml"
@@ -588,7 +588,7 @@ class TestRunnerConfiguration:
         """Test that unknown runner type raises error."""
         # Arrange: Config with invalid runner type
         config_data = {
-            "pipeline": {"mean": {"extractor": "MeanExtractor"}},
+            "pipeline": {"n_d_v_i": {"extractor": "NDVIExtractor"}},
             "runner": {"type": "unknown-runner"},
         }
         config_path = tmp_path / "config.yaml"
@@ -603,7 +603,7 @@ class TestRunnerConfiguration:
         """Test that runner as non-dict raises error."""
         # Arrange: Config with runner as string
         config_data = {
-            "pipeline": {"mean": {"extractor": "MeanExtractor"}},
+            "pipeline": {"n_d_v_i": {"extractor": "NDVIExtractor"}},
             "runner": "sequential",
         }
         config_path = tmp_path / "config.yaml"
@@ -618,7 +618,7 @@ class TestRunnerConfiguration:
         """Test that runner params as non-dict raises error."""
         # Arrange: Config with params as list
         config_data = {
-            "pipeline": {"mean": {"extractor": "MeanExtractor"}},
+            "pipeline": {"n_d_v_i": {"extractor": "NDVIExtractor"}},
             "runner": {"type": "local", "params": [1, 2, 3]},
         }
         config_path = tmp_path / "config.yaml"

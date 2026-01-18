@@ -234,18 +234,18 @@ class TestSequentialRunner:
 
     def test_integration_with_real_extractors(self, small_hsi):
         """Test SequentialRunner with real extractor implementations."""
-        # Arrange: Import real extractors
-        from hyppo.extractor import MeanExtractor, StdExtractor
+        # Arrange: Import test extractors
+        from tests.fixtures.extractors import MediumExtractor, SimpleExtractor
 
         runner = SequentialRunner()
-        fs = FeatureSpace.from_list([MeanExtractor(), StdExtractor()])
+        fs = FeatureSpace.from_list([SimpleExtractor(), MediumExtractor()])
 
         # Act: Execute extraction
         results = runner.resolve(small_hsi, fs)
 
         # Assert: Both extractors produced results
         assert len(results) == 2
-        assert "mean" in results
-        assert "std" in results
-        assert isinstance(results["mean"], Feature)
-        assert isinstance(results["std"], Feature)
+        assert "simple" in results
+        assert "medium" in results
+        assert isinstance(results["simple"], Feature)
+        assert isinstance(results["medium"], Feature)

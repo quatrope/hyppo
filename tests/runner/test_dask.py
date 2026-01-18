@@ -1,4 +1,4 @@
-"""Tests for DaskRunner."""
+"""Tests for Dask-based runners."""
 
 from unittest.mock import MagicMock, patch
 
@@ -7,7 +7,12 @@ import pytest
 
 from hyppo.core import FeatureCollection, FeatureSpace, HSI
 from hyppo.extractor.base import Extractor
-from hyppo.runner import DaskRunner
+from hyppo.runner import (
+    DaskProcessesRunner,
+    DaskRunner,
+    DaskSLURMRunner,
+    DaskThreadsRunner,
+)
 
 
 class SimpleTestExtractor(Extractor):
@@ -91,13 +96,14 @@ class TestDaskRunner:
         client.close()
         cluster.close()
 
-    def test_threads_classmethod(self):
-        """Test DaskRunner.threads() classmethod."""
-        # Act: Create runner with threads classmethod
-        runner = DaskRunner.threads(num_threads=2)
+    def test_threads_runner_init(self):
+        """Test DaskThreadsRunner initialization."""
+        # Act: Create runner with specific thread count
+        runner = DaskThreadsRunner(num_threads=2)
 
         # Assert: Runner created with cluster attached
         assert isinstance(runner, DaskRunner)
+        assert isinstance(runner, DaskThreadsRunner)
         assert runner._client is not None
         assert runner._cluster is not None
 
@@ -105,13 +111,13 @@ class TestDaskRunner:
         runner._client.close()
         runner._cluster.close()
 
-    def test_threads_classmethod_default_threads(self):
-        """Test DaskRunner.threads() with default thread count."""
+    def test_threads_runner_default_threads(self):
+        """Test DaskThreadsRunner with default thread count."""
         # Act: Create runner without specifying threads
-        runner = DaskRunner.threads()
+        runner = DaskThreadsRunner()
 
         # Assert: Runner created successfully
-        assert isinstance(runner, DaskRunner)
+        assert isinstance(runner, DaskThreadsRunner)
         assert runner._client is not None
         assert runner._cluster is not None
 
@@ -119,22 +125,23 @@ class TestDaskRunner:
         runner._client.close()
         runner._cluster.close()
 
-    def test_threads_classmethod_invalid_threads(self):
-        """Test DaskRunner.threads() raises error for invalid thread count."""
+    def test_threads_runner_invalid_threads(self):
+        """Test DaskThreadsRunner raises error for invalid thread count."""
         # Act & Assert: Invalid thread count
         with pytest.raises(ValueError, match="Invalid number of threads"):
-            DaskRunner.threads(num_threads=0)
+            DaskThreadsRunner(num_threads=0)
 
         with pytest.raises(ValueError, match="Invalid number of threads"):
-            DaskRunner.threads(num_threads=-1)
+            DaskThreadsRunner(num_threads=-1)
 
-    def test_processes_classmethod(self):
-        """Test DaskRunner.processes() classmethod."""
-        # Act: Create runner with processes classmethod
-        runner = DaskRunner.processes(num_workers=2, threads_per_worker=1)
+    def test_processes_runner_init(self):
+        """Test DaskProcessesRunner initialization."""
+        # Act: Create runner with specific worker count
+        runner = DaskProcessesRunner(num_workers=2, threads_per_worker=1)
 
         # Assert: Runner created with cluster attached
         assert isinstance(runner, DaskRunner)
+        assert isinstance(runner, DaskProcessesRunner)
         assert runner._client is not None
         assert runner._cluster is not None
 
@@ -142,28 +149,28 @@ class TestDaskRunner:
         runner._client.close()
         runner._cluster.close()
 
-    def test_processes_classmethod_invalid_workers(self):
-        """Test DaskRunner.processes() raises error for invalid workers."""
+    def test_processes_runner_invalid_workers(self):
+        """Test DaskProcessesRunner raises error for invalid workers."""
         # Act & Assert: Invalid worker count
         with pytest.raises(ValueError, match="Invalid number of workers"):
-            DaskRunner.processes(num_workers=0)
+            DaskProcessesRunner(num_workers=0)
 
         with pytest.raises(ValueError, match="Invalid number of workers"):
-            DaskRunner.processes(num_workers=-1)
+            DaskProcessesRunner(num_workers=-1)
 
-    def test_processes_classmethod_invalid_threads_per_worker(self):
-        """Test DaskRunner.processes() raises error for invalid threads."""
+    def test_processes_runner_invalid_threads_per_worker(self):
+        """Test DaskProcessesRunner raises error for invalid threads."""
         # Act & Assert: Invalid threads per worker
         with pytest.raises(ValueError, match="Invalid threads per worker"):
-            DaskRunner.processes(threads_per_worker=0)
+            DaskProcessesRunner(threads_per_worker=0)
 
         with pytest.raises(ValueError, match="Invalid threads per worker"):
-            DaskRunner.processes(threads_per_worker=-1)
+            DaskProcessesRunner(threads_per_worker=-1)
 
     def test_resolve_single_extractor(self, small_hsi):
         """Test resolving single extractor without dependencies."""
         # Arrange: Create runner and feature space
-        runner = DaskRunner.threads(num_threads=1)
+        runner = DaskThreadsRunner(num_threads=1)
         extractor = SimpleTestExtractor()
         fs = FeatureSpace.from_list([extractor])
 
@@ -183,7 +190,7 @@ class TestDaskRunner:
     def test_resolve_with_dependencies(self, small_hsi):
         """Test resolving extractors with dependencies."""
         # Arrange: Create runner with dependent extractors
-        runner = DaskRunner.threads(num_threads=2)
+        runner = DaskThreadsRunner(num_threads=2)
         simple = SimpleTestExtractor()
         dependent = DependentTestExtractor()
         fs = FeatureSpace.from_list([simple, dependent])
@@ -206,7 +213,7 @@ class TestDaskRunner:
         # Arrange: Import real extractors and create pipeline
         from hyppo.extractor import MeanExtractor, PCAExtractor, StdExtractor
 
-        runner = DaskRunner.threads(num_threads=2)
+        runner = DaskThreadsRunner(num_threads=2)
         fs = FeatureSpace.from_list(
             [MeanExtractor(), StdExtractor(), PCAExtractor()]
         )
@@ -227,7 +234,7 @@ class TestDaskRunner:
     def test_build_dask_graph(self, small_hsi):
         """Test _build_dask_graph creates correct graph structure."""
         # Arrange: Create runner and feature space
-        runner = DaskRunner.threads(num_threads=1)
+        runner = DaskThreadsRunner(num_threads=1)
         simple = SimpleTestExtractor()
         dependent = DependentTestExtractor()
         fs = FeatureSpace.from_list([simple, dependent])
@@ -257,7 +264,7 @@ class TestDaskRunner:
     def test_resolve_empty_feature_space(self, small_hsi):
         """Test resolving with empty feature space."""
         # Arrange: Create empty feature space
-        runner = DaskRunner.threads(num_threads=1)
+        runner = DaskThreadsRunner(num_threads=1)
         fs = FeatureSpace({})
 
         # Act: Execute extraction
@@ -275,7 +282,7 @@ class TestDaskRunner:
         # Arrange: Define extractors in non-topological order
         from hyppo.extractor import MeanExtractor, StdExtractor
 
-        runner = DaskRunner.threads(num_threads=2)
+        runner = DaskThreadsRunner(num_threads=2)
         # Add in reverse dependency order
         fs = FeatureSpace.from_list([StdExtractor(), MeanExtractor()])
 
@@ -296,7 +303,7 @@ class TestDaskRunner:
         # Arrange: Create runner and feature space
         from hyppo.extractor import MeanExtractor, StdExtractor
 
-        runner = DaskRunner.threads(num_threads=2)
+        runner = DaskThreadsRunner(num_threads=2)
         fs = FeatureSpace.from_list([MeanExtractor(), StdExtractor()])
 
         # Act: Call through FeatureSpace.extract()
@@ -314,7 +321,7 @@ class TestDaskRunner:
     def test_optional_dependency_with_default(self, small_hsi):
         """Test extractor with optional dependency using default."""
         # Arrange: Create runner with only optional dependency extractor
-        runner = DaskRunner.threads(num_threads=1)
+        runner = DaskThreadsRunner(num_threads=1)
         optional = OptionalDependencyExtractor()
         fs = FeatureSpace.from_list([optional])
 
@@ -333,7 +340,7 @@ class TestDaskRunner:
     def test_optional_dependency_provided(self, small_hsi):
         """Test optional dependency when source is provided."""
         # Arrange: Create runner with optional dependency and source
-        runner = DaskRunner.threads(num_threads=2)
+        runner = DaskThreadsRunner(num_threads=2)
         simple = SimpleTestExtractor()
         optional = OptionalDependencyExtractor()
         fs = FeatureSpace.from_list([simple, optional])
@@ -350,8 +357,8 @@ class TestDaskRunner:
         runner._client.close()
         runner._cluster.close()
 
-    def test_slurm_classmethod_missing_dask_jobqueue(self):
-        """Test DaskRunner.slurm() raises ImportError when missing pkg."""
+    def test_slurm_runner_missing_dask_jobqueue(self):
+        """Test DaskSLURMRunner raises ImportError when missing pkg."""
         # Arrange: Mock SLURMCluster as None (simulating missing package)
         with patch("hyppo.runner.dask.SLURMCluster", None):
             # Act & Assert: Should raise ImportError
@@ -359,10 +366,10 @@ class TestDaskRunner:
                 ImportError,
                 match="dask-jobqueue is required for SLURM execution",
             ):
-                DaskRunner.slurm()
+                DaskSLURMRunner()
 
-    def test_slurm_classmethod_invalid_cores(self):
-        """Test DaskRunner.slurm() raises error for invalid cores."""
+    def test_slurm_runner_invalid_cores(self):
+        """Test DaskSLURMRunner raises error for invalid cores."""
         # Arrange: Create mock SLURMCluster
         mock_cluster = MagicMock()
         mock_client = MagicMock()
@@ -373,15 +380,15 @@ class TestDaskRunner:
                 with pytest.raises(
                     ValueError, match="Invalid number of cores"
                 ):
-                    DaskRunner.slurm(cores=0)
+                    DaskSLURMRunner(cores=0)
 
                 with pytest.raises(
                     ValueError, match="Invalid number of cores"
                 ):
-                    DaskRunner.slurm(cores=-1)
+                    DaskSLURMRunner(cores=-1)
 
-    def test_slurm_classmethod_invalid_processes(self):
-        """Test DaskRunner.slurm() raises error for invalid processes."""
+    def test_slurm_runner_invalid_processes(self):
+        """Test DaskSLURMRunner raises error for invalid processes."""
         # Arrange: Create mock SLURMCluster
         mock_cluster = MagicMock()
         mock_client = MagicMock()
@@ -392,15 +399,15 @@ class TestDaskRunner:
                 with pytest.raises(
                     ValueError, match="Invalid number of processes"
                 ):
-                    DaskRunner.slurm(processes=0)
+                    DaskSLURMRunner(processes=0)
 
                 with pytest.raises(
                     ValueError, match="Invalid number of processes"
                 ):
-                    DaskRunner.slurm(processes=-1)
+                    DaskSLURMRunner(processes=-1)
 
-    def test_slurm_classmethod_invalid_jobs(self):
-        """Test DaskRunner.slurm() raises error for invalid number of jobs."""
+    def test_slurm_runner_invalid_jobs(self):
+        """Test DaskSLURMRunner raises error for invalid number of jobs."""
         # Arrange: Create mock SLURMCluster
         mock_cluster = MagicMock()
         mock_client = MagicMock()
@@ -409,13 +416,13 @@ class TestDaskRunner:
             with patch("hyppo.runner.dask.Client", return_value=mock_client):
                 # Act & Assert: Invalid jobs
                 with pytest.raises(ValueError, match="Invalid number of jobs"):
-                    DaskRunner.slurm(num_jobs=0)
+                    DaskSLURMRunner(num_jobs=0)
 
                 with pytest.raises(ValueError, match="Invalid number of jobs"):
-                    DaskRunner.slurm(num_jobs=-1)
+                    DaskSLURMRunner(num_jobs=-1)
 
-    def test_slurm_classmethod_basic_configuration(self):
-        """Test DaskRunner.slurm() with basic configuration."""
+    def test_slurm_runner_basic_configuration(self):
+        """Test DaskSLURMRunner with basic configuration."""
         # Arrange: Create mock SLURMCluster and Client
         mock_cluster_instance = MagicMock()
         mock_cluster_class = MagicMock(return_value=mock_cluster_instance)
@@ -426,7 +433,7 @@ class TestDaskRunner:
         with patch("hyppo.runner.dask.SLURMCluster", mock_cluster_class):
             with patch("hyppo.runner.dask.Client", mock_client_class):
                 # Act: Create SLURM runner
-                runner = DaskRunner.slurm(cores=8, memory="16GB", num_jobs=5)
+                runner = DaskSLURMRunner(cores=8, memory="16GB", num_jobs=5)
 
                 # Assert: SLURMCluster was called with correct parameters
                 mock_cluster_class.assert_called_once()
@@ -447,11 +454,12 @@ class TestDaskRunner:
                 )
 
                 # Assert: Runner instance created
+                assert isinstance(runner, DaskSLURMRunner)
                 assert isinstance(runner, DaskRunner)
                 assert runner._client is mock_client_instance
 
-    def test_slurm_classmethod_full_configuration(self):
-        """Test DaskRunner.slurm() with all configuration options."""
+    def test_slurm_runner_full_configuration(self):
+        """Test DaskSLURMRunner with all configuration options."""
         # Arrange: Create mock SLURMCluster and Client
         mock_cluster_instance = MagicMock()
         mock_cluster_class = MagicMock(return_value=mock_cluster_instance)
@@ -462,7 +470,7 @@ class TestDaskRunner:
         with patch("hyppo.runner.dask.SLURMCluster", mock_cluster_class):
             with patch("hyppo.runner.dask.Client", mock_client_class):
                 # Act: Create SLURM runner with all options
-                runner = DaskRunner.slurm(
+                runner = DaskSLURMRunner(
                     cores=16,
                     memory="64GB",
                     processes=2,
@@ -497,8 +505,8 @@ class TestDaskRunner:
                 # Assert: Cluster was scaled
                 mock_cluster_instance.scale.assert_called_once_with(jobs=20)
 
-    def test_slurm_classmethod_optional_parameters(self):
-        """Test DaskRunner.slurm() omits optional parameters."""
+    def test_slurm_runner_optional_parameters(self):
+        """Test DaskSLURMRunner omits optional parameters."""
         # Arrange: Create mock SLURMCluster and Client
         mock_cluster_instance = MagicMock()
         mock_cluster_class = MagicMock(return_value=mock_cluster_instance)
@@ -509,7 +517,7 @@ class TestDaskRunner:
         with patch("hyppo.runner.dask.SLURMCluster", mock_cluster_class):
             with patch("hyppo.runner.dask.Client", mock_client_class):
                 # Act: Create SLURM runner without optional parameters
-                runner = DaskRunner.slurm()
+                runner = DaskSLURMRunner()
 
                 # Assert: Runner created and optional parameters not included
                 assert runner is not None

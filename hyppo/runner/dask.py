@@ -15,192 +15,26 @@ except ImportError:
 
 class DaskRunner(BaseRunner):
     """
-    Dask-based runner for parallel feature extraction.
+    Base Dask runner with shared execution logic.
 
-    Provides functionality for Dask distributed execution across
-    different backend types: thread-based, process-based (local), and
-    SLURM cluster-based. Includes cluster management, graph building,
-    and resource cleanup.
-
-    Factory methods:
-        - threads(): Thread-based parallelism on local machine
-        - processes(): Process-based parallelism on local machine
-        - slurm(): SLURM cluster-based distributed execution
-                   (requires dask-jobqueue)
+    This class contains the core Dask graph building and execution logic
+    shared by all Dask-based runners. It should not be instantiated directly;
+    instead use one of the concrete runner classes:
+        - DaskThreadsRunner: Thread-based parallelism
+        - DaskProcessesRunner: Process-based parallelism
+        - DaskSLURMRunner: SLURM cluster execution
     """
 
     def __init__(self, client: Client):
-        """Initialize DaskRunner with a Dask client."""
+        """
+        Initialize DaskRunner with a Dask client.
+
+        Args:
+            client: Configured Dask Client instance
+        """
         super().__init__()
         self._client = client
         self._cluster = client.cluster
-
-    @classmethod
-    def threads(cls, num_threads: int | None = None):
-        """
-        Create a DaskRunner configured for thread-based parallel execution.
-
-        Args:
-            num_threads: Number of threads to use
-                        (None = use all available cores)
-
-        Returns:
-            DaskRunner instance configured for thread-based execution
-
-        Raises:
-            ValueError: If num_threads is less than 1
-        """
-        if num_threads is not None and num_threads < 1:
-            raise ValueError(f"Invalid number of threads: {num_threads}")
-
-        cluster = LocalCluster(
-            n_workers=1,
-            threads_per_worker=num_threads,
-            processes=False,
-            memory_limit="auto",
-            silence_logs=True,
-        )
-        client = Client(cluster)
-        return cls(client)
-
-    @classmethod
-    def processes(
-        cls,
-        num_workers: int | None = None,
-        threads_per_worker: int = 1,
-        memory_limit: str = "auto",
-    ):
-        """
-        Create a DaskRunner configured for process-based parallel execution.
-
-        Args:
-            num_workers: Number of worker processes
-                        (None = use all available cores)
-            threads_per_worker: Number of threads per worker process
-            memory_limit: Memory limit per worker (e.g., "2GB", "auto")
-
-        Returns:
-            DaskRunner instance configured for process-based execution
-
-        Raises:
-            ValueError: If num_workers or threads_per_worker is less than 1
-        """
-        if num_workers is not None and num_workers < 1:
-            raise ValueError(f"Invalid number of workers: {num_workers}")
-        if threads_per_worker < 1:
-            raise ValueError(
-                f"Invalid threads per worker: {threads_per_worker}"
-            )
-
-        cluster = LocalCluster(
-            n_workers=num_workers,
-            threads_per_worker=threads_per_worker,
-            processes=True,
-            memory_limit=memory_limit,
-            silence_logs=True,
-        )
-        client = Client(cluster)
-        return cls(client)
-
-    @classmethod
-    def slurm(
-        cls,
-        cores: int = 1,
-        memory: str = "4GB",
-        processes: int = 1,
-        queue: str = "normal",
-        walltime: str = "01:00:00",
-        num_jobs: int = 1,
-        account: str | None = None,
-        project: str | None = None,
-        job_extra_directives: list[str] | None = None,
-        **kwargs,
-    ):
-        """
-        Create a DaskRunner configured for SLURM cluster execution.
-
-        Must be run on a system with SLURM installed (HPC cluster login node).
-        Creates SLURM jobs that serve as Dask workers.
-
-        Args:
-            cores: Number of cores per SLURM job
-            memory: Memory per SLURM job (e.g., "4GB", "16GB")
-            processes: Number of worker processes per job
-            queue: SLURM queue/partition name
-            walltime: Maximum job duration (HH:MM:SS format)
-            num_jobs: Number of SLURM jobs to spawn
-            account: SLURM account to charge
-            project: SLURM project name
-            job_extra_directives: Additional SBATCH directives as
-                                 list of strings (e.g.,
-                                 ["--constraint=haswell",
-                                 "--exclusive"])
-            **kwargs: Additional keyword arguments passed to SLURMCluster
-
-        Returns:
-            DaskRunner instance configured for SLURM execution
-
-        Raises:
-            ImportError: If dask-jobqueue is not installed
-            ValueError: If cores, processes, or num_jobs is less than 1
-
-        Example:
-            >>> runner = DaskRunner.slurm(
-            ...     cores=8,
-            ...     memory="32GB",
-            ...     processes=1,
-            ...     queue="normal",
-            ...     walltime="02:00:00",
-            ...     num_jobs=10,
-            ...     account="my_project",
-            ...     job_extra_directives=["--constraint=haswell"]
-            ... )
-            >>> results = feature_space.extract(hsi, runner)
-        """
-        if SLURMCluster is None:
-            raise ImportError(
-                "dask-jobqueue is required for SLURM execution. "
-                "Install with: pip install dask-jobqueue"
-            )
-
-        if cores < 1:
-            raise ValueError(f"Invalid number of cores: {cores}")
-        if processes < 1:
-            raise ValueError(f"Invalid number of processes: {processes}")
-        if num_jobs < 1:
-            raise ValueError(f"Invalid number of jobs: {num_jobs}")
-
-        # Build cluster configuration
-        cluster_kwargs = {
-            "cores": cores,
-            "memory": memory,
-            "processes": processes,
-            "queue": queue,
-            "walltime": walltime,
-            "silence_logs": True,
-        }
-
-        # Add optional parameters
-        if account is not None:
-            cluster_kwargs["account"] = account
-        if project is not None:
-            cluster_kwargs["project"] = project
-        if job_extra_directives is not None:
-            cluster_kwargs["job_extra_directives"] = job_extra_directives
-
-        # Merge any additional kwargs
-        cluster_kwargs.update(kwargs)
-
-        # Create SLURM cluster
-        cluster = SLURMCluster(**cluster_kwargs)
-
-        # Scale to requested number of jobs
-        cluster.scale(jobs=num_jobs)
-
-        # Create client
-        client = Client(cluster)
-
-        return cls(client)
 
     def resolve(self, data: HSI, feature_space) -> FeatureCollection:
         """Resolve feature extraction using a complete Dask graph.
@@ -331,3 +165,185 @@ def _execute_extractor_task(extractor, hsi_data, *args):
 
     # Execute extractor with resolved inputs
     return extractor.extract(hsi_data, **input_kwargs)
+
+
+class DaskThreadsRunner(DaskRunner):
+    """
+    Thread-based Dask runner for parallel feature extraction.
+
+    Uses a single worker with multiple threads for parallel execution.
+    Suitable for I/O-bound tasks or when memory sharing is beneficial.
+    """
+
+    def __init__(self, num_threads: int | None = None):
+        """
+        Create a thread-based Dask runner.
+
+        Args:
+            num_threads: Number of threads to use
+                        (None = use all available cores)
+
+        Raises:
+            ValueError: If num_threads is less than 1
+        """
+        if num_threads is not None and num_threads < 1:
+            raise ValueError(f"Invalid number of threads: {num_threads}")
+
+        cluster = LocalCluster(
+            n_workers=1,
+            threads_per_worker=num_threads,
+            processes=False,
+            memory_limit="auto",
+            silence_logs=True,
+        )
+        client = Client(cluster)
+        super().__init__(client)
+
+
+class DaskProcessesRunner(DaskRunner):
+    """
+    Process-based Dask runner for parallel feature extraction.
+
+    Uses multiple worker processes for true parallel execution.
+    Suitable for CPU-bound tasks that can benefit from multiple cores.
+    """
+
+    def __init__(
+        self,
+        num_workers: int | None = None,
+        threads_per_worker: int = 1,
+        memory_limit: str = "auto",
+    ):
+        """
+        Create a process-based Dask runner.
+
+        Args:
+            num_workers: Number of worker processes
+                        (None = use all available cores)
+            threads_per_worker: Number of threads per worker process
+            memory_limit: Memory limit per worker (e.g., "2GB", "auto")
+
+        Raises:
+            ValueError: If num_workers or threads_per_worker is less than 1
+        """
+        if num_workers is not None and num_workers < 1:
+            raise ValueError(f"Invalid number of workers: {num_workers}")
+        if threads_per_worker < 1:
+            raise ValueError(
+                f"Invalid threads per worker: {threads_per_worker}"
+            )
+
+        cluster = LocalCluster(
+            n_workers=num_workers,
+            threads_per_worker=threads_per_worker,
+            processes=True,
+            memory_limit=memory_limit,
+            silence_logs=True,
+        )
+        client = Client(cluster)
+        super().__init__(client)
+
+
+class DaskSLURMRunner(DaskRunner):
+    """
+    SLURM cluster-based Dask runner for distributed feature extraction.
+
+    Uses SLURM job scheduler for distributed execution across HPC clusters.
+    Requires dask-jobqueue package and access to a SLURM cluster.
+    """
+
+    def __init__(
+        self,
+        cores: int = 1,
+        memory: str = "4GB",
+        processes: int = 1,
+        queue: str = "normal",
+        walltime: str = "01:00:00",
+        num_jobs: int = 1,
+        account: str | None = None,
+        project: str | None = None,
+        job_extra_directives: list[str] | None = None,
+        **kwargs,
+    ):
+        """
+        Create a SLURM cluster-based Dask runner.
+
+        Must be run on a system with SLURM installed (HPC cluster login node).
+        Creates SLURM jobs that serve as Dask workers.
+
+        Args:
+            cores: Number of cores per SLURM job
+            memory: Memory per SLURM job (e.g., "4GB", "16GB")
+            processes: Number of worker processes per job
+            queue: SLURM queue/partition name
+            walltime: Maximum job duration (HH:MM:SS format)
+            num_jobs: Number of SLURM jobs to spawn
+            account: SLURM account to charge
+            project: SLURM project name
+            job_extra_directives: Additional SBATCH directives as
+                                 list of strings (e.g.,
+                                 ["--constraint=haswell",
+                                 "--exclusive"])
+            **kwargs: Additional keyword arguments passed to SLURMCluster
+
+        Raises:
+            ImportError: If dask-jobqueue is not installed
+            ValueError: If cores, processes, or num_jobs is less than 1
+
+        Example:
+            >>> runner = DaskSLURMRunner(
+            ...     cores=8,
+            ...     memory="32GB",
+            ...     processes=1,
+            ...     queue="normal",
+            ...     walltime="02:00:00",
+            ...     num_jobs=10,
+            ...     account="my_project",
+            ...     job_extra_directives=["--constraint=haswell"]
+            ... )
+            >>> results = feature_space.extract(hsi, runner)
+        """
+        if SLURMCluster is None:
+            raise ImportError(
+                "dask-jobqueue is required for SLURM execution. "
+                "Install with: pip install dask-jobqueue"
+            )
+
+        if cores < 1:
+            raise ValueError(f"Invalid number of cores: {cores}")
+        if processes < 1:
+            raise ValueError(f"Invalid number of processes: {processes}")
+        if num_jobs < 1:
+            raise ValueError(f"Invalid number of jobs: {num_jobs}")
+
+        # Build cluster configuration
+        cluster_kwargs = {
+            "cores": cores,
+            "memory": memory,
+            "processes": processes,
+            "queue": queue,
+            "walltime": walltime,
+            "silence_logs": True,
+        }
+
+        # Add optional parameters
+        if account is not None:
+            cluster_kwargs["account"] = account
+        if project is not None:
+            cluster_kwargs["project"] = project
+        if job_extra_directives is not None:
+            cluster_kwargs["job_extra_directives"] = job_extra_directives
+
+        # Merge any additional kwargs
+        cluster_kwargs.update(kwargs)
+
+        # Create SLURM cluster
+        cluster = SLURMCluster(**cluster_kwargs)
+
+        # Scale to requested number of jobs
+        cluster.scale(jobs=num_jobs)
+
+        # Create client
+        client = Client(cluster)
+
+        super().__init__(client)

@@ -150,13 +150,13 @@ class TestSaveConfigYAML:
 
         # Act: Save and reload
         io.save_config_yaml(original_fs, yaml_path)
-        loaded_fs = io.load_config_yaml(yaml_path)
+        loaded_config = io.load_config_yaml(yaml_path)
 
         # Assert: Same extractors
-        assert set(loaded_fs.extractors.keys()) == set(
+        assert set(loaded_config.feature_space.extractors.keys()) == set(
             original_fs.extractors.keys()
         )
-        assert len(loaded_fs.extractors) == len(original_fs.extractors)
+        assert len(loaded_config.feature_space.extractors) == len(original_fs.extractors)
 
     def test_save_config_yaml_skip_underscore_params(self, tmp_path):
         """Test that parameters starting with underscore are skipped."""
@@ -298,13 +298,134 @@ class TestSaveConfigJSON:
 
         # Act: Save and reload
         io.save_config_json(original_fs, json_path)
-        loaded_fs = io.load_config_json(json_path)
+        loaded_config = io.load_config_json(json_path)
 
         # Assert: Same extractors
-        assert set(loaded_fs.extractors.keys()) == set(
+        assert set(loaded_config.feature_space.extractors.keys()) == set(
             original_fs.extractors.keys()
         )
-        assert len(loaded_fs.extractors) == len(original_fs.extractors)
+        assert len(loaded_config.feature_space.extractors) == len(original_fs.extractors)
+
+
+class TestConfigSaveMethod:
+    """Test cases for Config.save() method."""
+
+    def test_save_yaml_format(self, tmp_path):
+        """Test save with .yaml extension."""
+        # Arrange: Create Config
+        from hyppo.io import Config
+
+        fs = FeatureSpace.from_list([MeanExtractor(), StdExtractor()])
+        config = Config(feature_space=fs)
+        yaml_path = tmp_path / "config.yaml"
+
+        # Act: Call save method
+        config.save(yaml_path)
+
+        # Assert: File exists and is valid YAML
+        assert yaml_path.exists()
+        with open(yaml_path, "r") as f:
+            data = yaml.safe_load(f)
+        assert "pipeline" in data
+
+    def test_save_yml_format(self, tmp_path):
+        """Test save with .yml extension."""
+        # Arrange: Create Config
+        from hyppo.io import Config
+
+        fs = FeatureSpace.from_list([MeanExtractor()])
+        config = Config(feature_space=fs)
+        yml_path = tmp_path / "config.yml"
+
+        # Act: Call save method
+        config.save(yml_path)
+
+        # Assert: File exists
+        assert yml_path.exists()
+
+    def test_save_json_format(self, tmp_path):
+        """Test save with .json extension."""
+        # Arrange: Create Config
+        from hyppo.io import Config
+
+        fs = FeatureSpace.from_list([MeanExtractor(), StdExtractor()])
+        config = Config(feature_space=fs)
+        json_path = tmp_path / "config.json"
+
+        # Act: Call save method
+        config.save(json_path)
+
+        # Assert: File exists and is valid JSON
+        assert json_path.exists()
+        with open(json_path, "r") as f:
+            data = json.load(f)
+        assert "pipeline" in data
+
+    def test_save_invalid_extension(self, tmp_path):
+        """Test save raises ValueError for invalid extension."""
+        # Arrange: Create Config and path with wrong extension
+        from hyppo.io import Config
+
+        fs = FeatureSpace.from_list([MeanExtractor()])
+        config = Config(feature_space=fs)
+        txt_path = tmp_path / "config.txt"
+
+        # Act & Assert: Verify ValueError is raised
+        with pytest.raises(ValueError):
+            config.save(txt_path)
+
+    def test_save_accepts_string_path(self, tmp_path):
+        """Test that save accepts string paths."""
+        # Arrange: Create Config and string path
+        from hyppo.io import Config
+
+        fs = FeatureSpace.from_list([MeanExtractor()])
+        config = Config(feature_space=fs)
+        yaml_path = str(tmp_path / "config.yaml")
+
+        # Act: Save configuration
+        config.save(yaml_path)
+
+        # Assert: File created
+        assert Path(yaml_path).exists()
+
+    def test_save_roundtrip_yaml(self, tmp_path):
+        """Test save and load_config_yaml roundtrip."""
+        # Arrange: Create Config
+        from hyppo.io import Config
+
+        original_fs = FeatureSpace.from_list([MeanExtractor(), StdExtractor()])
+        original_config = Config(feature_space=original_fs)
+        yaml_path = tmp_path / "config.yaml"
+
+        # Act: Save and reload
+        original_config.save(yaml_path)
+        loaded_config = io.load_config_yaml(yaml_path)
+
+        # Assert: Same extractors
+        assert set(loaded_config.feature_space.extractors.keys()) == set(
+            original_config.feature_space.extractors.keys()
+        )
+
+    def test_save_roundtrip_json(self, tmp_path):
+        """Test save and load_config_json roundtrip."""
+        # Arrange: Create Config
+        from hyppo.io import Config
+
+        original_fs = FeatureSpace.from_list(
+            [MeanExtractor(), PCAExtractor(n_components=3)]
+        )
+        original_config = Config(feature_space=original_fs)
+        json_path = tmp_path / "config.json"
+
+        # Act: Save and reload
+        original_config.save(json_path)
+        loaded_config = io.load_config_json(json_path)
+
+        # Assert: Same extractors
+        assert set(loaded_config.feature_space.extractors.keys()) == set(
+            original_config.feature_space.extractors.keys()
+        )
 
 
 class TestFeatureSpaceSaveConfigMethod:
@@ -370,10 +491,10 @@ class TestFeatureSpaceSaveConfigMethod:
 
         # Act: Save and reload
         original_fs.save_config(yaml_path)
-        loaded_fs = io.load_config_yaml(yaml_path)
+        loaded_config = io.load_config_yaml(yaml_path)
 
         # Assert: Same extractors
-        assert set(loaded_fs.extractors.keys()) == set(
+        assert set(loaded_config.feature_space.extractors.keys()) == set(
             original_fs.extractors.keys()
         )
 
@@ -387,9 +508,9 @@ class TestFeatureSpaceSaveConfigMethod:
 
         # Act: Save and reload
         original_fs.save_config(json_path)
-        loaded_fs = io.load_config_json(json_path)
+        loaded_config = io.load_config_json(json_path)
 
         # Assert: Same extractors
-        assert set(loaded_fs.extractors.keys()) == set(
+        assert set(loaded_config.feature_space.extractors.keys()) == set(
             original_fs.extractors.keys()
         )

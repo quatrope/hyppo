@@ -1,4 +1,4 @@
-"""Tests for configuration loading and FeatureSpace generation."""
+"""Tests for configuration loading and Config generation."""
 
 import json
 from pathlib import Path
@@ -7,7 +7,8 @@ import pytest
 import yaml
 
 from hyppo.core import FeatureSpace
-from hyppo.io import load_config_json, load_config_yaml
+from hyppo.io import Config, load_config_json, load_config_yaml
+from hyppo.runner import BaseRunner, SequentialRunner
 
 
 class TestConfigLoader:
@@ -27,13 +28,15 @@ class TestConfigLoader:
             yaml.dump(config_data, f)
 
         # Act: Load configuration
-        feature_space = load_config_yaml(config_path)
+        config = load_config_yaml(config_path)
 
         # Assert: FeatureSpace created correctly
-        assert isinstance(feature_space, FeatureSpace)
-        assert len(feature_space.extractors) == 2
-        assert "mean" in feature_space.extractors
-        assert "std" in feature_space.extractors
+        assert isinstance(config, Config)
+        assert isinstance(config.feature_space, FeatureSpace)
+        assert isinstance(config.runner, BaseRunner)
+        assert len(config.feature_space.extractors) == 2
+        assert "mean" in config.feature_space.extractors
+        assert "std" in config.feature_space.extractors
 
     def test_load_json_simple_pipeline(self, tmp_path):
         """Test loading JSON config with simple pipeline."""
@@ -48,11 +51,13 @@ class TestConfigLoader:
             json.dump(config_data, f)
 
         # Act: Load configuration
-        feature_space = load_config_json(config_path)
+        config = load_config_json(config_path)
 
         # Assert: FeatureSpace created correctly
-        assert isinstance(feature_space, FeatureSpace)
-        assert "mean" in feature_space.extractors
+        assert isinstance(config, Config)
+        assert isinstance(config.feature_space, FeatureSpace)
+        assert isinstance(config.runner, BaseRunner)
+        assert "mean" in config.feature_space.extractors
 
     def test_load_yaml_multiple_extractors(self, tmp_path):
         """Test loading YAML config with multiple extractors."""
@@ -69,11 +74,13 @@ class TestConfigLoader:
             yaml.dump(config_data, f)
 
         # Act: Load configuration
-        feature_space = load_config_yaml(config_path)
+        config = load_config_yaml(config_path)
 
         # Assert: All extractors in pipeline
-        assert isinstance(feature_space, FeatureSpace)
-        assert len(feature_space.extractors) == 3
+        assert isinstance(config, Config)
+        assert isinstance(config.feature_space, FeatureSpace)
+        assert isinstance(config.runner, BaseRunner)
+        assert len(config.feature_space.extractors) == 3
 
     def test_load_extractor_with_parameters(self, tmp_path):
         """Test loading extractor with parameters."""
@@ -91,11 +98,13 @@ class TestConfigLoader:
             yaml.dump(config_data, f)
 
         # Act: Load configuration
-        feature_space = load_config_yaml(config_path)
+        config = load_config_yaml(config_path)
 
         # Assert: Extractor instantiated with parameters
-        assert isinstance(feature_space, FeatureSpace)
-        assert "pca" in feature_space.extractors
+        assert isinstance(config, Config)
+        assert isinstance(config.feature_space, FeatureSpace)
+        assert isinstance(config.runner, BaseRunner)
+        assert "pca" in config.feature_space.extractors
 
     def test_load_multiple_extractors_with_parameters(self, tmp_path):
         """Test loading multiple extractors with various parameters."""
@@ -115,10 +124,10 @@ class TestConfigLoader:
             yaml.dump(config_data, f)
 
         # Act: Load configuration
-        feature_space = load_config_yaml(config_path)
+        config = load_config_yaml(config_path)
 
         # Assert: All extractors created
-        assert len(feature_space.extractors) == 3
+        assert len(config.feature_space.extractors) == 3
 
     def test_missing_pipeline_raises_error(self, tmp_path):
         """Test that missing pipeline field raises error."""
@@ -225,11 +234,13 @@ class TestConfigLoader:
             yaml.dump(config_data, f)
 
         # Act: Load configuration
-        feature_space = load_config_yaml(config_path)
+        config = load_config_yaml(config_path)
 
         # Assert: FeatureSpace created with all extractors
-        assert isinstance(feature_space, FeatureSpace)
-        assert len(feature_space.extractors) == 3
+        assert isinstance(config, Config)
+        assert isinstance(config.feature_space, FeatureSpace)
+        assert isinstance(config.runner, BaseRunner)
+        assert len(config.feature_space.extractors) == 3
 
     def test_extract_from_loaded_config(self, tmp_path, sample_hsi):
         """Test feature extraction from loaded config."""
@@ -243,10 +254,10 @@ class TestConfigLoader:
         config_path = tmp_path / "config.yaml"
         with open(config_path, "w") as f:
             yaml.dump(config_data, f)
-        feature_space = load_config_yaml(config_path)
+        config = load_config_yaml(config_path)
 
         # Act: Execute extraction
-        results = feature_space.extract(sample_hsi)
+        results = config.feature_space.extract(sample_hsi)
 
         # Assert: Results contain expected features
         assert "mean" in results
@@ -278,11 +289,13 @@ class TestConfigLoader:
                 json.dump(config_data, f)
 
         # Act: Load configuration
-        feature_space = loader(config_path)
+        config = loader(config_path)
 
         # Assert: Same result regardless of format
-        assert isinstance(feature_space, FeatureSpace)
-        assert len(feature_space.extractors) == 2
+        assert isinstance(config, Config)
+        assert isinstance(config.feature_space, FeatureSpace)
+        assert isinstance(config.runner, BaseRunner)
+        assert len(config.feature_space.extractors) == 2
 
     def test_single_extractor_pipeline(self, tmp_path):
         """Test pipeline with single extractor."""
@@ -293,10 +306,10 @@ class TestConfigLoader:
             yaml.dump(config_data, f)
 
         # Act: Load configuration
-        feature_space = load_config_yaml(config_path)
+        config = load_config_yaml(config_path)
 
         # Assert: Single extractor loaded
-        assert len(feature_space.extractors) == 1
+        assert len(config.feature_space.extractors) == 1
 
     def test_extractor_name_with_special_characters(self, tmp_path):
         """Test extractor names with underscores and numbers."""
@@ -313,12 +326,12 @@ class TestConfigLoader:
             yaml.dump(config_data, f)
 
         # Act: Load configuration
-        feature_space = load_config_yaml(config_path)
+        config = load_config_yaml(config_path)
 
         # Assert: All names preserved
-        assert "mean_v1" in feature_space.extractors
-        assert "std_2d" in feature_space.extractors
-        assert "pca_3" in feature_space.extractors
+        assert "mean_v1" in config.feature_space.extractors
+        assert "std_2d" in config.feature_space.extractors
+        assert "pca_3" in config.feature_space.extractors
 
     def test_empty_params_dict(self, tmp_path):
         """Test extractor with empty params dict."""
@@ -331,10 +344,12 @@ class TestConfigLoader:
             yaml.dump(config_data, f)
 
         # Act: Load configuration
-        feature_space = load_config_yaml(config_path)
+        config = load_config_yaml(config_path)
 
         # Assert: Extractor created with defaults
-        assert isinstance(feature_space, FeatureSpace)
+        assert isinstance(config, Config)
+        assert isinstance(config.feature_space, FeatureSpace)
+        assert isinstance(config.runner, BaseRunner)
 
     def test_yaml_loads_via_json(self, tmp_path):
         """Test that YAML loading converts to dict then JSON."""
@@ -349,11 +364,13 @@ class TestConfigLoader:
             yaml.dump(config_data, f)
 
         # Act: Load YAML configuration
-        feature_space = load_config_yaml(config_path)
+        config = load_config_yaml(config_path)
 
         # Assert: Successfully loaded via YAML->dict->JSON path
-        assert isinstance(feature_space, FeatureSpace)
-        assert "mean" in feature_space.extractors
+        assert isinstance(config, Config)
+        assert isinstance(config.feature_space, FeatureSpace)
+        assert isinstance(config.runner, BaseRunner)
+        assert "mean" in config.feature_space.extractors
 
     def test_pipeline_not_dict_raises_error(self, tmp_path):
         """Test that pipeline as non-dict raises error."""
@@ -410,4 +427,204 @@ class TestConfigLoader:
 
         # Act & Assert: Verify error raised
         with pytest.raises(ValueError, match="Failed to instantiate"):
+            load_config_yaml(config_path)
+
+
+class TestRunnerConfiguration:
+    """Test runner configuration loading."""
+
+    def test_config_get_default_runner(self):
+        """Test that Config.get_default_runner() returns SequentialRunner."""
+        # Act: Get default runner
+        runner = Config.get_default_runner()
+
+        # Assert: Returns SequentialRunner instance
+        assert isinstance(runner, SequentialRunner)
+
+    def test_config_without_runner_defaults_to_sequential(self):
+        """Test that Config created without runner uses SequentialRunner."""
+        # Arrange: Create FeatureSpace
+        from hyppo.extractor import MeanExtractor
+
+        fs = FeatureSpace.from_list([MeanExtractor()])
+
+        # Act: Create Config without providing runner
+        config = Config(feature_space=fs)
+
+        # Assert: Runner defaults to SequentialRunner
+        assert isinstance(config.runner, SequentialRunner)
+
+    def test_load_config_without_runner_defaults_to_sequential(self, tmp_path):
+        """Test that missing runner section defaults to SequentialRunner."""
+        # Arrange: Config without runner section
+        config_data = {
+            "pipeline": {"mean": {"extractor": "MeanExtractor"}}
+        }
+        config_path = tmp_path / "config.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_data, f)
+
+        # Act: Load configuration
+        config = load_config_yaml(config_path)
+
+        # Assert: Runner defaults to Sequential
+        assert isinstance(config.runner, SequentialRunner)
+
+    def test_load_config_with_sequential_runner(self, tmp_path):
+        """Test loading config with explicit sequential runner."""
+        # Arrange: Config with sequential runner
+        config_data = {
+            "pipeline": {"mean": {"extractor": "MeanExtractor"}},
+            "runner": {"type": "sequential"},
+        }
+        config_path = tmp_path / "config.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_data, f)
+
+        # Act: Load configuration
+        config = load_config_yaml(config_path)
+
+        # Assert: Sequential runner configured
+        assert isinstance(config.runner, SequentialRunner)
+
+    def test_load_config_with_local_runner(self, tmp_path):
+        """Test loading config with local process runner."""
+        # Arrange: Config with local runner
+        config_data = {
+            "pipeline": {"mean": {"extractor": "MeanExtractor"}},
+            "runner": {"type": "local", "params": {"num_workers": 4}},
+        }
+        config_path = tmp_path / "config.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_data, f)
+
+        # Act: Load configuration
+        config = load_config_yaml(config_path)
+
+        # Assert: Local runner configured
+        from hyppo.runner import LocalProcessRunner
+        assert isinstance(config.runner, LocalProcessRunner)
+
+    def test_load_config_with_dask_threads_runner(self, tmp_path):
+        """Test loading config with Dask threads runner."""
+        # Arrange: Config with dask-threads runner
+        config_data = {
+            "pipeline": {"mean": {"extractor": "MeanExtractor"}},
+            "runner": {"type": "dask-threads", "params": {"num_threads": 8}},
+        }
+        config_path = tmp_path / "config.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_data, f)
+
+        # Act: Load configuration
+        config = load_config_yaml(config_path)
+
+        # Assert: Dask threads runner configured
+        from hyppo.runner import DaskThreadsRunner
+        assert isinstance(config.runner, DaskThreadsRunner)
+
+    def test_load_config_with_dask_processes_runner(self, tmp_path):
+        """Test loading config with Dask processes runner."""
+        # Arrange: Config with dask-processes runner
+        config_data = {
+            "pipeline": {"mean": {"extractor": "MeanExtractor"}},
+            "runner": {
+                "type": "dask-processes",
+                "params": {"num_workers": 4, "threads_per_worker": 2},
+            },
+        }
+        config_path = tmp_path / "config.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_data, f)
+
+        # Act: Load configuration
+        config = load_config_yaml(config_path)
+
+        # Assert: Dask processes runner configured
+        from hyppo.runner import DaskProcessesRunner
+        assert isinstance(config.runner, DaskProcessesRunner)
+
+    def test_load_config_with_dask_slurm_runner(self, tmp_path):
+        """Test loading config with Dask SLURM runner."""
+        # Arrange: Config with dask-slurm runner
+        config_data = {
+            "pipeline": {"mean": {"extractor": "MeanExtractor"}},
+            "runner": {
+                "type": "dask-slurm",
+                "params": {
+                    "cores": 4,
+                    "memory": "16GB",
+                    "queue": "gpu",
+                },
+            },
+        }
+        config_path = tmp_path / "config.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_data, f)
+
+        # Act: Load configuration
+        config = load_config_yaml(config_path)
+
+        # Assert: Dask SLURM runner configured
+        from hyppo.runner import DaskSLURMRunner
+        assert isinstance(config.runner, DaskSLURMRunner)
+
+    def test_runner_missing_type_raises_error(self, tmp_path):
+        """Test that runner config without type raises error."""
+        # Arrange: Config with runner but no type
+        config_data = {
+            "pipeline": {"mean": {"extractor": "MeanExtractor"}},
+            "runner": {"params": {"num_workers": 4}},
+        }
+        config_path = tmp_path / "config.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_data, f)
+
+        # Act & Assert: Verify error raised
+        with pytest.raises(ValueError, match="type.*missing"):
+            load_config_yaml(config_path)
+
+    def test_runner_unknown_type_raises_error(self, tmp_path):
+        """Test that unknown runner type raises error."""
+        # Arrange: Config with invalid runner type
+        config_data = {
+            "pipeline": {"mean": {"extractor": "MeanExtractor"}},
+            "runner": {"type": "unknown-runner"},
+        }
+        config_path = tmp_path / "config.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_data, f)
+
+        # Act & Assert: Verify error raised
+        with pytest.raises(ValueError, match="Unknown runner type"):
+            load_config_yaml(config_path)
+
+    def test_runner_not_dict_raises_error(self, tmp_path):
+        """Test that runner as non-dict raises error."""
+        # Arrange: Config with runner as string
+        config_data = {
+            "pipeline": {"mean": {"extractor": "MeanExtractor"}},
+            "runner": "sequential",
+        }
+        config_path = tmp_path / "config.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_data, f)
+
+        # Act & Assert: Verify error raised
+        with pytest.raises(ValueError, match="must be a dictionary"):
+            load_config_yaml(config_path)
+
+    def test_runner_params_not_dict_raises_error(self, tmp_path):
+        """Test that runner params as non-dict raises error."""
+        # Arrange: Config with params as list
+        config_data = {
+            "pipeline": {"mean": {"extractor": "MeanExtractor"}},
+            "runner": {"type": "local", "params": [1, 2, 3]},
+        }
+        config_path = tmp_path / "config.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_data, f)
+
+        # Act & Assert: Verify error raised
+        with pytest.raises(ValueError, match="must be a dictionary"):
             load_config_yaml(config_path)

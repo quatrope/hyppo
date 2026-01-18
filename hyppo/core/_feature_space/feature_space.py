@@ -144,6 +144,9 @@ class FeatureSpace:
         """
         Save this FeatureSpace configuration to file.
 
+        Creates a Config object with the default runner and saves it
+        to the specified path.
+
         Args:
             path: Output file path (.yaml, .yml, or .json extension)
 
@@ -155,17 +158,17 @@ class FeatureSpace:
             >>> fs.save_config("pipeline.yaml")
             >>> fs.save_config("pipeline.json")
         """
-        from pathlib import Path
-
         from hyppo import io
 
-        if not isinstance(path, Path):
-            path = Path(path)
+        if not isinstance(path, io.Path):
+            path = io.Path(path)
+
+        config = io.Config(feature_space=self)
 
         if path.suffix in [".yaml", ".yml"]:
-            io.save_config_yaml(self, path)
+            io.save_config_yaml(config, path)
         elif path.suffix == ".json":
-            io.save_config_json(self, path)
+            io.save_config_json(config, path)
         else:
             msg = (
                 f"Path must have .yaml, .yml, or .json extension, "

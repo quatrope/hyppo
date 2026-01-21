@@ -1,0 +1,48 @@
+# Configuración de datasets para benchmark
+# Valores actualizados según archivos reales convertidos a H5
+
+datasets:
+  indian_pines:
+    name: "Indian Pines"
+    source: "Purdue AVIRIS"
+    purpose: "Escalabilidad espectral (muchas bandas)"
+    dimensions:
+      height: 145
+      width: 145
+      bands: 200
+    pixels: 21025
+    size_mb: 8.7
+    wavelength_range: [400, 2500]
+    local_path: "data/indian_pines/indian_pines.h5"
+
+  pavia_university:
+    name: "Pavia University"
+    source: "ROSIS sensor"
+    purpose: "Dataset intermedio (balance pixels/bandas)"
+    dimensions:
+      height: 610
+      width: 340
+      bands: 103
+    pixels: 207400
+    size_mb: 44.3
+    wavelength_range: [430, 860]
+    local_path: "data/pavia_university/pavia_university.h5"
+
+  houston_2013:
+    name: "Houston 2013 (subset)"
+    source: "IEEE GRSS Data Fusion Contest"
+    purpose: "Escalabilidad espacial (muchos pixels)"
+    dimensions:
+      height: 954
+      width: 210
+      bands: 48
+    pixels: 200340
+    size_mb: 27.1
+    wavelength_range: [380, 1050]
+    local_path: "data/houston_2013/houston_2013.h5"
+
+# Orden de ejecución para benchmark
+execution_order:
+  - indian_pines      # Pequeño espacialmente, muchas bandas
+  - houston_2013      # Grande espacialmente, pocas bandas
+  - pavia_university  # Intermedio en ambas dimensiones

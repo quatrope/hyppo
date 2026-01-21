@@ -180,3 +180,9 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Benchmark
+benchmark/data/
+benchmark/results/
+benchmark/analysis/
+benchmark/BENCHMARK_DESIGN.md

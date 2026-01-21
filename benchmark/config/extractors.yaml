@@ -1,0 +1,116 @@
+# Configuración de grupos de extractores para benchmark
+# Parámetros verificados contra la implementación actual de hyppo
+
+groups:
+  SIMPLE:
+    description: "Índices espectrales - O(H×W)"
+    extractors:
+      - class: NDVIExtractor
+        params: {}
+      - class: SAVIExtractor
+        params: {}
+      - class: NDWIExtractor
+        params: {}
+
+  COMPLEX:
+    description: "Operaciones matriciales y espaciales - O(H×W×B²) a O(H×W×w²)"
+    extractors:
+      - class: PCAExtractor
+        params:
+          n_components: 10
+      - class: ICAExtractor
+        params:
+          n_components: 10
+      - class: MNFExtractor
+        params:
+          n_components: 10
+      - class: GLCMExtractor
+        params:
+          distances: [1, 2]
+      - class: LBPExtractor
+        params:
+          radius: 3
+          n_points: 24
+      - class: GaborExtractor
+        params:
+          frequencies: [0.05, 0.1, 0.2]
+      - class: MPExtractor
+        params:
+          n_components: 3
+          radii: [2, 4, 6]
+      - class: DWT2DExtractor
+        params:
+          wavelet: "haar"
+          levels: 2
+
+  ALL:
+    description: "Todos los extractores implementados (17 total)"
+    extractors:
+      # Índices espectrales
+      - class: NDVIExtractor
+        params: {}
+      - class: SAVIExtractor
+        params: {}
+      - class: NDWIExtractor
+        params: {}
+      # Estadísticos
+      - class: PCAExtractor
+        params:
+          n_components: 10
+      - class: ICAExtractor
+        params:
+          n_components: 10
+      - class: MNFExtractor
+        params:
+          n_components: 10
+      # Textura/Espaciales
+      - class: GLCMExtractor
+        params:
+          distances: [1, 2]
+      - class: LBPExtractor
+        params:
+          radius: 3
+          n_points: 24
+      - class: GaborExtractor
+        params:
+          frequencies: [0.05, 0.1, 0.2]
+      - class: MPExtractor
+        params:
+          n_components: 3
+          radii: [2, 4, 6]
+      # Wavelets
+      - class: DWT1DExtractor
+        params:
+          wavelet: "db4"
+          levels: 3
+      - class: DWT2DExtractor
+        params:
+          wavelet: "haar"
+          levels: 2
+      - class: DWT3DExtractor
+        params:
+          wavelet: "haar"
+          levels: 1
+      # Momentos
+      - class: GeometricMomentExtractor
+        params:
+          n_components: 3
+          max_order: 4
+      - class: LegendreMomentExtractor
+        params:
+          n_components: 3
+          max_order: 4
+      - class: ZernikeMomentExtractor
+        params:
+          n_components: 3
+          max_order: 6
+      # Otros
+      - class: PPExtractor
+        params:
+          n_projections: 10
+
+# Orden de ejecución
+execution_order:
+  - SIMPLE
+  - COMPLEX
+  - ALL

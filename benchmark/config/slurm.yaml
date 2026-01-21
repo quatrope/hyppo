@@ -1,0 +1,89 @@
+# Configuración SLURM para benchmark en Serafín
+# Basado en hardware: AMD EPYC 7532 (64 cores), 128 GiB RAM
+
+# Configuración base del cluster
+cluster:
+  # Parámetros fijos por job
+  cores_per_job: 8
+  memory_per_job: "32GB"
+  processes_per_job: 1
+  walltime: "04:00:00"
+
+  # Parámetros de cuenta (ACTUALIZAR según tu acceso)
+  queue: "normal"        # Partición de Serafín
+  account: null          # Cuenta de proyecto (si aplica)
+  project: null          # Nombre del proyecto (si aplica)
+
+  # Directivas adicionales SBATCH
+  job_extra_directives: []
+  # Ejemplos:
+  # - "--constraint=epyc"
+  # - "--exclusive"
+  # - "--mail-type=END"
+
+# Configuraciones de escala a probar
+scales:
+  S1:
+    num_jobs: 1
+    total_workers: 1
+    description: "Baseline - 1 job"
+
+  S2:
+    num_jobs: 2
+    total_workers: 2
+    description: "2 jobs paralelos"
+
+  S4:
+    num_jobs: 4
+    total_workers: 4
+    description: "4 jobs paralelos"
+
+  S8:
+    num_jobs: 8
+    total_workers: 8
+    description: "8 jobs paralelos"
+
+  S16:
+    num_jobs: 16
+    total_workers: 16
+    description: "16 jobs paralelos"
+
+  S32:
+    num_jobs: 32
+    total_workers: 32
+    description: "32 jobs paralelos - máximo"
+
+# Orden de ejecución de escalas
+execution_order:
+  - S1
+  - S2
+  - S4
+  - S8
+  - S16
+  - S32
+
+# Configuración del benchmark
+benchmark:
+  repetitions: 10
+  warmup_runs: 1          # Ejecuciones de calentamiento (no se cuentan)
+  timeout_minutes: 240     # Timeout máximo por experimento
+
+  # Control de ejecución
+  save_intermediate: true  # Guardar resultados parciales
+  retry_on_failure: 2      # Reintentos si falla un experimento
+
+  # Métricas a recolectar
+  metrics:
+    - total_time
+    - setup_time
+    - compute_time
+    - per_extractor_time
+    - peak_memory
+    - speedup
+    - efficiency
+
+# Rutas de salida
+output:
+  results_dir: "results/raw"
+  logs_dir: "results/logs"
+  figures_dir: "analysis/figures"

@@ -5,20 +5,50 @@ import warnings
 import numpy as np
 import pytest
 
+from hyppo.core import HSI
 from hyppo.extractor.savi import SAVIExtractor
 
 
 class TestSAVIExtractor:
     """Test cases for SAVIExtractor."""
 
-    @pytest.mark.skip(
-        reason="Paper reference validation pending implementation"
+    @pytest.mark.parametrize(
+        "red_val,nir_val,L",
+        [
+            (0.08, 0.50, 0.5),  # Dense vegetation, standard L
+            (0.25, 0.30, 0.5),  # Sparse vegetation
+            (0.10, 0.40, 0.0),  # L=0 reduces to NDVI-like
+            (0.10, 0.40, 1.0),  # L=1 for very sparse vegetation
+            (0.20, 0.20, 0.5),  # Equal reflectance
+        ],
     )
-    def test_paper_reference_result(self, sample_hsi):
-        """Test results match reference values from literature."""
-        # TODO: Implement validation against reference paper results
-        # Huete (1988) - A soil-adjusted vegetation index (SAVI)
-        pass
+    def test_savi_formula_reference(self, red_val, nir_val, L):
+        """Test SAVI calculation matches the mathematical definition.
+
+        SAVI = ((NIR - Red) * (1 + L)) / (NIR + Red + L)
+
+        Reference: Huete (1988) - A soil-adjusted vegetation index (SAVI).
+        Remote Sensing of Environment, 25(3), 295-309.
+        """
+        # Arrange: Create HSI with known reflectance values
+        wavelengths = np.array([660.0, 850.0])
+        reflectance = np.full((2, 2, 2), 0.0, dtype=np.float32)
+        reflectance[:, :, 0] = red_val
+        reflectance[:, :, 1] = nir_val
+        hsi = HSI(reflectance=reflectance, wavelengths=wavelengths)
+
+        expected_savi = ((nir_val - red_val) * (1 + L)) / (nir_val + red_val + L)
+        extractor = SAVIExtractor(red_wavelength=660, nir_wavelength=850, L=L)
+
+        # Act
+        result = extractor.extract(hsi)
+
+        # Assert
+        np.testing.assert_allclose(
+            result["features"],
+            expected_savi,
+            rtol=1e-5,
+        )
 
     def test_extract_basic_with_defaults(self, small_hsi):
         """Test extraction with default parameters."""

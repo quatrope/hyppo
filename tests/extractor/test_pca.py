@@ -3,20 +3,83 @@
 import numpy as np
 import pytest
 
+from sklearn.decomposition import PCA
+
+from hyppo.core import HSI
 from hyppo.extractor.pca import PCAExtractor
 
 
 class TestPCAExtractor:
     """Test cases for PCAExtractor."""
 
-    @pytest.mark.skip(
-        reason="Paper reference validation pending implementation"
-    )
-    def test_paper_reference_result(self, sample_hsi):
-        """Test results match reference values from literature."""
-        # TODO: Implement validation against reference paper results
-        # Principal Component Analysis for dimensionality reduction
-        pass
+    def test_pca_reference_sklearn(self):
+        """Test PCA results match sklearn.decomposition.PCA directly.
+
+        Reference: Jolliffe, I.T., "Principal Component Analysis", Springer, 2002.
+        Implementation uses sklearn which follows the standard PCA algorithm.
+        """
+        # Arrange: Create HSI with known data
+        np.random.seed(42)
+        h, w, bands = 4, 4, 10
+        reflectance = np.random.rand(h, w, bands).astype(np.float32)
+        wavelengths = np.linspace(400, 1000, bands).astype(np.float32)
+        hsi = HSI(reflectance=reflectance, wavelengths=wavelengths)
+
+        n_components = 3
+        extractor = PCAExtractor(n_components=n_components, random_state=42)
+
+        # Act
+        result = extractor.extract(hsi)
+
+        # Assert: Compare with sklearn PCA directly
+        X_reshaped = reflectance.reshape(-1, bands)
+        sklearn_pca = PCA(n_components=n_components, random_state=42)
+        sklearn_features = sklearn_pca.fit_transform(X_reshaped)
+        sklearn_features = sklearn_features.reshape(h, w, n_components)
+
+        np.testing.assert_allclose(
+            result["features"], sklearn_features, rtol=1e-5
+        )
+        np.testing.assert_allclose(
+            result["explained_variance_ratio"],
+            sklearn_pca.explained_variance_ratio_,
+            rtol=1e-5,
+        )
+        np.testing.assert_allclose(
+            result["components"], sklearn_pca.components_, rtol=1e-5
+        )
+
+    def test_pca_mathematical_properties(self):
+        """Test PCA satisfies mathematical properties.
+
+        - Components are orthonormal
+        - Explained variance ratios sum to <= 1
+        - Variance is ordered descending
+        """
+        # Arrange
+        np.random.seed(42)
+        reflectance = np.random.rand(5, 5, 8).astype(np.float32)
+        wavelengths = np.linspace(400, 900, 8).astype(np.float32)
+        hsi = HSI(reflectance=reflectance, wavelengths=wavelengths)
+
+        extractor = PCAExtractor(n_components=4, random_state=42)
+
+        # Act
+        result = extractor.extract(hsi)
+
+        # Assert: Variance ratios sum <= 1
+        assert result["explained_variance_ratio"].sum() <= 1.0 + 1e-6
+
+        # Assert: Variance is descending
+        variances = result["explained_variance"]
+        assert np.all(np.diff(variances) <= 1e-10)
+
+        # Assert: Components are orthonormal
+        components = result["components"]
+        identity = np.eye(components.shape[0])
+        np.testing.assert_allclose(
+            components @ components.T, identity, atol=1e-5
+        )
 
     def test_extract_basic_with_defaults(self, small_hsi):
         """Test extraction with default parameters."""

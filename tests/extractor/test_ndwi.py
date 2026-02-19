@@ -5,21 +5,50 @@ import warnings
 import numpy as np
 import pytest
 
+from hyppo.core import HSI
 from hyppo.extractor.ndwi import NDWIExtractor
 
 
 class TestNDWIExtractor:
     """Test cases for NDWIExtractor."""
 
-    @pytest.mark.skip(
-        reason="Paper reference validation pending implementation"
+    @pytest.mark.parametrize(
+        "green_val,nir_val",
+        [
+            (0.30, 0.10),  # Open water (positive NDWI)
+            (0.20, 0.50),  # Vegetation (negative NDWI)
+            (0.25, 0.25),  # Equal values (NDWI = 0)
+            (0.40, 0.05),  # Deep water
+            (0.15, 0.80),  # Dense vegetation
+        ],
     )
-    def test_paper_reference_result(self, sample_hsi):
-        """Test results match reference values from literature."""
-        # TODO: Implement validation against reference paper results
-        # Gao (1996) - NDWI for remote sensing of vegetation liquid water
-        # McFeeters (1996) - NDWI for delineation of open water
-        pass
+    def test_ndwi_formula_reference(self, green_val, nir_val):
+        """Test NDWI calculation matches the mathematical definition.
+
+        NDWI = (Green - NIR) / (Green + NIR)
+
+        Reference: McFeeters (1996) - The use of the Normalized Difference
+        Water Index (NDWI) in the delineation of open water features.
+        """
+        # Arrange: Create HSI with known reflectance values
+        wavelengths = np.array([560.0, 850.0])
+        reflectance = np.full((2, 2, 2), 0.0, dtype=np.float32)
+        reflectance[:, :, 0] = green_val
+        reflectance[:, :, 1] = nir_val
+        hsi = HSI(reflectance=reflectance, wavelengths=wavelengths)
+
+        expected_ndwi = (green_val - nir_val) / (green_val + nir_val)
+        extractor = NDWIExtractor(green_wavelength=560, nir_wavelength=850)
+
+        # Act
+        result = extractor.extract(hsi)
+
+        # Assert
+        np.testing.assert_allclose(
+            result["features"],
+            expected_ndwi,
+            rtol=1e-5,
+        )
 
     def test_extract_basic_with_defaults(self, small_hsi):
         """Test extraction with default parameters."""

@@ -5,20 +5,50 @@ import warnings
 import numpy as np
 import pytest
 
+from hyppo.core import HSI
 from hyppo.extractor.ndvi import NDVIExtractor
 
 
 class TestNDVIExtractor:
     """Test cases for NDVIExtractor."""
 
-    @pytest.mark.skip(
-        reason="Paper reference validation pending implementation"
+    @pytest.mark.parametrize(
+        "red_val,nir_val",
+        [
+            (0.08, 0.50),  # Dense vegetation
+            (0.25, 0.30),  # Bare soil
+            (0.30, 0.10),  # Water (negative NDVI)
+            (0.20, 0.20),  # Equal values (NDVI = 0)
+            (0.05, 0.90),  # Very healthy vegetation
+        ],
     )
-    def test_paper_reference_result(self, sample_hsi):
-        """Test results match reference values from literature."""
-        # TODO: Implement validation against reference paper results
-        # Rouse et al. (1974) - Monitoring vegetation systems
-        pass
+    def test_ndvi_formula_reference(self, red_val, nir_val):
+        """Test NDVI calculation matches the mathematical definition.
+
+        NDVI = (NIR - Red) / (NIR + Red)
+
+        Reference: Rouse et al. (1974) - Monitoring vegetation systems
+        in the Great Plains with ERTS.
+        """
+        # Arrange: Create HSI with known reflectance values
+        wavelengths = np.array([660.0, 850.0])
+        reflectance = np.full((2, 2, 2), 0.0, dtype=np.float32)
+        reflectance[:, :, 0] = red_val
+        reflectance[:, :, 1] = nir_val
+        hsi = HSI(reflectance=reflectance, wavelengths=wavelengths)
+
+        expected_ndvi = (nir_val - red_val) / (nir_val + red_val)
+        extractor = NDVIExtractor(red_wavelength=660, nir_wavelength=850)
+
+        # Act
+        result = extractor.extract(hsi)
+
+        # Assert
+        np.testing.assert_allclose(
+            result["features"],
+            expected_ndvi,
+            rtol=1e-5,
+        )
 
     def test_extract_basic_with_defaults(self, small_hsi):
         """Test extraction with default parameters."""

@@ -1,12 +1,83 @@
 """Tests for ICAExtractor."""
 
+import numpy as np
 import pytest
+from sklearn.decomposition import FastICA
 
+from hyppo.core import HSI
 from hyppo.extractor.ica import ICAExtractor
 
 
 class TestICAExtractor:
     """Test cases for ICAExtractor."""
+
+    def test_ica_reference_sklearn(self):
+        """Test ICA results match sklearn.decomposition.FastICA directly.
+
+        Reference: Hyvärinen & Oja (2000) - Independent component analysis:
+        algorithms and applications.
+        """
+        # Arrange: Create HSI with known data
+        np.random.seed(42)
+        h, w, bands = 4, 4, 10
+        reflectance = np.random.rand(h, w, bands).astype(np.float32)
+        wavelengths = np.linspace(400, 1000, bands).astype(np.float32)
+        hsi = HSI(reflectance=reflectance, wavelengths=wavelengths)
+
+        n_components = 3
+        extractor = ICAExtractor(n_components=n_components, random_state=42)
+
+        # Act
+        result = extractor.extract(hsi)
+
+        # Assert: Compare with sklearn FastICA directly
+        X_flat = reflectance.reshape(-1, bands)
+        mean = X_flat.mean(axis=0)
+        X_centered = X_flat - mean
+
+        sklearn_ica = FastICA(
+            n_components=n_components,
+            whiten="unit-variance",
+            random_state=42,
+        )
+        sklearn_features = sklearn_ica.fit_transform(X_centered)
+        sklearn_features = sklearn_features.reshape(h, w, n_components)
+
+        np.testing.assert_allclose(
+            result["features"], sklearn_features, rtol=1e-5
+        )
+        np.testing.assert_allclose(
+            result["components"], sklearn_ica.components_, rtol=1e-5
+        )
+        np.testing.assert_allclose(
+            result["mixing_matrix"], sklearn_ica.mixing_, rtol=1e-5
+        )
+
+    def test_ica_mathematical_properties(self):
+        """Test ICA satisfies mathematical properties.
+
+        - Components @ Mixing^T gives identity (n_components x n_components)
+        - n_iter > 0 (algorithm ran)
+        """
+        # Arrange
+        np.random.seed(42)
+        reflectance = np.random.rand(5, 5, 8).astype(np.float32)
+        wavelengths = np.linspace(400, 900, 8).astype(np.float32)
+        hsi = HSI(reflectance=reflectance, wavelengths=wavelengths)
+
+        extractor = ICAExtractor(n_components=4, random_state=42)
+
+        # Act
+        result = extractor.extract(hsi)
+
+        # Assert: Components (4x8) @ Mixing.T (8x4) = Identity (4x4)
+        mixing = result["mixing_matrix"]  # (8, 4)
+        components = result["components"]  # (4, 8)
+        product = components @ mixing
+        np.testing.assert_allclose(product, np.eye(4), atol=1e-5)
+
+        # Assert: Algorithm ran
+        assert result["n_iter"] > 0
 
     def test_extract_basic_with_defaults(self, small_hsi):
         """Test extraction with default parameters."""

@@ -4,13 +4,13 @@
 # Configuración base del cluster
 cluster:
   # Parámetros fijos por job
-  cores_per_job: 8
-  memory_per_job: "32GB"
+  cores_per_job: 64
+  memory_per_job: "8GB"
   processes_per_job: 1
-  walltime: "04:00:00"
+  walltime: "00:10:00"
 
   # Parámetros de cuenta (ACTUALIZAR según tu acceso)
-  queue: "normal"        # Partición de Serafín
+  queue: "short"        # Partición de Serafín
   account: null          # Cuenta de proyecto (si aplica)
   project: null          # Nombre del proyecto (si aplica)
 

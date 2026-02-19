@@ -263,6 +263,7 @@ class DaskSLURMRunner(DaskRunner):
         account: str | None = None,
         project: str | None = None,
         job_extra_directives: list[str] | None = None,
+        interface: str | None = None,
         **kwargs,
     ):
         """
@@ -284,6 +285,9 @@ class DaskSLURMRunner(DaskRunner):
                                  list of strings (e.g.,
                                  ["--constraint=haswell",
                                  "--exclusive"])
+            interface: Network interface to use (e.g., "ib0", "eth0").
+                      Use this when workers are on a different network
+                      than the scheduler.
             **kwargs: Additional keyword arguments passed to SLURMCluster
 
         Raises:
@@ -333,6 +337,8 @@ class DaskSLURMRunner(DaskRunner):
             cluster_kwargs["project"] = project
         if job_extra_directives is not None:
             cluster_kwargs["job_extra_directives"] = job_extra_directives
+        if interface is not None:
+            cluster_kwargs["interface"] = interface
 
         # Merge any additional kwargs
         cluster_kwargs.update(kwargs)

@@ -167,7 +167,7 @@ class TestPCAExtractor:
         name = PCAExtractor.feature_name()
 
         # Assert: Verify correct name
-        assert name == "p_c_a"
+        assert name == "pca"
 
     def test_random_state_reproducibility(self, small_hsi):
         """Test that same random state produces same results."""

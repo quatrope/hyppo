@@ -71,8 +71,8 @@ class TestFeatureSpace:
 
         # Check that all extractors ran
         assert len(results) == 3
-        assert "n_d_v_i" in results
-        assert "s_a_v_i" in results
+        assert "ndvi" in results
+        assert "savi" in results
         assert "l_b_p" in results
 
     def test_from_list_with_dependencies(self, sample_hsi):

@@ -30,6 +30,16 @@ def sample_hsi(sample_hsi_data):
 
 
 @pytest.fixture
+def large_spectral_hsi():
+    """Create an HSI with enough spectral bands for DWT extractors (levels=3)."""
+    spatial_size = (5, 5)
+    spectral_bands = 100
+    reflectance = np.random.rand(*spatial_size, spectral_bands) * 0.8
+    wavelengths = np.linspace(400, 2500, spectral_bands)
+    return HSI(reflectance=reflectance, wavelengths=wavelengths)
+
+
+@pytest.fixture
 def small_hsi():
     """Create a small HSI object for quick tests."""
     # Create minimal test data: 3x3 spatial, 5 spectral bands

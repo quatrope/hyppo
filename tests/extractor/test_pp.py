@@ -87,7 +87,7 @@ class TestPPExtractor:
 
     def test_feature_name(self):
         """Test feature name."""
-        assert PPExtractor.feature_name() == "p_p"
+        assert PPExtractor.feature_name() == "pp"
 
     def test_random_state_reproducibility(self, small_hsi):
         """Test random state reproducibility."""

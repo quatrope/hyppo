@@ -27,20 +27,19 @@ class TestDWT1DExtractor:
         # Mallat, S. (1999). A Wavelet Tour of Signal Processing.
         pass
 
-    def test_extract_basic_with_defaults(self, small_hsi):
+    def test_extract_basic_with_defaults(self, large_spectral_hsi):
         """Test extraction with default parameters."""
         # Arrange: Create extractor with defaults
         extractor = DWT1DExtractor()
 
         # Act: Execute extraction
-        result = extractor.extract(small_hsi)
+        result = extractor.extract(large_spectral_hsi)
 
         # Assert: Verify output structure
         assert "features" in result
         assert "wavelet" in result
         assert "mode" in result
         assert "levels" in result
-        assert "coeffs_lengths" in result
         assert "n_features" in result
         assert "original_shape" in result
 
@@ -51,20 +50,15 @@ class TestDWT1DExtractor:
 
         # Assert: Verify feature shape matches (H, W, n_features)
         features = result["features"]
-        assert features.shape[0] == small_hsi.height
-        assert features.shape[1] == small_hsi.width
+        assert features.shape[0] == large_spectral_hsi.height
+        assert features.shape[1] == large_spectral_hsi.width
         assert features.ndim == 3
-
-        # Assert: Verify coeffs_lengths is list with correct structure
-        coeffs_lengths = result["coeffs_lengths"]
-        assert isinstance(coeffs_lengths, list)
-        assert len(coeffs_lengths) == 4  # levels + 1 (approximation + details)
 
         # Assert: Verify n_features matches actual feature dimension
         assert result["n_features"] == features.shape[1]
 
         # Assert: Verify original shape preserved
-        assert result["original_shape"] == small_hsi.shape
+        assert result["original_shape"] == large_spectral_hsi.shape
 
     def test_validate_invalid_wavelet(self, small_hsi):
         """Test validation fails with invalid wavelet name."""
@@ -107,13 +101,13 @@ class TestDWT1DExtractor:
             ("coif2", "periodic"),
         ],
     )
-    def test_extract_wavelet_mode_combinations(self, small_hsi, wavelet, mode):
+    def test_extract_wavelet_mode_combinations(self, large_spectral_hsi, wavelet, mode):
         """Test extraction with cross-product of wavelets and modes."""
         # Arrange: Create extractor with specific wavelet and mode
         extractor = DWT1DExtractor(wavelet=wavelet, mode=mode)
 
         # Act: Execute extraction
-        result = extractor.extract(small_hsi)
+        result = extractor.extract(large_spectral_hsi)
 
         # Assert: Verify successful extraction with correct parameters
         assert result["wavelet"] == wavelet

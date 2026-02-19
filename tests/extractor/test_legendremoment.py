@@ -27,7 +27,7 @@ class TestLegendreMomentExtractor:
         # Assert: Verify default parameter values
         assert result["n_components"] == 3
         assert result["window_sizes"] == [3, 9, 15]
-        assert result["max_order"] == 3
+        assert result["max_order"] == 6
 
         # Assert: Verify feature shape
         features = result["features"]

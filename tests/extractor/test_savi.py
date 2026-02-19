@@ -39,10 +39,10 @@ class TestSAVIExtractor:
         # Assert: Verify default parameter values
         assert result["brightness_correction"] == 0.5
 
-        # Assert: Verify feature shape (2D for index)
+        # Assert: Verify feature shape (3D with single band for index)
         features = result["features"]
-        assert features.shape == (small_hsi.height, small_hsi.width)
-        assert features.ndim == 2
+        assert features.shape == (small_hsi.height, small_hsi.width, 1)
+        assert features.ndim == 3
 
     def test_extract_with_custom_wavelengths(self, small_hsi):
         """Test extraction with custom wavelengths."""
@@ -216,7 +216,7 @@ class TestSAVIExtractor:
         name = SAVIExtractor.feature_name()
 
         # Assert: Verify correct name
-        assert name == "s_a_v_i"
+        assert name == "savi"
 
     def test_original_shape_preserved(self, small_hsi):
         """Test that original shape is recorded."""
@@ -300,4 +300,4 @@ class TestSAVIExtractor:
 
         # Assert: Verify successful extraction
         assert "features" in result
-        assert result["features"].shape == (small_hsi.height, small_hsi.width)
+        assert result["features"].shape == (small_hsi.height, small_hsi.width, 1)

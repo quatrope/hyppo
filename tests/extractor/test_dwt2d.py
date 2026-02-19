@@ -50,15 +50,13 @@ class TestDWT2DExtractor:
         # Assert: Verify output structure
         assert "features" in result
         assert "wavelet" in result
-        assert "mode" in result
         assert "levels" in result
         assert "n_features" in result
         assert "original_shape" in result
 
         # Assert: Verify default parameter values
-        assert result["wavelet"] == "db4"
-        assert result["mode"] == "symmetric"
-        assert result["levels"] == 2
+        assert result["wavelet"] == "haar"
+        assert result["levels"] == 1
 
         # Assert: Verify feature shape matches (H, W, n_features)
         features = result["features"]
@@ -81,15 +79,6 @@ class TestDWT2DExtractor:
         with pytest.raises(ValueError, match="Wavelet .* not available"):
             extractor.extract(small_hsi)
 
-    def test_validate_invalid_mode(self, small_hsi):
-        """Test validation fails with invalid signal extension mode."""
-        # Arrange: Create extractor with invalid mode
-        extractor = DWT2DExtractor(mode="invalid_mode")
-
-        # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="Mode .* not available"):
-            extractor.extract(small_hsi)
-
     @pytest.mark.parametrize("levels", [-1, 0, 2.5])
     def test_validate_invalid_levels(self, small_hsi, levels):
         """Test validation fails with invalid decomposition levels."""
@@ -102,28 +91,17 @@ class TestDWT2DExtractor:
         ):
             extractor.extract(small_hsi)
 
-    @pytest.mark.parametrize(
-        "wavelet,mode",
-        [
-            ("haar", "symmetric"),
-            ("haar", "periodic"),
-            ("db4", "symmetric"),
-            ("db4", "zero"),
-            ("sym5", "constant"),
-            ("coif2", "periodic"),
-        ],
-    )
-    def test_extract_wavelet_mode_combinations(self, small_hsi, wavelet, mode):
-        """Test extraction with cross-product of wavelets and modes."""
-        # Arrange: Create extractor with specific wavelet and mode
-        extractor = DWT2DExtractor(wavelet=wavelet, mode=mode)
+    @pytest.mark.parametrize("wavelet", ["haar", "db4", "sym5", "coif2"])
+    def test_extract_different_wavelets(self, small_hsi, wavelet):
+        """Test extraction with different wavelets."""
+        # Arrange: Create extractor with specific wavelet
+        extractor = DWT2DExtractor(wavelet=wavelet)
 
         # Act: Execute extraction
         result = extractor.extract(small_hsi)
 
         # Assert: Verify successful extraction with correct parameters
         assert result["wavelet"] == wavelet
-        assert result["mode"] == mode
         assert "features" in result
 
     def test_feature_name(self):

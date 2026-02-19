@@ -80,10 +80,10 @@ class TestSaveConfigYAML:
             config = yaml.safe_load(f)
 
         assert "pipeline" in config
-        assert "n_d_v_i" in config["pipeline"]
-        assert "s_a_v_i" in config["pipeline"]
-        assert config["pipeline"]["n_d_v_i"]["extractor"] == "NDVIExtractor"
-        assert config["pipeline"]["s_a_v_i"]["extractor"] == "SAVIExtractor"
+        assert "ndvi" in config["pipeline"]
+        assert "savi" in config["pipeline"]
+        assert config["pipeline"]["ndvi"]["extractor"] == "NDVIExtractor"
+        assert config["pipeline"]["savi"]["extractor"] == "SAVIExtractor"
 
     def test_save_config_yaml_with_parameters(self, tmp_path):
         """Test saving extractors with parameters."""
@@ -240,10 +240,10 @@ class TestSaveConfigJSON:
             config = json.load(f)
 
         assert "pipeline" in config
-        assert "n_d_v_i" in config["pipeline"]
-        assert "s_a_v_i" in config["pipeline"]
-        assert config["pipeline"]["n_d_v_i"]["extractor"] == "NDVIExtractor"
-        assert config["pipeline"]["s_a_v_i"]["extractor"] == "SAVIExtractor"
+        assert "ndvi" in config["pipeline"]
+        assert "savi" in config["pipeline"]
+        assert config["pipeline"]["ndvi"]["extractor"] == "NDVIExtractor"
+        assert config["pipeline"]["savi"]["extractor"] == "SAVIExtractor"
 
     def test_save_config_json_with_parameters(self, tmp_path):
         """Test saving extractors with parameters."""

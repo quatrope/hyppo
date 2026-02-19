@@ -178,7 +178,7 @@ class TestICAExtractor:
         name = ICAExtractor.feature_name()
 
         # Assert: Verify correct name
-        assert name == "i_c_a"
+        assert name == "ica"
 
     def test_random_state_reproducibility(self, small_hsi):
         """Test that same random state produces same results."""

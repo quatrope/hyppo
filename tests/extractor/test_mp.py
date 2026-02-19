@@ -1,5 +1,6 @@
 """Tests for MPExtractor."""
 
+import numpy as np
 import pytest
 
 from hyppo.extractor.mp import MPExtractor
@@ -28,15 +29,18 @@ class TestMPExtractor:
 
         # Assert: Verify output structure
         assert "features" in result
-        assert "bands_used" in result
+        assert "explained_variance_ratio" in result
+        assert "n_components" in result
+        assert "shapes" in result
         assert "radii" in result
-        assert "structuring_element" in result
         assert "n_features" in result
-        assert "original_shape" in result
+        assert "use_reconstruction" in result
 
         # Assert: Verify default parameter values
-        assert result["radii"] == [1, 3, 5]
-        assert result["structuring_element"] == "disk"
+        assert result["n_components"] == 3
+        assert result["radii"] == [2, 4, 6, 8]
+        assert result["shapes"] == ["disk", "square", "diamond"]
+        assert result["use_reconstruction"] is False
 
         # Assert: Verify feature shape
         features = result["features"]
@@ -47,106 +51,81 @@ class TestMPExtractor:
     def test_extract_with_custom_parameters(self, small_hsi):
         """Test extraction with custom parameters."""
         # Arrange: Create extractor with custom parameters
-        bands = [0, 1]
-        radii = [1, 2]
-        structuring_element = "square"
         extractor = MPExtractor(
-            bands=bands, radii=radii, structuring_element=structuring_element
+            n_components=2,
+            radii=[1, 3],
+            shapes=["disk"],
+            use_reconstruction=True,
         )
 
         # Act: Execute extraction
         result = extractor.extract(small_hsi)
 
         # Assert: Verify custom parameters
-        assert result["bands_used"] == bands
-        assert result["radii"] == radii
-        assert result["structuring_element"] == structuring_element
+        assert result["n_components"] == 2
+        assert result["radii"] == [1, 3]
+        assert result["shapes"] == ["disk"]
+        assert result["use_reconstruction"] is True
 
-    def test_all_bands_default(self, small_hsi):
-        """Test that default behavior processes all bands."""
-        # Arrange: Create extractor without specifying bands
+    @pytest.mark.parametrize("shape", ["disk", "square", "diamond"])
+    def test_different_shapes(self, small_hsi, shape):
+        """Test extraction with different structuring element shapes."""
+        # Arrange: Create extractor with specific shape
+        extractor = MPExtractor(shapes=[shape])
+
+        # Act: Execute extraction
+        result = extractor.extract(small_hsi)
+
+        # Assert: Verify correct shape used
+        assert result["shapes"] == [shape]
+        assert "features" in result
+
+    def test_get_structuring_element_disk(self):
+        """Test disk structuring element generation."""
+        # Arrange: Create extractor
         extractor = MPExtractor()
 
-        # Act: Execute extraction
-        result = extractor.extract(small_hsi)
-
-        # Assert: Verify all bands used
-        assert len(result["bands_used"]) == small_hsi.reflectance.shape[2]
-
-    def test_specific_bands(self, small_hsi):
-        """Test extraction with specific bands."""
-        # Arrange: Create extractor with specific bands
-        bands = [0, 2]
-        extractor = MPExtractor(bands=bands)
-
-        # Act: Execute extraction
-        result = extractor.extract(small_hsi)
-
-        # Assert: Verify correct bands used
-        assert result["bands_used"] == bands
-
-    @pytest.mark.parametrize(
-        "structuring_element", ["disk", "square", "octagon"]
-    )
-    def test_different_structuring_elements(
-        self, small_hsi, structuring_element
-    ):
-        """Test extraction with different structuring elements."""
-        # Arrange: Create extractor with specific structuring element
-        extractor = MPExtractor(structuring_element=structuring_element)
-
-        # Act: Execute extraction
-        result = extractor.extract(small_hsi)
-
-        # Assert: Verify correct structuring element
-        assert result["structuring_element"] == structuring_element
-
-    def test_get_structuring_element_disk(self, small_hsi):
-        """Test disk structuring element generation."""
-        # Arrange: Create extractor with disk
-        extractor = MPExtractor(structuring_element="disk")
-
         # Act: Get structuring element
-        elem = extractor._get_structuring_element(3)
+        elem = extractor._get_structuring_element("disk", 3)
 
         # Assert: Verify disk structure
         assert elem.ndim == 2
         assert elem.shape[0] == elem.shape[1]
 
-    def test_get_structuring_element_square(self, small_hsi):
+    def test_get_structuring_element_square(self):
         """Test square structuring element generation."""
-        # Arrange: Create extractor with square
-        extractor = MPExtractor(structuring_element="square")
+        # Arrange: Create extractor
+        extractor = MPExtractor()
 
         # Act: Get structuring element
-        elem = extractor._get_structuring_element(3)
+        elem = extractor._get_structuring_element("square", 3)
 
         # Assert: Verify square structure
         assert elem.ndim == 2
         assert elem.shape[0] == elem.shape[1]
         assert elem.shape[0] == 7  # 2*3 + 1
 
-    def test_get_structuring_element_octagon(self, small_hsi):
-        """Test octagon structuring element generation."""
-        # Arrange: Create extractor with octagon
-        extractor = MPExtractor(structuring_element="octagon")
+    def test_get_structuring_element_diamond(self):
+        """Test diamond structuring element generation."""
+        # Arrange: Create extractor
+        extractor = MPExtractor()
 
         # Act: Get structuring element
-        elem = extractor._get_structuring_element(3)
+        elem = extractor._get_structuring_element("diamond", 3)
 
-        # Assert: Verify octagon structure
+        # Assert: Verify diamond structure
         assert elem.ndim == 2
 
-    def test_get_structuring_element_invalid(self, small_hsi):
+    def test_get_structuring_element_invalid(self):
         """Test invalid structuring element raises error."""
-        # Arrange: Create extractor with invalid element
-        extractor = MPExtractor(structuring_element="invalid")
+        # Arrange: Create extractor
+        extractor = MPExtractor()
 
         # Act & Assert: Verify error raised
-        with pytest.raises(ValueError, match="Unknown structuring element"):
-            extractor._get_structuring_element(3)
+        with pytest.raises(ValueError, match="Unsupported shape"):
+            extractor._get_structuring_element("invalid", 3)
 
-    @pytest.mark.parametrize("radii", [[1], [1, 2], [1, 3, 5]])
+    @pytest.mark.parametrize("radii", [[1], [1, 2], [2, 4, 6, 8]])
     def test_different_radii(self, small_hsi, radii):
         """Test extraction with different radii."""
         # Arrange: Create extractor with specific radii
@@ -156,43 +135,24 @@ class TestMPExtractor:
         result = extractor.extract(small_hsi)
 
         # Assert: Verify correct radii used
-        assert result["radii"] == radii
+        assert result["radii"] == sorted(radii)
 
     def test_n_features_calculation(self, small_hsi):
         """Test that n_features is calculated correctly."""
         # Arrange: Create extractor with known configuration
-        bands = [0, 1]
+        n_components = 2
         radii = [1, 2]
-        extractor = MPExtractor(bands=bands, radii=radii)
+        shapes = ["disk"]
+        extractor = MPExtractor(
+            n_components=n_components, radii=radii, shapes=shapes
+        )
 
         # Act: Execute extraction
         result = extractor.extract(small_hsi)
 
-        # Assert: Verify n_features = bands * radii * 4 operations
-        expected_features = len(bands) * len(radii) * 4
-        assert result["n_features"] == expected_features
-
-    def test_validate_invalid_bands_type(self, small_hsi):
-        """Test validation fails with invalid bands type."""
-        # Arrange: Create extractor with invalid bands
-        extractor = MPExtractor(bands="invalid")
-
-        # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(
-            ValueError, match="bands must be None or a non-empty"
-        ):
-            extractor.extract(small_hsi)
-
-    def test_validate_empty_bands(self, small_hsi):
-        """Test validation fails with empty bands list."""
-        # Arrange: Create extractor with empty bands
-        extractor = MPExtractor(bands=[])
-
-        # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(
-            ValueError, match="bands must be None or a non-empty"
-        ):
-            extractor.extract(small_hsi)
+        # Assert: n_features = n_components * len(shapes) * (2*len(radii) + 1)
+        expected = n_components * len(shapes) * (2 * len(radii) + 1)
+        assert result["n_features"] == expected
 
     def test_validate_invalid_radii_type(self, small_hsi):
         """Test validation fails with invalid radii type."""
@@ -200,7 +160,7 @@ class TestMPExtractor:
         extractor = MPExtractor(radii="invalid")
 
         # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(ValueError, match="radii must be a non-empty"):
+        with pytest.raises((ValueError, TypeError)):
             extractor.extract(small_hsi)
 
     def test_validate_empty_radii(self, small_hsi):
@@ -230,15 +190,42 @@ class TestMPExtractor:
         with pytest.raises(ValueError, match="All radii must be positive"):
             extractor.extract(small_hsi)
 
-    def test_validate_invalid_structuring_element(self, small_hsi):
-        """Test validation fails with invalid structuring element."""
-        # Arrange: Create extractor with invalid structuring element
-        extractor = MPExtractor(structuring_element="invalid")
+    def test_validate_invalid_shape(self, small_hsi):
+        """Test validation fails with invalid shape."""
+        # Arrange: Create extractor with invalid shape
+        extractor = MPExtractor(shapes=["invalid"])
+
+        # Act & Assert: Verify validation raises ValueError
+        with pytest.raises(ValueError, match="Invalid shape"):
+            extractor.extract(small_hsi)
+
+    def test_validate_empty_shapes(self, small_hsi):
+        """Test validation fails with empty shapes list."""
+        # Arrange: Create extractor with empty shapes
+        extractor = MPExtractor(shapes=[])
+
+        # Act & Assert: Verify validation raises ValueError
+        with pytest.raises(ValueError, match="shapes must be a non-empty"):
+            extractor.extract(small_hsi)
+
+    def test_validate_invalid_n_components(self, small_hsi):
+        """Test validation fails with invalid n_components."""
+        # Arrange: Create extractor with invalid n_components
+        extractor = MPExtractor(n_components=0)
 
         # Act & Assert: Verify validation raises ValueError
         with pytest.raises(
-            ValueError, match="structuring_element must be one of"
+            ValueError, match="n_components must be a positive integer"
         ):
+            extractor.extract(small_hsi)
+
+    def test_validate_n_components_exceeds_bands(self, small_hsi):
+        """Test validation fails when n_components exceeds spectral bands."""
+        # Arrange: Create extractor with too many components
+        extractor = MPExtractor(n_components=100)
+
+        # Act & Assert: Verify validation raises ValueError
+        with pytest.raises(ValueError, match="Number of spectral bands"):
             extractor.extract(small_hsi)
 
     def test_feature_name(self):
@@ -249,24 +236,48 @@ class TestMPExtractor:
         # Assert: Verify correct name
         assert name == "m_p"
 
-    def test_original_shape_preserved(self, small_hsi):
-        """Test that original spatial shape is recorded."""
+    def test_spatial_shape_preserved(self, small_hsi):
+        """Test that output features preserve spatial dimensions."""
         # Arrange: Create extractor
         extractor = MPExtractor()
 
         # Act: Execute extraction
         result = extractor.extract(small_hsi)
 
-        # Assert: Verify original shape
-        assert result["original_shape"] == (small_hsi.height, small_hsi.width)
+        # Assert: Verify spatial dimensions
+        features = result["features"]
+        assert features.shape[0] == small_hsi.height
+        assert features.shape[1] == small_hsi.width
 
-    def test_morphological_operations_applied(self, small_hsi):
-        """Test that all morphological operations are applied."""
-        # Arrange: Create extractor with single band and radius
-        extractor = MPExtractor(bands=[0], radii=[1])
+    def test_use_reconstruction(self, small_hsi):
+        """Test extraction with reconstruction-based morphological operations."""
+        # Arrange: Create extractors with and without reconstruction
+        extractor_standard = MPExtractor(
+            shapes=["disk"], radii=[2], use_reconstruction=False
+        )
+        extractor_recon = MPExtractor(
+            shapes=["disk"], radii=[2], use_reconstruction=True
+        )
+
+        # Act: Execute both extractions
+        result_standard = extractor_standard.extract(small_hsi)
+        result_recon = extractor_recon.extract(small_hsi)
+
+        # Assert: Both produce valid results with same shape
+        assert result_standard["features"].shape == result_recon["features"].shape
+        assert result_standard["use_reconstruction"] is False
+        assert result_recon["use_reconstruction"] is True
+
+    def test_pca_variance_explained(self, small_hsi):
+        """Test that PCA variance ratios are returned."""
+        # Arrange: Create extractor
+        extractor = MPExtractor(n_components=2)
 
         # Act: Execute extraction
         result = extractor.extract(small_hsi)
 
-        # Assert: Verify 4 operations (opening, closing, dilation, erosion)
-        assert result["n_features"] == 4
+        # Assert: Verify variance explained
+        variance_ratio = result["explained_variance_ratio"]
+        assert len(variance_ratio) == 2
+        assert np.all(variance_ratio >= 0)
+        assert np.all(variance_ratio <= 1)

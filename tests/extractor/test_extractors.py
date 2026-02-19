@@ -35,15 +35,16 @@ class TestMNFExtractor:
         assert isinstance(result["features"], np.ndarray)
         assert set(result.keys()) == {
             "features",
-            "explained_variance_ratio",
-            "explained_variance",
-            "components",
-            "mean",
-            "n_components",
+            "n_features",
             "original_shape",
-            "cumulative_variance_ratio",
+            "mean",
             "noise_eigenvalues",
+            "snr_eigenvalues",
+            "snr_estimates",
+            "snr_ratio",
+            "cumulative_snr_ratio",
             "whitening_matrix",
+            "projection_matrix",
         }
 
 
@@ -63,11 +64,12 @@ class TestMPExtractor:
         assert isinstance(result["features"], np.ndarray)
         assert set(result.keys()) == {
             "features",
-            "bands_used",
+            "explained_variance_ratio",
+            "n_components",
+            "shapes",
             "radii",
-            "structuring_element",
             "n_features",
-            "original_shape",
+            "use_reconstruction",
         }
 
 
@@ -213,5 +215,6 @@ class TestZernikeMomentExtractor:
             "explained_variance_ratio",
             "n_components",
             "window_sizes",
-            "degree",
+            "max_order",
+            "n_moments_per_scale",
         }

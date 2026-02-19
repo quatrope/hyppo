@@ -31,12 +31,12 @@ class TestZernikeMomentExtractor:
         assert "explained_variance_ratio" in result
         assert "n_components" in result
         assert "window_sizes" in result
-        assert "degree" in result
+        assert "max_order" in result
 
         # Assert: Verify default parameter values
         assert result["n_components"] == 3
         assert result["window_sizes"] == [3, 9, 15]
-        assert result["degree"] == 3
+        assert result["max_order"] == 6
 
         # Assert: Verify feature shape
         features = result["features"]
@@ -52,7 +52,7 @@ class TestZernikeMomentExtractor:
         window_sizes = [3, 5]
         extractor = ZernikeMomentExtractor(
             n_components=n_components,
-            degree=max_order,
+            max_order=max_order,
             window_sizes=window_sizes,
         )
 
@@ -61,13 +61,13 @@ class TestZernikeMomentExtractor:
 
         # Assert: Verify custom parameters
         assert result["n_components"] == n_components
-        assert result["degree"] == max_order
+        assert result["max_order"] == max_order
         assert result["window_sizes"] == window_sizes
 
     def test_zernike_moments_computation(self, small_hsi):
         """Test Zernike moments computation."""
         # Arrange: Create extractor and test patches
-        extractor = ZernikeMomentExtractor(degree=4)
+        extractor = ZernikeMomentExtractor(max_order=4)
         patches = np.random.rand(10, 5, 5).astype(np.float32)
 
         # Act: Compute moments
@@ -105,24 +105,24 @@ class TestZernikeMomentExtractor:
     def test_validate_invalid_max_order(self, small_hsi):
         """Test validation fails with invalid max_order."""
         # Arrange: Create extractor with negative max_order
-        extractor = ZernikeMomentExtractor(degree=-1)
+        extractor = ZernikeMomentExtractor(max_order=-1)
 
         # Act & Assert: Verify validation raises ValueError
         with pytest.raises(
-            ValueError, match="degree must be a non-negative integer"
+            ValueError, match="max_order must be a non-negative integer"
         ):
             extractor.extract(small_hsi)
 
     def test_validate_odd_max_order(self, small_hsi):
         """Test validation allows odd degree values."""
         # Arrange: Create extractor with odd degree
-        extractor = ZernikeMomentExtractor(degree=5)
+        extractor = ZernikeMomentExtractor(max_order=5)
 
         # Act: Execute extraction
         result = extractor.extract(small_hsi)
 
         # Assert: Verify successful extraction
-        assert result["degree"] == 5
+        assert result["max_order"] == 5
 
     def test_validate_invalid_window_sizes_empty(self, small_hsi):
         """Test validation fails with empty window_sizes."""
@@ -166,13 +166,13 @@ class TestZernikeMomentExtractor:
     def test_different_max_orders(self, small_hsi, max_order):
         """Test extraction with different max orders."""
         # Arrange: Create extractor with specific max_order
-        extractor = ZernikeMomentExtractor(degree=max_order)
+        extractor = ZernikeMomentExtractor(max_order=max_order)
 
         # Act: Execute extraction
         result = extractor.extract(small_hsi)
 
         # Assert: Verify correct max order
-        assert result["degree"] == max_order
+        assert result["max_order"] == max_order
 
     def test_feature_name(self):
         """Test that feature name is correctly generated."""
@@ -224,11 +224,11 @@ class TestZernikeMomentExtractor:
     def test_validate_non_integer_max_order(self, small_hsi):
         """Test validation fails with non-integer max_order."""
         # Arrange: Create extractor with float max_order
-        extractor = ZernikeMomentExtractor(degree=2.5)  # type: ignore
+        extractor = ZernikeMomentExtractor(max_order=2.5)  # type: ignore
 
         # Act & Assert: Verify validation raises ValueError
         with pytest.raises(
-            ValueError, match="degree must be a non-negative integer"
+            ValueError, match="max_order must be a non-negative integer"
         ):
             extractor.extract(small_hsi)
 
@@ -248,7 +248,7 @@ class TestZernikeMomentExtractor:
     def test_zernike_polynomial_coordinates(self, small_hsi):
         """Test that Zernike polynomial coordinates are within unit disk."""
         # Arrange: Create extractor with small window
-        extractor = ZernikeMomentExtractor(window_sizes=[3], degree=4)
+        extractor = ZernikeMomentExtractor(window_sizes=[3], max_order=4)
         image = small_hsi.reflectance[:, :, 0]
 
         # Act: Extract moments
@@ -273,7 +273,7 @@ class TestZernikeMomentExtractor:
     def test_rotation_invariance_property(self, small_hsi):
         """Test that Zernike moments magnitude is rotation invariant."""
         # Arrange: Create extractor
-        extractor = ZernikeMomentExtractor(degree=4, window_sizes=[5])
+        extractor = ZernikeMomentExtractor(max_order=4, window_sizes=[5])
 
         # Act: Execute extraction
         result = extractor.extract(small_hsi)

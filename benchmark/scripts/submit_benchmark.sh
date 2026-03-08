@@ -20,7 +20,7 @@ echo "Started: $(date)"
 echo "=========================================="
 
 # Activate conda/mamba environment (adjust path as needed)
-source ~/micromamba/etc/profile.d/micromamba.sh
+source ~/micromamba/etc/profile.d/mamba.sh
 micromamba activate hyppo3.13
 
 # Change to benchmark directory

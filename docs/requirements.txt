@@ -10,5 +10,6 @@ ipython
 
 sphinxcontrib-bibtex
 pybtex-apa-style
+sphinxcontrib-mermaid
 
 m2r2

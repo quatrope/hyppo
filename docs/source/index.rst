@@ -40,6 +40,14 @@ Contents
     :caption: Reference
 
     api/index
+    architecture
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Guides
+
+    contributing
+    troubleshooting
 
 .. toctree::
     :maxdepth: 2

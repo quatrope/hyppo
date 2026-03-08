@@ -48,6 +48,28 @@ Explore complex extractor dependencies, parallel processing, and distributed com
    advanced_usage
 
 
+Configuration Examples
+----------------------
+
+Ready-to-use YAML configurations for common pipelines.
+
+.. toctree::
+   :maxdepth: 1
+
+   config_examples
+
+
+Extending HYPPO
+---------------
+
+Learn how to create custom feature extractors.
+
+.. toctree::
+   :maxdepth: 1
+
+   adding_extractors
+
+
 Tutorial Overview
 -----------------
 
@@ -66,6 +88,14 @@ Tutorial Overview
 :doc:`advanced_usage`
     Explore advanced features including complex extractor dependencies, parallel execution
     with Dask, and distributed computing with SLURM clusters.
+
+:doc:`config_examples`
+    Ready-to-use YAML configuration files for spectral, spatial, wavelet,
+    morphological, and full extraction pipelines.
+
+:doc:`adding_extractors`
+    Step-by-step guide to creating, registering, documenting, and testing
+    a new feature extractor.
 
 
 Prerequisites

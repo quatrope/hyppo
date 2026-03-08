@@ -63,6 +63,7 @@ extensions = [
     "nbsphinx",
     "sphinxcontrib.bibtex",
     "sphinx_copybutton",
+    "sphinxcontrib.mermaid",
 ]
 # =============================================================================
 # EXTRA CONF

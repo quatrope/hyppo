@@ -6,7 +6,6 @@ from .base import BaseRunner
 from .dask import (
     DaskProcessesRunner,
     DaskRunner,
-    DaskSLURMRunner,
     DaskThreadsRunner,
 )
 from .local_process import LocalProcessRunner
@@ -17,7 +16,6 @@ __all__ = [
     "BaseRunner",
     "DaskProcessesRunner",
     "DaskRunner",
-    "DaskSLURMRunner",
     "DaskThreadsRunner",
     "LocalProcessRunner",
     "SequentialRunner",
@@ -33,4 +31,3 @@ registry.register("sequential", SequentialRunner)
 registry.register("local", LocalProcessRunner)
 registry.register("dask-threads", DaskThreadsRunner)
 registry.register("dask-processes", DaskProcessesRunner)
-registry.register("dask-slurm", DaskSLURMRunner)

@@ -7,11 +7,6 @@ from dask.distributed import Client, LocalCluster
 from hyppo.core import Feature, FeatureCollection, HSI
 from .base import BaseRunner
 
-try:
-    from dask_jobqueue import SLURMCluster
-except ImportError:
-    SLURMCluster = None
-
 
 class DaskRunner(BaseRunner):
     """
@@ -22,7 +17,6 @@ class DaskRunner(BaseRunner):
     instead use one of the concrete runner classes:
         - DaskThreadsRunner: Thread-based parallelism
         - DaskProcessesRunner: Process-based parallelism
-        - DaskSLURMRunner: SLURM cluster execution
     """
 
     def __init__(self, client: Client):
@@ -241,109 +235,4 @@ class DaskProcessesRunner(DaskRunner):
             silence_logs=True,
         )
         client = Client(cluster)
-        super().__init__(client)
-
-
-class DaskSLURMRunner(DaskRunner):
-    """
-    SLURM cluster-based Dask runner for distributed feature extraction.
-
-    Uses SLURM job scheduler for distributed execution across HPC clusters.
-    Requires dask-jobqueue package and access to a SLURM cluster.
-    """
-
-    def __init__(
-        self,
-        cores: int = 1,
-        memory: str = "4GB",
-        processes: int = 1,
-        queue: str = "normal",
-        walltime: str = "01:00:00",
-        num_jobs: int = 1,
-        account: str | None = None,
-        project: str | None = None,
-        job_extra_directives: list[str] | None = None,
-        **kwargs,
-    ):
-        """
-        Create a SLURM cluster-based Dask runner.
-
-        Must be run on a system with SLURM installed (HPC cluster login node).
-        Creates SLURM jobs that serve as Dask workers.
-
-        Args:
-            cores: Number of cores per SLURM job
-            memory: Memory per SLURM job (e.g., "4GB", "16GB")
-            processes: Number of worker processes per job
-            queue: SLURM queue/partition name
-            walltime: Maximum job duration (HH:MM:SS format)
-            num_jobs: Number of SLURM jobs to spawn
-            account: SLURM account to charge
-            project: SLURM project name
-            job_extra_directives: Additional SBATCH directives as
-                                 list of strings (e.g.,
-                                 ["--constraint=haswell",
-                                 "--exclusive"])
-            **kwargs: Additional keyword arguments passed to SLURMCluster
-
-        Raises:
-            ImportError: If dask-jobqueue is not installed
-            ValueError: If cores, processes, or num_jobs is less than 1
-
-        Example:
-            >>> runner = DaskSLURMRunner(
-            ...     cores=8,
-            ...     memory="32GB",
-            ...     processes=1,
-            ...     queue="normal",
-            ...     walltime="02:00:00",
-            ...     num_jobs=10,
-            ...     account="my_project",
-            ...     job_extra_directives=["--constraint=haswell"]
-            ... )
-            >>> results = feature_space.extract(hsi, runner)
-        """
-        if SLURMCluster is None:
-            raise ImportError(
-                "dask-jobqueue is required for SLURM execution. "
-                "Install with: pip install dask-jobqueue"
-            )
-
-        if cores < 1:
-            raise ValueError(f"Invalid number of cores: {cores}")
-        if processes < 1:
-            raise ValueError(f"Invalid number of processes: {processes}")
-        if num_jobs < 1:
-            raise ValueError(f"Invalid number of jobs: {num_jobs}")
-
-        # Build cluster configuration
-        cluster_kwargs = {
-            "cores": cores,
-            "memory": memory,
-            "processes": processes,
-            "queue": queue,
-            "walltime": walltime,
-            "silence_logs": True,
-        }
-
-        # Add optional parameters
-        if account is not None:
-            cluster_kwargs["account"] = account
-        if project is not None:
-            cluster_kwargs["project"] = project
-        if job_extra_directives is not None:
-            cluster_kwargs["job_extra_directives"] = job_extra_directives
-
-        # Merge any additional kwargs
-        cluster_kwargs.update(kwargs)
-
-        # Create SLURM cluster
-        cluster = SLURMCluster(**cluster_kwargs)
-
-        # Scale to requested number of jobs
-        cluster.scale(jobs=num_jobs)
-
-        # Create client
-        client = Client(cluster)
-
         super().__init__(client)

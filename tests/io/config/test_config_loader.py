@@ -544,31 +544,6 @@ class TestRunnerConfiguration:
         from hyppo.runner import DaskProcessesRunner
         assert isinstance(config.runner, DaskProcessesRunner)
 
-    def test_load_config_with_dask_slurm_runner(self, tmp_path):
-        """Test loading config with Dask SLURM runner."""
-        # Arrange: Config with dask-slurm runner
-        config_data = {
-            "pipeline": {"n_d_v_i": {"extractor": "NDVIExtractor"}},
-            "runner": {
-                "type": "dask-slurm",
-                "params": {
-                    "cores": 4,
-                    "memory": "16GB",
-                    "queue": "gpu",
-                },
-            },
-        }
-        config_path = tmp_path / "config.yaml"
-        with open(config_path, "w") as f:
-            yaml.dump(config_data, f)
-
-        # Act: Load configuration
-        config = load_config_yaml(config_path)
-
-        # Assert: Dask SLURM runner configured
-        from hyppo.runner import DaskSLURMRunner
-        assert isinstance(config.runner, DaskSLURMRunner)
-
     def test_runner_missing_type_raises_error(self, tmp_path):
         """Test that runner config without type raises error."""
         # Arrange: Config with runner but no type

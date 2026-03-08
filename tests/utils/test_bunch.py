@@ -217,3 +217,21 @@ class TestBunch:
         # Assert: Verify state updated
         assert bunch._name == "new_name"
         assert bunch["new_key"] == "new_value"
+
+    def test_setitem_raises_attribute_error(self):
+        """Test that __setitem__ raises AttributeError (read-only)."""
+        # Arrange: Create Bunch
+        bunch = Bunch("test", {"key": "value"})
+
+        # Act & Assert: Verify read-only behavior
+        with pytest.raises(AttributeError, match="read-only"):
+            bunch["key"] = "new_value"
+
+    def test_delitem_raises_attribute_error(self):
+        """Test that __delitem__ raises AttributeError (read-only)."""
+        # Arrange: Create Bunch
+        bunch = Bunch("test", {"key": "value"})
+
+        # Act & Assert: Verify read-only behavior
+        with pytest.raises(AttributeError, match="read-only"):
+            del bunch["key"]

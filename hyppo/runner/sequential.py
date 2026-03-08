@@ -31,15 +31,9 @@ class SequentialRunner(BaseRunner):
             extractor = feature_graph.extractors[extractor_name]
             input_mapping = feature_graph.get_input_mapping_for(extractor_name)
 
-            input_kwargs = {}
-            for input_name, source_name in input_mapping.items():
-                input_kwargs[input_name] = extracted_results[source_name]
-
-            defaults = self._get_defaults_for_extractor(extractor)
-            for input_name, default_extractor in defaults.items():
-                if input_name not in input_kwargs:
-                    default_result = default_extractor.extract(data)
-                    input_kwargs[input_name] = default_result
+            input_kwargs = self._build_input_kwargs(
+                input_mapping, extracted_results, extractor, data
+            )
 
             result = extractor.extract(data, **input_kwargs)
 
@@ -50,3 +44,19 @@ class SequentialRunner(BaseRunner):
             )
 
         return FeatureCollection.from_features(results)
+
+    def _build_input_kwargs(
+        self, input_mapping, extracted_results, extractor, data
+    ):
+        """Build input keyword arguments for an extractor."""
+        input_kwargs = {}
+        for input_name, source_name in input_mapping.items():
+            input_kwargs[input_name] = extracted_results[source_name]
+
+        defaults = self._get_defaults_for_extractor(extractor)
+        for input_name, default_extractor in defaults.items():
+            if input_name not in input_kwargs:
+                default_result = default_extractor.extract(data)
+                input_kwargs[input_name] = default_result
+
+        return input_kwargs

@@ -50,6 +50,26 @@ def load_h5_hsi(
         )
 
 
+def _extract_dataset_attrs(ref_dataset, scale_factor_name, null_value_name):
+    """Extract scale factor, null value, and metadata from dataset attrs."""
+    result = {}
+
+    scale_factor = ref_dataset.attrs.get(scale_factor_name)
+    if scale_factor:
+        result["scale_factor"] = scale_factor[0]
+
+    null_value = ref_dataset.attrs.get(null_value_name)
+    if null_value:
+        result["null_value"] = null_value[0]
+
+    metadata = {}
+    for key, value in ref_dataset.attrs.items():
+        metadata[key] = value
+    result["reflectance_metadata"] = metadata
+
+    return result
+
+
 def _parse_h5_hsi(
     file: h5py.File,
     reflectance_name: str | None = None,
@@ -57,14 +77,11 @@ def _parse_h5_hsi(
     scale_factor_name: str | None = None,
     null_value_name: str | None = None,
 ):
-
     if scale_factor_name is None:
         scale_factor_name = "Scale_Factor"
     if null_value_name is None:
         null_value_name = "Data_Ignore_Value"
 
-    # Find reflectance and wavelength datasets using heuristics or
-    # provided paths
     ref_dataset, ref_path = _find_reflectance_dataset(file, reflectance_name)
     wave_dataset, wave_path = _find_wavelength_dataset(file, wavelength_name)
 
@@ -83,20 +100,35 @@ def _parse_h5_hsi(
         "reflectance_metadata": {},
     }
 
-    # Apply scale factor if present
-    scale_factor = ref_dataset.attrs.get(scale_factor_name)
-    if scale_factor:
-        parsed_data["scale_factor"] = scale_factor[0]
-
-    null_value = ref_dataset.attrs.get(null_value_name)
-    if null_value:
-        parsed_data["null_value"] = null_value[0]
-
-    reflectance_metadata = parsed_data["reflectance_metadata"]
-    for key, value in ref_dataset.attrs.items():
-        reflectance_metadata[key] = value
+    attrs = _extract_dataset_attrs(
+        ref_dataset, scale_factor_name, null_value_name
+    )
+    parsed_data.update(attrs)
 
     return parsed_data
+
+
+def _validate_provided_dataset(f, provided_path, ndim, label):
+    """Validate a user-provided dataset path exists and has correct ndim."""
+    if provided_path not in f:
+        raise ValueError(
+            f"Provided {label} path '{provided_path}' is invalid"
+        )
+
+    node = f[provided_path]
+    if not isinstance(node, h5py.Dataset) or node.ndim != ndim:
+        raise ValueError(
+            f"Provided {label} path '{provided_path}' is invalid"
+        )
+
+    return node
+
+
+def _reflectance_priority(name_lower):
+    """Return priority for reflectance candidate (1=best, 2=fallback)."""
+    if "reflectance" in name_lower or "reflectancia" in name_lower:
+        return 1
+    return 2
 
 
 def _find_reflectance_dataset(
@@ -104,38 +136,22 @@ def _find_reflectance_dataset(
 ) -> tuple[h5py.Dataset | None, str]:
 
     if provided_path:
-        if provided_path in f:
-            node = f[provided_path]
-            if isinstance(node, h5py.Dataset) and node.ndim == 3:
-                return node, provided_path
-        raise ValueError(
-            f"Provided reflectance path '{provided_path}' is invalid"
-        )
+        node = _validate_provided_dataset(f, provided_path, 3, "reflectance")
+        return node, provided_path
 
-    # Heuristic search
     candidates = []
 
     def visitor(name, node):
         if isinstance(node, h5py.Dataset) and node.ndim == 3:
-            # Check if path contains reflectance-related keywords
             name_lower = name.lower()
-            if any(
-                keyword in name_lower
-                for keyword in ["reflectance", "reflectancia", "radiance"]
-            ):
-                # Prioritize reflectance over radiance
-                priority = (
-                    1
-                    if "reflectance" in name_lower
-                    or "reflectancia" in name_lower
-                    else 2
-                )
+            keywords = ["reflectance", "reflectancia", "radiance"]
+            if any(kw in name_lower for kw in keywords):
+                priority = _reflectance_priority(name_lower)
                 candidates.append((priority, name, node))
 
     f.visititems(visitor)
 
     if candidates:
-        # Sort by priority and return the best match
         candidates.sort(key=lambda x: x[0])
         return candidates[0][2], candidates[0][1]
 
@@ -145,29 +161,21 @@ def _find_reflectance_dataset(
 def _find_wavelength_dataset(
     f: h5py.File, provided_path: str | None = None
 ) -> tuple[h5py.Dataset | None, str]:
-    if provided_path:
-        if provided_path in f:
-            node = f[provided_path]
-            if isinstance(node, h5py.Dataset) and node.ndim == 1:
-                return node, provided_path
-        raise ValueError(
-            f"Provided wavelength path '{provided_path}' is invalid"
-        )
 
-    # Heuristic search
+    if provided_path:
+        node = _validate_provided_dataset(f, provided_path, 1, "wavelength")
+        return node, provided_path
+
     candidates = []
 
     def visitor(name, node):
         if isinstance(node, h5py.Dataset) and node.ndim == 1:
-            # Check if path contains wavelength-related keywords
-            name_lower = name.lower()
-            if "wavelength" in name_lower:
+            if "wavelength" in name.lower():
                 candidates.append((name, node))
 
     f.visititems(visitor)
 
     if candidates:
-        # Return the first match
         return candidates[0][1], candidates[0][0]
 
     return None, ""

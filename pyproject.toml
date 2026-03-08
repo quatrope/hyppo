@@ -47,6 +47,8 @@ dev = [
     "pytest-cov>=4.0",
     "flake8>=6.0",
     "tox>=4.0",
+    "radon>=5.1",
+    "xenon>=0.9",
 ]
 
 [tool.setuptools.packages.find]

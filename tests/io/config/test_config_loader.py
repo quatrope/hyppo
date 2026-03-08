@@ -603,3 +603,37 @@ class TestRunnerConfiguration:
         # Act & Assert: Verify error raised
         with pytest.raises(ValueError, match="must be a dictionary"):
             load_config_yaml(config_path)
+
+    def test_runner_type_not_string_raises_error(self, tmp_path):
+        """Test that runner type as non-string raises error."""
+        # Arrange: Config with runner type as integer
+        config_data = {
+            "pipeline": {"n_d_v_i": {"extractor": "NDVIExtractor"}},
+            "runner": {"type": 123},
+        }
+        config_path = tmp_path / "config.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_data, f)
+
+        # Act & Assert: Verify error raised
+        with pytest.raises(ValueError, match="must be a string"):
+            load_config_yaml(config_path)
+
+    def test_runner_creation_generic_exception(self, tmp_path):
+        """Test that generic exception during runner creation is wrapped."""
+        # Arrange: Config with valid runner type but invalid params
+        # that cause TypeError (not ValueError) during instantiation
+        config_data = {
+            "pipeline": {"n_d_v_i": {"extractor": "NDVIExtractor"}},
+            "runner": {
+                "type": "sequential",
+                "params": {"nonexistent_param": 42},
+            },
+        }
+        config_path = tmp_path / "config.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_data, f)
+
+        # Act & Assert: TypeError from constructor wrapped as ValueError
+        with pytest.raises(ValueError, match="Failed to create runner"):
+            load_config_yaml(config_path)

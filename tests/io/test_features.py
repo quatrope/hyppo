@@ -271,3 +271,31 @@ class TestFeatureCollectionSaveMethod:
                 sample_feature_collection.save(tmp_path)
         finally:
             Path(tmp_path).unlink(missing_ok=True)
+
+    def test_save_feature_without_dict_data(self, small_hsi):
+        """Test saving feature whose data is not a dict."""
+        # Arrange: Create Feature with non-dict data
+        from hyppo.utils.bunch import Bunch
+
+        feature = Bunch("Feature", {
+            "result": None,
+            "data": "not_a_dict",
+            "extractor": None,
+            "inputs_used": [],
+        })
+        collection = FeatureCollection({"test": feature})
+
+        with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp:
+            tmp_path = tmp.name
+
+        try:
+            # Act: Save collection with non-dict data feature
+            io.save_feature_collection(collection, tmp_path)
+
+            # Assert: File created, feature group exists but is empty
+            with h5py.File(tmp_path, "r") as f:
+                assert "features" in f
+                assert "test" in f["features"]
+                assert len(f["features"]["test"]) == 0
+        finally:
+            Path(tmp_path).unlink(missing_ok=True)

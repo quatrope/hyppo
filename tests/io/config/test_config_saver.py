@@ -514,3 +514,15 @@ class TestFeatureSpaceSaveConfigMethod:
         assert set(loaded_config.feature_space.extractors.keys()) == set(
             original_fs.extractors.keys()
         )
+
+    def test_save_config_with_string_path(self, tmp_path):
+        """Test save_config accepts string path instead of Path object."""
+        # Arrange: Create FeatureSpace and string path
+        fs = FeatureSpace.from_list([NDVIExtractor()])
+        yaml_path = str(tmp_path / "config.yaml")
+
+        # Act: Call save_config with string
+        fs.save_config(yaml_path)
+
+        # Assert: File exists
+        assert Path(yaml_path).exists()

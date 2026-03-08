@@ -16,6 +16,9 @@ ipdb
 coverage
 pytest-cov
 
+radon
+xenon
+
 pydocstyle
 toml
 

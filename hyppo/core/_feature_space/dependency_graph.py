@@ -59,6 +59,44 @@ class FeatureDependencyGraph:
         # Validate types and requirements
         self._validate_types_and_requirements()
 
+    def _check_required_input(self, node_name, input_name, dep_spec, input_mapping):
+        """Check that a required input is present in the mapping."""
+        is_required = dep_spec.get("required", True)
+        if is_required and input_name not in input_mapping:
+            msg = (
+                f"Extractor '{node_name}' requires input "
+                f"'{input_name}' but it was not provided"
+            )
+            raise ValueError(msg)
+
+    def _validate_single_dependency(
+        self, node_name, input_name, dep_spec, input_mapping
+    ) -> None:
+        """Validate a single input dependency for an extractor."""
+        self._check_required_input(node_name, input_name, dep_spec, input_mapping)
+
+        if input_name not in input_mapping:
+            return
+
+        source_name = input_mapping[input_name]
+        if source_name not in self.extractors:
+            msg = (
+                f"Source extractor '{source_name}' not found "
+                f"for input '{input_name}' of '{node_name}'"
+            )
+            raise ValueError(msg)
+
+        source_extractor = self.extractors[source_name]
+        expected_type = dep_spec["extractor"]
+        if not isinstance(source_extractor, expected_type):
+            msg = (
+                f"Type mismatch for input '{input_name}' "
+                f"of '{node_name}': "
+                f"expected {expected_type.__name__}, "
+                f"got {type(source_extractor).__name__}"
+            )
+            raise TypeError(msg)
+
     def _validate_types_and_requirements(self) -> None:
         """Validate input types and requirements for all extractors."""
         for node_name in self.graph.nodes():
@@ -66,37 +104,10 @@ class FeatureDependencyGraph:
             input_deps = extractor.get_input_dependencies()
             input_mapping = self.input_mappings.get(node_name, {})
 
-            # Check each declared input dependency
             for input_name, dep_spec in input_deps.items():
-                # Check if required input is missing
-                is_required = dep_spec.get("required", True)
-                if is_required and input_name not in input_mapping:
-                    msg = (
-                        f"Extractor '{node_name}' requires input "
-                        f"'{input_name}' but it was not provided"
-                    )
-                    raise ValueError(msg)
-
-                # If input is mapped, validate the source extractor type
-                if input_name in input_mapping:
-                    source_name = input_mapping[input_name]
-                    if source_name not in self.extractors:
-                        msg = (
-                            f"Source extractor '{source_name}' not found "
-                            f"for input '{input_name}' of '{node_name}'"
-                        )
-                        raise ValueError(msg)
-
-                    source_extractor = self.extractors[source_name]
-                    expected_type = dep_spec["extractor"]
-                    if not isinstance(source_extractor, expected_type):
-                        msg = (
-                            f"Type mismatch for input '{input_name}' "
-                            f"of '{node_name}': "
-                            f"expected {expected_type.__name__}, "
-                            f"got {type(source_extractor).__name__}"
-                        )
-                        raise TypeError(msg)
+                self._validate_single_dependency(
+                    node_name, input_name, dep_spec, input_mapping
+                )
 
     def get_execution_order(self) -> list[str]:
         """

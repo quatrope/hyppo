@@ -76,15 +76,19 @@ class FeatureSpace:
         if not extractors:
             return cls({})
 
-        # Create name-to-extractor mapping and check for duplicates
+        extractor_mapping = cls._build_extractor_mapping(extractors)
+        config_dict = cls._resolve_dependencies(extractor_mapping)
+
+        return cls(config_dict)
+
+    @staticmethod
+    def _build_extractor_mapping(extractors):
+        """Build name-to-extractor mapping with duplicate checking."""
         extractor_mapping = {}
-        type_to_name = {}
 
         for extractor in extractors:
             extractor_name = extractor.feature_name()
-            extractor_type = type(extractor)
 
-            # Check for duplicate names
             if extractor_name in extractor_mapping:
                 msg = (
                     f"Duplicate extractor name '{extractor_name}'. "
@@ -93,39 +97,45 @@ class FeatureSpace:
                 raise ValueError(msg)
 
             extractor_mapping[extractor_name] = extractor
-            type_to_name[extractor_type] = extractor_name
 
-        # Resolve dependencies for each extractor
+        return extractor_mapping
+
+    @staticmethod
+    def _find_matching_extractor(required_type, extractor_mapping):
+        """Find a single extractor matching the required type."""
+        matching_name = None
+
+        for candidate_name, cand in extractor_mapping.items():
+            if isinstance(cand, required_type):
+                if matching_name is not None:
+                    msg = (
+                        f"Ambiguous dependency: found multiple "
+                        f"extractors of type "
+                        f"'{required_type.__name__}': "
+                        f"'{matching_name}' and '{candidate_name}'"
+                    )
+                    raise ValueError(msg)
+                matching_name = candidate_name
+
+        return matching_name
+
+    @staticmethod
+    def _resolve_dependencies(extractor_mapping):
+        """Resolve input dependencies for all extractors."""
         config_dict = {}
 
         for extractor_name, extractor in extractor_mapping.items():
             input_dependencies = extractor.get_input_dependencies()
             input_mapping = {}
 
-            # Resolve each declared dependency
             for input_name, dep_spec in input_dependencies.items():
                 required_type = dep_spec["extractor"]
+                match = FeatureSpace._find_matching_extractor(
+                    required_type, extractor_mapping
+                )
 
-                # Look for an extractor of the required type
-                matching_extractor_name = None
-                for candidate_name, cand in extractor_mapping.items():
-                    if isinstance(cand, required_type):
-                        if matching_extractor_name is not None:
-                            # Multiple matches - ambiguous
-                            msg = (
-                                f"Ambiguous dependency: extractor "
-                                f"'{extractor_name}' requires input "
-                                f"'{input_name}' of type "
-                                f"'{required_type.__name__}', but found "
-                                f"multiple candidates: "
-                                f"'{matching_extractor_name}' and "
-                                f"'{candidate_name}'"
-                            )
-                            raise ValueError(msg)
-                        matching_extractor_name = candidate_name
-
-                if matching_extractor_name is not None:
-                    input_mapping[input_name] = matching_extractor_name
+                if match is not None:
+                    input_mapping[input_name] = match
                 elif dep_spec["required"]:
                     msg = (
                         f"Missing required dependency: extractor "
@@ -138,7 +148,7 @@ class FeatureSpace:
 
             config_dict[extractor_name] = (extractor, input_mapping)
 
-        return cls(config_dict)
+        return config_dict
 
     def save_config(self, path) -> None:
         """

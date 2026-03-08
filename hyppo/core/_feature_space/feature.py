@@ -26,6 +26,17 @@ class Feature(Bunch):
         }
         super().__init__("Feature", mapping)
 
+    @staticmethod
+    def _get_features_shape(data):
+        """Extract shape from features entry if available."""
+        if not isinstance(data, dict) or "features" not in data:
+            return None
+
+        features = data["features"]
+        if hasattr(features, "shape"):
+            return features.shape
+        return None
+
     def describe(self):
         """
         Get summary information about this feature result.
@@ -34,14 +45,7 @@ class Feature(Bunch):
             Dictionary with dimensions and extra_data keys
         """
         data = self.get("data", {})
-
-        features_shape = None
-        if isinstance(data, dict) and "features" in data:
-            features = data["features"]
-            if isinstance(features, np.ndarray):
-                features_shape = features.shape
-            elif hasattr(features, "shape"):
-                features_shape = features.shape
+        features_shape = self._get_features_shape(data)
 
         extra_keys = []
         if isinstance(data, dict):

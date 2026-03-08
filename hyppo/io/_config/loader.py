@@ -91,19 +91,8 @@ def load_config_json_str(json_str: str) -> Config:
     return _build_config(config_dict)
 
 
-def _build_feature_space(config_dict: Dict[str, Any]) -> FeatureSpace:
-    """
-    Build FeatureSpace from configuration dictionary.
-
-    Args:
-        config_dict: Dictionary containing pipeline configuration
-
-    Returns:
-        Configured FeatureSpace
-
-    Raises:
-        ValueError: If configuration is malformed
-    """
+def _validate_pipeline(config_dict: Dict[str, Any]) -> dict:
+    """Validate and extract pipeline from config."""
     if "pipeline" not in config_dict:
         raise ValueError(
             "Required field 'pipeline' missing from configuration"
@@ -117,46 +106,100 @@ def _build_feature_space(config_dict: Dict[str, Any]) -> FeatureSpace:
     if not pipeline:
         raise ValueError("Pipeline cannot be empty")
 
+    return pipeline
+
+
+def _validate_extractor_spec(feature_name: str, extractor_spec) -> tuple[str, dict]:
+    """Validate extractor spec structure and return type and params."""
+    if not isinstance(extractor_spec, dict):
+        raise ValueError(
+            f"Extractor '{feature_name}' specification must be a "
+            f"dictionary"
+        )
+
+    if "extractor" not in extractor_spec:
+        raise ValueError(
+            f"Required field 'extractor' missing for '{feature_name}'"
+        )
+
+    extractor_type = extractor_spec["extractor"]
+
+    if not registry.is_registered(extractor_type):
+        raise ValueError(f"Unknown extractor type: {extractor_type}")
+
+    params = extractor_spec.get("params", {})
+
+    if not isinstance(params, dict):
+        raise ValueError(
+            f"Field 'params' for extractor '{feature_name}' must "
+            f"be a dictionary"
+        )
+
+    return extractor_type, params
+
+
+def _process_extractor_spec(feature_name: str, extractor_spec: dict):
+    """Validate and instantiate a single extractor from its spec."""
+    extractor_type, params = _validate_extractor_spec(
+        feature_name, extractor_spec
+    )
+    extractor_class = registry.get(extractor_type)
+
+    try:
+        return extractor_class(**params)
+    except TypeError as e:
+        raise ValueError(
+            f"Failed to instantiate {extractor_type} with parameters "
+            f"{params}: {e}"
+        )
+
+
+def _build_feature_space(config_dict: Dict[str, Any]) -> FeatureSpace:
+    """
+    Build FeatureSpace from configuration dictionary.
+
+    Args:
+        config_dict: Dictionary containing pipeline configuration
+
+    Returns:
+        Configured FeatureSpace
+
+    Raises:
+        ValueError: If configuration is malformed
+    """
+    pipeline = _validate_pipeline(config_dict)
+
     extractor_configs = {}
-
     for feature_name, extractor_spec in pipeline.items():
-        if not isinstance(extractor_spec, dict):
-            raise ValueError(
-                f"Extractor '{feature_name}' specification must be a "
-                f"dictionary"
-            )
-
-        if "extractor" not in extractor_spec:
-            raise ValueError(
-                f"Required field 'extractor' missing for '{feature_name}'"
-            )
-
-        extractor_type = extractor_spec["extractor"]
-
-        if not registry.is_registered(extractor_type):
-            raise ValueError(f"Unknown extractor type: {extractor_type}")
-
-        extractor_class = registry.get(extractor_type)
-
-        params = extractor_spec.get("params", {})
-
-        if not isinstance(params, dict):
-            raise ValueError(
-                f"Field 'params' for extractor '{feature_name}' must "
-                f"be a dictionary"
-            )
-
-        try:
-            extractor_instance = extractor_class(**params)
-        except TypeError as e:
-            raise ValueError(
-                f"Failed to instantiate {extractor_type} with parameters "
-                f"{params}: {e}"
-            )
-
+        extractor_instance = _process_extractor_spec(
+            feature_name, extractor_spec
+        )
         extractor_configs[feature_name] = (extractor_instance, {})
 
     return FeatureSpace(extractor_configs)
+
+
+def _validate_runner_config(runner_config: dict) -> tuple[str, dict]:
+    """Validate runner config and return type and params."""
+    if not isinstance(runner_config, dict):
+        raise ValueError("Field 'runner' must be a dictionary")
+
+    if "type" not in runner_config:
+        raise ValueError(
+            "Required field 'type' missing from runner configuration"
+        )
+
+    runner_type = runner_config["type"]
+
+    if not isinstance(runner_type, str):
+        raise ValueError("Runner 'type' must be a string")
+
+    params = runner_config.get("params", {})
+
+    if not isinstance(params, dict):
+        raise ValueError("Field 'params' for runner must be a dictionary")
+
+    return runner_type, params
 
 
 def _build_runner(config_dict: Dict[str, Any]):
@@ -173,27 +216,11 @@ def _build_runner(config_dict: Dict[str, Any]):
         ValueError: If runner configuration is malformed
     """
     runner_config = config_dict.get("runner", {"type": "sequential"})
-
-    if not isinstance(runner_config, dict):
-        raise ValueError("Field 'runner' must be a dictionary")
-
-    if "type" not in runner_config:
-        raise ValueError("Required field 'type' missing from runner configuration")
-
-    runner_type = runner_config["type"]
-
-    if not isinstance(runner_type, str):
-        raise ValueError("Runner 'type' must be a string")
-
-    params = runner_config.get("params", {})
-
-    if not isinstance(params, dict):
-        raise ValueError("Field 'params' for runner must be a dictionary")
+    runner_type, params = _validate_runner_config(runner_config)
 
     try:
         return runner_registry.get(runner_type, params)
-    except ValueError as e:
-        # Re-raise ValueError from registry (already has good error message)
+    except ValueError:
         raise
     except Exception as e:
         raise ValueError(f"Failed to create runner: {e}")

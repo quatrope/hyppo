@@ -384,6 +384,30 @@ class TestLoadH5Specific:
         finally:
             Path(tmp_path).unlink(missing_ok=True)
 
+    def test_load_h5_hsi_provided_reflectance_wrong_ndim(self):
+        """Test that provided path with wrong ndim raises ValueError."""
+        # Arrange: Create H5 file with 2D dataset at given path
+        spatial_shape = (3, 3)
+        spectral_bands = 5
+        reflectance_2d = np.random.rand(*spatial_shape)
+        wavelengths = np.linspace(400, 800, spectral_bands)
+
+        with tempfile.NamedTemporaryFile(
+            suffix=".h5", delete=False
+        ) as tmp_file:
+            tmp_path = tmp_file.name
+
+        try:
+            with h5py.File(tmp_path, "w") as f:
+                f.create_dataset("my_data", data=reflectance_2d)
+                f.create_dataset("wavelength", data=wavelengths)
+
+            # Act & Assert: Verify error for wrong ndim
+            with pytest.raises(ValueError, match="invalid"):
+                io.load_h5_hsi(tmp_path, reflectance_path="my_data")
+        finally:
+            Path(tmp_path).unlink(missing_ok=True)
+
     def test_load_h5_hsi_with_invalid_metadata_encoding(self):
         """Test load_h5_hsi with invalid UTF-8 metadata."""
         spatial_shape = (3, 3)

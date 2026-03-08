@@ -137,28 +137,33 @@ def _execute_extractor_task(extractor, hsi_data, *args):
     Returns:
         Extraction results from the extractor
     """
-    # Split args into dependency results and metadata
-    # Last two args are always input_names and defaults
     assert len(args) >= 2
 
     dependency_results = args[:-2]
     input_names = args[-2]
     defaults = args[-1]
 
-    # Build input kwargs from dependency results
+    input_kwargs = _build_kwargs_from_dependencies(input_names, dependency_results)
+    _apply_default_extractors(input_kwargs, defaults, hsi_data)
+
+    return extractor.extract(hsi_data, **input_kwargs)
+
+
+def _build_kwargs_from_dependencies(input_names, dependency_results):
+    """Map dependency results to their input names."""
     input_kwargs = {}
     for i, input_name in enumerate(input_names):
         if i < len(dependency_results):
             input_kwargs[input_name] = dependency_results[i]
+    return input_kwargs
 
-    # Add defaults for optional inputs not provided
+
+def _apply_default_extractors(input_kwargs, defaults, hsi_data):
+    """Fill missing optional inputs with default extractor results."""
     for input_name, default_extractor in defaults.items():
         if input_name not in input_kwargs:
             default_result = default_extractor.extract(hsi_data)
             input_kwargs[input_name] = default_result
-
-    # Execute extractor with resolved inputs
-    return extractor.extract(hsi_data, **input_kwargs)
 
 
 class DaskThreadsRunner(DaskRunner):

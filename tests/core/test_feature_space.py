@@ -210,3 +210,42 @@ class TestFeatureSpace:
         # Will be caught by duplicate name check first
         with pytest.raises(ValueError, match="Duplicate"):
             FeatureSpace.from_list(extractors)
+
+
+class TestFeature:
+    """Tests for Feature and FeatureCollection."""
+
+    def test_describe_features_without_shape(self):
+        """Test describe when features value has no shape attribute."""
+        # Arrange: Create Feature with non-array features
+        from hyppo.core import Feature
+
+        data = {"features": "not_an_array", "extra": 42}
+        feature = Feature(data, None, [])
+
+        # Act: Call describe
+        info = feature.describe()
+
+        # Assert: Dimensions should be None
+        assert info["dimensions"] is None
+        assert "extra" in info["extra_data"]
+
+    def test_get_all_features_non_dict_data(self):
+        """Test get_all_features with feature whose data is not a dict."""
+        # Arrange: Create FeatureCollection with non-dict data feature
+        from hyppo.core import Feature, FeatureCollection
+        from hyppo.utils.bunch import Bunch
+
+        feature = Bunch("Feature", {
+            "result": None,
+            "data": "raw_value",
+            "extractor": None,
+            "inputs_used": [],
+        })
+        collection = FeatureCollection({"test": feature})
+
+        # Act: Get all features
+        all_features = collection.get_all_features()
+
+        # Assert: Should use extractor_name as key with raw data
+        assert all_features["test"] == "raw_value"

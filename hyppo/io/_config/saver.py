@@ -107,6 +107,27 @@ def _build_config_dict(config: Config | "FeatureSpace") -> dict:
     return result
 
 
+def _is_extractable_param(param_name, extractor) -> bool:
+    """Check if param is a public, accessible constructor parameter."""
+    if param_name in ["self", "args", "kwargs"]:
+        return False
+    if param_name.startswith("_"):
+        return False
+    return hasattr(extractor, param_name)
+
+
+def _should_include_param(param_name, param, extractor) -> bool:
+    """Check if a parameter should be included in extracted params."""
+    if not _is_extractable_param(param_name, extractor):
+        return False
+
+    value = getattr(extractor, param_name)
+    if value is None and param.default is None:
+        return False
+
+    return True
+
+
 def _extract_params(extractor) -> dict:
     """
     Extract initialization parameters from an extractor instance.
@@ -121,21 +142,7 @@ def _extract_params(extractor) -> dict:
     sig = inspect.signature(type(extractor).__init__)
 
     for param_name, param in sig.parameters.items():
-        if param_name in ["self", "args", "kwargs"]:
-            continue
-
-        if hasattr(extractor, param_name):
-            value = getattr(extractor, param_name)
-
-            # Skip attributes that look like internal state
-            # (not constructor params)
-            if param_name.startswith("_"):
-                continue
-
-            # Skip None values that match None defaults
-            if value is None and param.default is None:
-                continue
-
-            params[param_name] = value
+        if _should_include_param(param_name, param, extractor):
+            params[param_name] = getattr(extractor, param_name)
 
     return params

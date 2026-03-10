@@ -5,21 +5,11 @@ import pytest
 from hyppo.runner import (
     BaseRunner,
     DaskProcessesRunner,
-    DaskSLURMRunner,
     DaskThreadsRunner,
     LocalProcessRunner,
     SequentialRunner,
     registry,
 )
-
-
-
-# Check if dask-jobqueue is available for SLURM tests
-try:
-    from dask_jobqueue import SLURMCluster
-    HAS_DASK_JOBQUEUE = True
-except ImportError:
-    HAS_DASK_JOBQUEUE = False
 
 
 class TestRunnerRegistry:
@@ -37,7 +27,6 @@ class TestRunnerRegistry:
             "local",
             "dask-threads",
             "dask-processes",
-            "dask-slurm",
         }
         assert set(registry.list_runners()) == expected_runners
 
@@ -104,47 +93,6 @@ class TestCreateRunner:
             {"memory_limit": "8GB"}
         )
         assert isinstance(runner, DaskProcessesRunner)
-
-    @pytest.mark.skipif(not HAS_DASK_JOBQUEUE, reason="dask-jobqueue not installed")
-    def test_create_dask_slurm_default(self):
-        """Should create DaskSLURMRunner with defaults."""
-        runner = registry.get("dask-slurm")
-        assert isinstance(runner, DaskSLURMRunner)
-        assert isinstance(runner, BaseRunner)
-
-    @pytest.mark.skipif(not HAS_DASK_JOBQUEUE, reason="dask-jobqueue not installed")
-    def test_create_dask_slurm_with_cores(self):
-        """Should create DaskSLURMRunner with specified cores."""
-        runner = registry.get("dask-slurm", {"cores": 4})
-        assert isinstance(runner, DaskSLURMRunner)
-
-    @pytest.mark.skipif(not HAS_DASK_JOBQUEUE, reason="dask-jobqueue not installed")
-    def test_create_dask_slurm_with_memory(self):
-        """Should create DaskSLURMRunner with specified memory."""
-        runner = registry.get("dask-slurm", {"memory": "16GB"})
-        assert isinstance(runner, DaskSLURMRunner)
-
-    @pytest.mark.skipif(not HAS_DASK_JOBQUEUE, reason="dask-jobqueue not installed")
-    def test_create_dask_slurm_with_queue(self):
-        """Should create DaskSLURMRunner with specified queue."""
-        runner = registry.get("dask-slurm", {"queue": "gpu"})
-        assert isinstance(runner, DaskSLURMRunner)
-
-    @pytest.mark.skipif(not HAS_DASK_JOBQUEUE, reason="dask-jobqueue not installed")
-    def test_create_dask_slurm_with_all_params(self):
-        """Should create DaskSLURMRunner with all parameters."""
-        params = {
-            "cores": 4,
-            "memory": "16GB",
-            "processes": 2,
-            "queue": "gpu",
-            "walltime": "02:00:00",
-            "num_jobs": 10,
-            "account": "myaccount",
-            "project": "myproject",
-        }
-        runner = registry.get("dask-slurm", params)
-        assert isinstance(runner, DaskSLURMRunner)
 
     def test_create_runner_unknown_type(self):
         """Should raise ValueError for unknown runner type."""

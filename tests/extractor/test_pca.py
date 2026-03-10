@@ -12,6 +12,30 @@ from hyppo.extractor.pca import PCAExtractor
 class TestPCAExtractor:
     """Test cases for PCAExtractor."""
 
+    def test_regression(self):
+        """Regression test: PCA output must not change."""
+        # Arrange
+        rng = np.random.RandomState(42)
+        reflectance = rng.rand(5, 5, 8).astype(np.float32)
+        wavelengths = np.linspace(400, 900, 8).astype(np.float32)
+        hsi = HSI(reflectance=reflectance, wavelengths=wavelengths)
+        extractor = PCAExtractor(n_components=3, random_state=42)
+
+        # Act
+        result = extractor.extract(hsi)
+
+        # Assert
+        expected_row0 = np.array([
+            [ 0.2774842,   0.46440527,  0.06909234],
+            [ 0.644388,   -0.6134839,  -0.01987338],
+            [ 0.16158254,  0.12348851, -0.1538901],
+            [ 0.22280443, -0.24693222, -0.18409398],
+            [ 0.40811694,  0.4917808,  -0.13342306],
+        ], dtype=np.float32)
+        np.testing.assert_allclose(
+            result["features"][0, :, :], expected_row0, rtol=1e-5
+        )
+
     def test_pca_reference_sklearn(self):
         """Test PCA results match sklearn.decomposition.PCA directly.
 
@@ -196,6 +220,12 @@ class TestPCAExtractor:
 
         # Act & Assert: Verify validation raises ValueError
         with pytest.raises(ValueError, match="n_components must be positive"):
+            extractor.extract(small_hsi)
+
+    def test_validate_invalid_whiten(self, small_hsi):
+        """Test validation fails with non-boolean whiten."""
+        extractor = PCAExtractor(whiten="invalid")  # type: ignore
+        with pytest.raises(ValueError, match="whiten must be boolean"):
             extractor.extract(small_hsi)
 
     @pytest.mark.parametrize("whiten", [True, False])

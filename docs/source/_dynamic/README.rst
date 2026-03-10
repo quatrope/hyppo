@@ -1,20 +1,14 @@
-.. FILE AUTO GENERATED !! 
+.. FILE AUTO GENERATED !!
 
 hyppo
 =====
 
 Hyper Spectral Feature Extractor
 
-Command-Line Interface
-----------------------
-
-Hyppo provides a command-line interface for extracting features from
-hyperspectral imaging (HSI) data.
-
 Installation
 ^^^^^^^^^^^^
 
-After installing the package, the ``hyppo`` command becomes available:
+Install the package:
 
 .. code-block:: bash
 
@@ -23,56 +17,22 @@ After installing the package, the ``hyppo`` command becomes available:
 Usage
 ^^^^^
 
-All commands require a configuration file in YAML or JSON format:
+HYPPO is used as a Python library for extracting features from
+hyperspectral imaging (HSI) data.
 
-.. code-block:: bash
+.. code-block:: python
 
-   hyppo -c config.yaml <command> [options]
+    import hyppo
+    from hyppo.core import FeatureSpace
+    from hyppo.extractor import MeanExtractor, StdExtractor
 
-Available Commands
-^^^^^^^^^^^^^^^^^^
+    # Load hyperspectral image
+    hsi = hyppo.io.load_h5_hsi("path_to_file.h5")
 
-extract
-~~~~~~~
+    # Configure feature space
+    fs = FeatureSpace.from_list([MeanExtractor(), StdExtractor()])
 
-Extract features from HSI data:
+    # Extract features
+    results = fs.extract(hsi)
 
-.. code-block:: bash
-
-   hyppo -c config.yaml extract input.h5
-   hyppo -c config.yaml extract input.h5 -o output.h5
-
-info
-~~~~
-
-Display configuration information:
-
-.. code-block:: bash
-
-   hyppo -c config.yaml info
-
-Runner Options
-^^^^^^^^^^^^^^
-
-Select different execution backends with the ``-r/--runner`` option:
-
-
-* ``sequential``\ : Single-threaded execution (default)
-* ``local``\ : Multi-process local execution
-* ``dask-thread``\ : Dask threaded execution
-* ``dask-process``\ : Dask process execution
-
-Example with parallel execution:
-
-.. code-block:: bash
-
-   hyppo -c config.yaml -r local -w 8 extract input.h5
-
-Getting Help
-^^^^^^^^^^^^
-
-.. code-block:: bash
-
-   hyppo --help
-   hyppo extract --help
-   hyppo info --help
+For more details, see the full documentation.

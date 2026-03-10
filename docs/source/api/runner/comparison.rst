@@ -18,7 +18,6 @@ Runner                   Parallelism GIL-free     Distributed  Setup
 ``LocalProcessRunner``   Process     Yes          No           None
 ``DaskThreadsRunner``    Threads     No           No           Minimal
 ``DaskProcessesRunner``  Processes   Yes          No           Minimal
-``DaskSLURMRunner``      Cluster     Yes          Yes          SLURM
 ======================== =========== ============ ============ ==========
 
 
@@ -115,33 +114,6 @@ Uses multiple Dask worker processes with true parallelism.
     results = fs.extract(hsi, runner)
 
 
-DaskSLURMRunner
-~~~~~~~~~~~~~~~
-
-Distributes extraction across SLURM cluster nodes.
-
-**Use when:**
-
-- Processing very large datasets that exceed local resources
-- Running batch jobs on HPC clusters
-- You have access to a SLURM-managed cluster
-
-**Requires:** ``dask-jobqueue`` package and SLURM cluster access.
-
-.. code-block:: python
-
-    from hyppo.runner import DaskSLURMRunner
-
-    runner = DaskSLURMRunner(
-        cores=4,
-        memory="8GB",
-        queue="normal",
-        walltime="02:00:00",
-        num_jobs=10
-    )
-    results = fs.extract(hsi, runner)
-
-
 Decision Flowchart
 ------------------
 
@@ -150,9 +122,7 @@ Decision Flowchart
    flowchart TD
        Start["Choose a Runner"] --> Q1{"Debugging?"}
        Q1 -->|Yes| SEQ["SequentialRunner"]
-       Q1 -->|No| Q2{"HPC cluster available?"}
-       Q2 -->|Yes| SLURM["DaskSLURMRunner"]
-       Q2 -->|No| Q3{"CPU-bound extractors?"}
+       Q1 -->|No| Q3{"CPU-bound extractors?"}
        Q3 -->|Yes| PROC["DaskProcessesRunner"]
        Q3 -->|No| Q4{"Need parallelism?"}
        Q4 -->|Yes| THREAD["DaskThreadsRunner"]
@@ -161,7 +131,6 @@ Decision Flowchart
        style SEQ fill:#4a9eff,color:#fff
        style THREAD fill:#66bb6a,color:#fff
        style PROC fill:#ffa726,color:#fff
-       style SLURM fill:#ef5350,color:#fff
 
 
 Configuration File Usage
@@ -178,7 +147,7 @@ Runners can be specified in YAML/JSON configuration files:
           n_components: 10
 
     runner:
-      type: sequential          # or dask-threads, dask-processes, dask-slurm
+      type: sequential          # or dask-threads, dask-processes
       params:
         # Runner-specific parameters here
 
@@ -191,5 +160,4 @@ Config name          Runner class
 ``local``            ``LocalProcessRunner``
 ``dask-threads``     ``DaskThreadsRunner``
 ``dask-processes``   ``DaskProcessesRunner``
-``dask-slurm``       ``DaskSLURMRunner``
 ==================== ========================

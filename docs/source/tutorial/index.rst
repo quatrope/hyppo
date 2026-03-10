@@ -87,7 +87,7 @@ Tutorial Overview
 
 :doc:`advanced_usage`
     Explore advanced features including complex extractor dependencies, parallel execution
-    with Dask, and distributed computing with SLURM clusters.
+    with Dask runners.
 
 :doc:`config_examples`
     Ready-to-use YAML configuration files for spectral, spatial, wavelet,
@@ -110,7 +110,6 @@ Before starting these tutorials, you should have:
 
 For advanced tutorials, you may also need:
 
-- Access to a SLURM cluster (for distributed computing)
 - Understanding of parallel computing concepts
 - Knowledge of HDF5 file format
 

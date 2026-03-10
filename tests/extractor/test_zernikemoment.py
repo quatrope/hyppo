@@ -3,295 +3,297 @@
 import numpy as np
 import pytest
 
+from hyppo.core import HSI
 from hyppo.extractor.zernikemoment import ZernikeMomentExtractor
 
 
 class TestZernikeMomentExtractor:
     """Test cases for ZernikeMomentExtractor."""
 
-    @pytest.mark.skip(
-        reason="Paper reference validation pending implementation"
-    )
-    def test_paper_reference_result(self, sample_hsi):
-        """Test results match reference values from literature."""
-        # TODO: Implement validation against reference paper results
-        # Zernike moments for shape and texture characterization
-        pass
+    @pytest.fixture
+    def regression_hsi(self):
+        """Deterministic 5x5x8 HSI for regression tests."""
+        rng = np.random.RandomState(42)
+        reflectance = rng.rand(5, 5, 8).astype(np.float32)
+        wavelengths = np.linspace(400, 900, 8).astype(np.float32)
+        return HSI(reflectance=reflectance, wavelengths=wavelengths)
 
-    def test_extract_basic_with_defaults(self, small_hsi):
-        """Test extraction with default parameters."""
-        # Arrange: Create extractor with defaults
+    def test_regression(self, regression_hsi):
+        """Regression test: ZernikeMoment output must not change."""
+        # Arrange
+        extractor = ZernikeMomentExtractor(
+            n_components=2, max_order=2, window_sizes=[3],
+        )
+
+        # Act
+        result = extractor.extract(regression_hsi)
+
+        # Assert
+        expected_row0 = np.array([
+            [5.83703470e-01, 0.0, 1.22115461e+00, 9.75248418e-01,
+             4.43472353e-01, 0.0, 2.21736579e+00, 5.69444482e-01],
+            [3.70571385e-01, 7.37852909e-02, 1.18976310e-01, 3.42186807e-01,
+             1.03215616e-01, 2.17034350e-01, 1.48131480e+00, 2.27313583e-01],
+            [1.45270217e-01, 2.68388451e-01, 1.27210722e-01, 1.37470489e+00,
+             3.39800163e-01, 2.33354049e-01, 1.25524617e+00, 5.05950432e-01],
+            [9.87498268e-02, 1.56948669e-01, 1.29275631e-01, 1.00455894e+00,
+             1.63246309e-01, 2.34462147e-01, 1.81331206e-02, 1.42901382e+00],
+            [7.27131087e-01, 0.0, 1.40194733e+00, 9.40620071e-01,
+             1.47438067e-01, 0.0, 4.96917920e-01, 9.15909755e-01],
+        ])
+        np.testing.assert_allclose(
+            result["features"][0, :, :], expected_row0, atol=1e-5
+        )
+
+    def test_magnitudes_non_negative(self, regression_hsi):
+        """Test Zernike moment magnitudes are always non-negative."""
+        # Arrange
+        extractor = ZernikeMomentExtractor(
+            n_components=2, max_order=4, window_sizes=[3],
+        )
+
+        # Act
+        result = extractor.extract(regression_hsi)
+
+        # Assert
+        assert np.all(result["features"] >= 0)
+
+    def test_rotation_invariance(self):
+        """Test Zernike moment magnitudes are rotation invariant.
+
+        Reference: Khotanzad & Hong (1990) - Zernike moments provide
+        rotation-invariant features through their magnitude.
+        """
+        # Arrange: create a simple asymmetric patch and its 90-degree rotation
+        extractor = ZernikeMomentExtractor(max_order=4)
+        patch = np.array([
+            [1.0, 2.0, 3.0, 4.0, 5.0],
+            [0.0, 1.0, 2.0, 3.0, 4.0],
+            [0.0, 0.0, 1.0, 2.0, 3.0],
+            [0.0, 0.0, 0.0, 1.0, 2.0],
+            [0.0, 0.0, 0.0, 0.0, 1.0],
+        ])
+        rotated = np.rot90(patch)
+
+        patches = np.stack([patch, rotated])
+
+        # Act
+        moments = extractor._zernike_moments(patches)
+
+        # Assert: magnitudes should be very similar (not exact due to grid)
+        np.testing.assert_allclose(moments[0], moments[1], atol=0.5)
+
+    def test_radial_polynomial_r00(self):
+        """Test R_00(r) = 1 for all r."""
+        # Arrange
         extractor = ZernikeMomentExtractor()
+        r = np.linspace(0, 1, 100)
 
-        # Act: Execute extraction
-        result = extractor.extract(small_hsi)
+        # Act
+        R00 = extractor._zernike_radial_poly(0, 0, r)
 
-        # Assert: Verify output structure
-        assert "features" in result
-        assert "explained_variance_ratio" in result
-        assert "n_components" in result
-        assert "window_sizes" in result
-        assert "max_order" in result
+        # Assert
+        np.testing.assert_allclose(R00, np.ones_like(r))
 
-        # Assert: Verify default parameter values
-        assert result["n_components"] == 3
-        assert result["window_sizes"] == [3, 9, 15]
-        assert result["max_order"] == 6
+    def test_radial_polynomial_r11(self):
+        """Test R_11(r) = r."""
+        # Arrange
+        extractor = ZernikeMomentExtractor()
+        r = np.linspace(0, 1, 100)
 
-        # Assert: Verify feature shape
-        features = result["features"]
-        assert features.shape[0] == small_hsi.height
-        assert features.shape[1] == small_hsi.width
-        assert features.ndim == 3
+        # Act
+        R11 = extractor._zernike_radial_poly(1, 1, r)
 
-    def test_extract_with_custom_parameters(self, small_hsi):
-        """Test extraction with custom parameters."""
-        # Arrange: Create extractor with custom parameters
+        # Assert
+        np.testing.assert_allclose(R11, r)
+
+    def test_radial_polynomial_r20(self):
+        """Test R_20(r) = 2r^2 - 1."""
+        # Arrange
+        extractor = ZernikeMomentExtractor()
+        r = np.linspace(0, 1, 100)
+
+        # Act
+        R20 = extractor._zernike_radial_poly(2, 0, r)
+
+        # Assert
+        expected = 2 * r**2 - 1
+        np.testing.assert_allclose(R20, expected)
+
+    def test_feature_count_formula(self, small_hsi):
+        """Test feature count matches formula."""
+        # Arrange
         n_components = 2
         max_order = 4
         window_sizes = [3, 5]
         extractor = ZernikeMomentExtractor(
-            n_components=n_components,
-            max_order=max_order,
+            n_components=n_components, max_order=max_order,
             window_sizes=window_sizes,
         )
 
-        # Act: Execute extraction
+        # Act
         result = extractor.extract(small_hsi)
 
-        # Assert: Verify custom parameters
+        # Assert
+        n_moments = sum(
+            1
+            for p in range(max_order + 1)
+            for q in range(0, p + 1)
+            if (p - q) % 2 == 0
+        )
+        expected_features = n_components * len(window_sizes) * n_moments
+        assert result["features"].shape[2] == expected_features
+        assert result["n_moments_per_scale"] == n_moments
+
+    def test_extract_basic_with_defaults(self, small_hsi):
+        """Test extraction with default parameters."""
+        # Arrange
+        extractor = ZernikeMomentExtractor()
+
+        # Act
+        result = extractor.extract(small_hsi)
+
+        # Assert
+        expected_keys = [
+            "features", "explained_variance_ratio", "n_components",
+            "window_sizes", "max_order", "n_moments_per_scale",
+        ]
+        for key in expected_keys:
+            assert key in result
+
+        assert result["n_components"] == 3
+        assert result["window_sizes"] == [3, 9, 15]
+        assert result["max_order"] == 6
+
+        features = result["features"]
+        assert features.shape[:2] == (small_hsi.height, small_hsi.width)
+        assert features.ndim == 3
+
+    def test_extract_with_custom_parameters(self, small_hsi):
+        """Test extraction with custom parameters."""
+        # Arrange
+        extractor = ZernikeMomentExtractor(
+            n_components=2, max_order=4, window_sizes=[3, 5],
+        )
+
+        # Act
+        result = extractor.extract(small_hsi)
+
+        # Assert
+        assert result["n_components"] == 2
+        assert result["max_order"] == 4
+        assert result["window_sizes"] == [3, 5]
+
+    @pytest.mark.parametrize("n_components", [1, 3, 5])
+    def test_different_n_components(self, small_hsi, n_components):
+        """Test extraction with different number of components."""
+        # Arrange
+        extractor = ZernikeMomentExtractor(n_components=n_components)
+
+        # Act
+        result = extractor.extract(small_hsi)
+
+        # Assert
         assert result["n_components"] == n_components
+        assert len(result["explained_variance_ratio"]) == n_components
+
+    @pytest.mark.parametrize("max_order", [2, 4, 6])
+    def test_different_max_orders(self, small_hsi, max_order):
+        """Test extraction with different max orders."""
+        # Arrange
+        extractor = ZernikeMomentExtractor(max_order=max_order)
+
+        # Act
+        result = extractor.extract(small_hsi)
+
+        # Assert
         assert result["max_order"] == max_order
-        assert result["window_sizes"] == window_sizes
 
-    def test_zernike_moments_computation(self, small_hsi):
-        """Test Zernike moments computation."""
-        # Arrange: Create extractor and test patches
-        extractor = ZernikeMomentExtractor(max_order=4)
-        patches = np.random.rand(10, 5, 5).astype(np.float32)
+    def test_pca_variance_explained(self, small_hsi):
+        """Test that PCA variance ratios are valid."""
+        # Arrange
+        extractor = ZernikeMomentExtractor(n_components=2)
 
-        # Act: Compute moments
-        moments = extractor._zernike_moments(patches)
+        # Act
+        result = extractor.extract(small_hsi)
 
-        # Assert: Verify moments shape
-        assert moments.shape[0] == 10
-        assert moments.shape[1] > 0
+        # Assert
+        variance_ratio = result["explained_variance_ratio"]
+        assert len(variance_ratio) == 2
+        assert np.all(variance_ratio >= 0)
+        assert np.all(variance_ratio <= 1)
 
-    def test_extract_moments_multiscale(self, small_hsi):
-        """Test multiscale moment extraction."""
-        # Arrange: Create extractor
-        extractor = ZernikeMomentExtractor(window_sizes=[3, 5])
-        image = small_hsi.reflectance[:, :, 0]
+    def test_pca_object_stored(self, small_hsi):
+        """Test that PCA object is stored in extractor."""
+        # Arrange
+        extractor = ZernikeMomentExtractor(n_components=3)
 
-        # Act: Extract multiscale moments
-        moments = extractor._extract_moments_multiscale(image)
+        # Act
+        extractor.extract(small_hsi)
 
-        # Assert: Verify output shape
-        assert moments.shape[0] == image.shape[0]
-        assert moments.shape[1] == image.shape[1]
-        assert moments.ndim == 3
+        # Assert
+        assert extractor.pca is not None
+        assert hasattr(extractor.pca, "explained_variance_ratio_")
 
     def test_validate_invalid_n_components(self, small_hsi):
         """Test validation fails with invalid n_components."""
-        # Arrange: Create extractor with invalid n_components
         extractor = ZernikeMomentExtractor(n_components=0)
+        with pytest.raises(
+            ValueError, match="n_components must be a positive integer"
+        ):
+            extractor.extract(small_hsi)
 
-        # Act & Assert: Verify validation raises ValueError
+    def test_validate_non_integer_n_components(self, small_hsi):
+        """Test validation fails with non-integer n_components."""
+        extractor = ZernikeMomentExtractor(
+            n_components=2.5,  # type: ignore
+        )
         with pytest.raises(
             ValueError, match="n_components must be a positive integer"
         ):
             extractor.extract(small_hsi)
 
     def test_validate_invalid_max_order(self, small_hsi):
-        """Test validation fails with invalid max_order."""
-        # Arrange: Create extractor with negative max_order
+        """Test validation fails with negative max_order."""
         extractor = ZernikeMomentExtractor(max_order=-1)
-
-        # Act & Assert: Verify validation raises ValueError
         with pytest.raises(
             ValueError, match="max_order must be a non-negative integer"
-        ):
-            extractor.extract(small_hsi)
-
-    def test_validate_odd_max_order(self, small_hsi):
-        """Test validation allows odd degree values."""
-        # Arrange: Create extractor with odd degree
-        extractor = ZernikeMomentExtractor(max_order=5)
-
-        # Act: Execute extraction
-        result = extractor.extract(small_hsi)
-
-        # Assert: Verify successful extraction
-        assert result["max_order"] == 5
-
-    def test_validate_invalid_window_sizes_empty(self, small_hsi):
-        """Test validation fails with empty window_sizes."""
-        # Arrange: Create extractor with empty window_sizes
-        extractor = ZernikeMomentExtractor(window_sizes=[])
-
-        # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(
-            ValueError, match="window_sizes must be a non-empty list"
-        ):
-            extractor.extract(small_hsi)
-
-    @pytest.mark.parametrize("invalid_window", [2, 4, 1])
-    def test_validate_invalid_window_size_values(
-        self, small_hsi, invalid_window
-    ):
-        """Test validation fails with invalid window size values."""
-        # Arrange: Create extractor with invalid window size
-        extractor = ZernikeMomentExtractor(window_sizes=[invalid_window])
-
-        # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(
-            ValueError, match="Each window size must be an odd integer"
-        ):
-            extractor.extract(small_hsi)
-
-    @pytest.mark.parametrize("n_components", [1, 3, 5])
-    def test_different_n_components(self, small_hsi, n_components):
-        """Test extraction with different number of components."""
-        # Arrange: Create extractor with specific n_components
-        extractor = ZernikeMomentExtractor(n_components=n_components)
-
-        # Act: Execute extraction
-        result = extractor.extract(small_hsi)
-
-        # Assert: Verify correct number of components
-        assert result["n_components"] == n_components
-        assert len(result["explained_variance_ratio"]) == n_components
-
-    @pytest.mark.parametrize("max_order", [2, 4, 6, 8])
-    def test_different_max_orders(self, small_hsi, max_order):
-        """Test extraction with different max orders."""
-        # Arrange: Create extractor with specific max_order
-        extractor = ZernikeMomentExtractor(max_order=max_order)
-
-        # Act: Execute extraction
-        result = extractor.extract(small_hsi)
-
-        # Assert: Verify correct max order
-        assert result["max_order"] == max_order
-
-    def test_feature_name(self):
-        """Test that feature name is correctly generated."""
-        # Arrange & Act: Get feature name
-        name = ZernikeMomentExtractor.feature_name()
-
-        # Assert: Verify correct name
-        assert name == "zernike_moment"
-
-    def test_pca_variance_explained(self, small_hsi):
-        """Test that PCA variance is computed."""
-        # Arrange: Create extractor
-        extractor = ZernikeMomentExtractor(n_components=2)
-
-        # Act: Execute extraction
-        result = extractor.extract(small_hsi)
-
-        # Assert: Verify variance explained
-        assert "explained_variance_ratio" in result
-        variance_ratio = result["explained_variance_ratio"]
-        assert len(variance_ratio) == 2
-        assert np.all(variance_ratio >= 0)
-        assert np.all(variance_ratio <= 1)
-
-    def test_multiscale_concatenation(self, small_hsi):
-        """Test that multiscale features are concatenated properly."""
-        # Arrange: Create extractor with multiple window sizes
-        window_sizes = [3, 5, 7]
-        extractor = ZernikeMomentExtractor(window_sizes=window_sizes)
-
-        # Act: Execute extraction
-        result = extractor.extract(small_hsi)
-
-        # Assert: Verify features from all scales are present
-        features = result["features"]
-        assert features.shape[2] > 0
-
-    def test_validate_non_integer_n_components(self, small_hsi):
-        """Test validation fails with non-integer n_components."""
-        # Arrange: Create extractor with float n_components
-        extractor = ZernikeMomentExtractor(n_components=2.5)  # type: ignore
-
-        # Act & Assert: Verify validation raises ValueError
-        with pytest.raises(
-            ValueError, match="n_components must be a positive integer"
         ):
             extractor.extract(small_hsi)
 
     def test_validate_non_integer_max_order(self, small_hsi):
         """Test validation fails with non-integer max_order."""
-        # Arrange: Create extractor with float max_order
         extractor = ZernikeMomentExtractor(max_order=2.5)  # type: ignore
-
-        # Act & Assert: Verify validation raises ValueError
         with pytest.raises(
             ValueError, match="max_order must be a non-negative integer"
         ):
             extractor.extract(small_hsi)
 
-    def test_pca_object_stored(self, small_hsi):
-        """Test that PCA object is stored in extractor."""
-        # Arrange: Create extractor
-        extractor = ZernikeMomentExtractor(n_components=3)
+    def test_validate_empty_window_sizes(self, small_hsi):
+        """Test validation fails with empty window_sizes."""
+        extractor = ZernikeMomentExtractor(window_sizes=[])
+        with pytest.raises(
+            ValueError, match="window_sizes must be a non-empty list"
+        ):
+            extractor.extract(small_hsi)
 
-        # Act: Execute extraction
-        result = extractor.extract(small_hsi)
+    @pytest.mark.parametrize("invalid_window", [1, 2, 4])
+    def test_validate_invalid_window_size(self, small_hsi, invalid_window):
+        """Test validation fails with invalid window size values."""
+        extractor = ZernikeMomentExtractor(
+            window_sizes=[invalid_window],
+        )
+        with pytest.raises(
+            ValueError, match="Each window size must be an odd integer"
+        ):
+            extractor.extract(small_hsi)
 
-        # Assert: Verify PCA object is stored and result is valid
-        assert "features" in result
-        assert extractor.pca is not None
-        assert hasattr(extractor.pca, "explained_variance_ratio_")
+    def test_validate_n_components_exceeds_bands(self, small_hsi):
+        """Test validation fails when n_components exceeds spectral bands."""
+        extractor = ZernikeMomentExtractor(n_components=100)
+        with pytest.raises(ValueError, match="Number of spectral bands"):
+            extractor.extract(small_hsi)
 
-    def test_zernike_polynomial_coordinates(self, small_hsi):
-        """Test that Zernike polynomial coordinates are within unit disk."""
-        # Arrange: Create extractor with small window
-        extractor = ZernikeMomentExtractor(window_sizes=[3], max_order=4)
-        image = small_hsi.reflectance[:, :, 0]
-
-        # Act: Extract moments
-        moments = extractor._extract_moments_multiscale(image)
-
-        # Assert: Verify moments computed successfully
-        assert moments.shape[0] == image.shape[0]
-        assert moments.shape[1] == image.shape[1]
-
-    @pytest.mark.parametrize("window_sizes", [[3], [3, 5], [3, 5, 7]])
-    def test_different_window_size_combinations(self, small_hsi, window_sizes):
-        """Test extraction with different window size combinations."""
-        # Arrange: Create extractor with specific window sizes
-        extractor = ZernikeMomentExtractor(window_sizes=window_sizes)
-
-        # Act: Execute extraction
-        result = extractor.extract(small_hsi)
-
-        # Assert: Verify correct window sizes used
-        assert result["window_sizes"] == window_sizes
-
-    def test_rotation_invariance_property(self, small_hsi):
-        """Test that Zernike moments magnitude is rotation invariant."""
-        # Arrange: Create extractor
-        extractor = ZernikeMomentExtractor(max_order=4, window_sizes=[5])
-
-        # Act: Execute extraction
-        result = extractor.extract(small_hsi)
-
-        # Assert: Verify extraction successful
-        # Note: Actual rotation invariance needs rotated images
-        assert "features" in result
-        assert result["features"].shape[0] == small_hsi.height
-
-    def test_scale_invariance_multiscale(self, small_hsi):
-        """Test multiscale approach for scale invariance."""
-        # Arrange: Create extractor with multiple scales
-        extractor = ZernikeMomentExtractor(window_sizes=[3, 7, 11])
-
-        # Act: Execute extraction
-        result = extractor.extract(small_hsi)
-
-        # Assert: Verify multiscale features extracted
-        assert len(result["window_sizes"]) == 3
-        features = result["features"]
-        assert features.ndim == 3
+    def test_feature_name(self):
+        """Test that feature name is correctly generated."""
+        assert ZernikeMomentExtractor.feature_name() == "zernike_moment"

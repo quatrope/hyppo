@@ -146,7 +146,7 @@ class PPExtractor(Extractor):
                     best_score = score
                     best_projection = candidate_vector.copy()
                     best_pixel_idx = sample_indices[i]
-            except Exception:
+            except (ValueError, FloatingPointError):
                 continue  # Skip if divergence computation fails
 
         if best_projection is None:

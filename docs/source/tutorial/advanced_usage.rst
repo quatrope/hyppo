@@ -2,7 +2,7 @@ Advanced Usage
 ==============
 
 This tutorial covers advanced features of HYPPO including complex extractor dependencies,
-parallel execution with different runners, and distributed computing with SLURM.
+parallel execution with different runners.
 
 Complex Extractor Dependencies
 -------------------------------
@@ -163,285 +163,38 @@ Compare different runner strategies:
         print(f"{name}: {elapsed:.2f} seconds")
 
 
-SLURM Distributed Computing
-----------------------------
-
-What is SLURM?
-~~~~~~~~~~~~~~
-
-SLURM (Simple Linux Utility for Resource Management) is a cluster management
-system used in HPC environments. HYPPO can distribute feature extraction across
-SLURM cluster nodes.
-
-Basic SLURM Configuration
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Create a SLURM runner for cluster computing:
-
-.. code-block:: python
-
-    from hyppo.runner import DaskRunner
-    
-    # Create SLURM runner
-    runner = DaskRunner.slurm(
-        queue="normal",              # SLURM partition/queue name
-        project="my_project",        # Account/project for billing
-        cores=4,                     # Cores per worker
-        memory="8GB",                # Memory per worker
-        walltime="02:00:00",         # Maximum runtime (2 hours)
-        n_workers=10                 # Number of SLURM jobs to spawn
-    )
-    
-    # Extract features distributed across cluster
-    results = fs.extract(hsi, runner)
-
-
-Advanced SLURM Options
-~~~~~~~~~~~~~~~~~~~~~~
-
-Fine-tune SLURM job parameters:
-
-.. code-block:: python
-
-    runner = DaskRunner.slurm(
-        queue="gpu",                 # GPU partition
-        project="hyperspectral_01",
-        cores=8,
-        processes=2,                 # Processes per worker
-        memory="16GB",
-        walltime="04:00:00",
-        n_workers=20,
-        
-        # Additional SLURM options
-        job_extra=[
-            "--gres=gpu:1",          # Request 1 GPU per job
-            "--constraint=v100",     # Request specific GPU type
-            "--exclusive",           # Exclusive node access
-        ],
-        
-        # Dask-specific options
-        local_directory="/scratch/dask-tmp",  # Temp directory on nodes
-        silence_logs=False,          # Show detailed logs
-    )
-
-
-SLURM Configuration File
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-Create a configuration file for SLURM settings:
-
-.. code-block:: yaml
-
-    # slurm_config.yaml
-    runner:
-      type: slurm
-      queue: normal
-      project: hyperspectral_analysis
-      cores: 4
-      memory: 8GB
-      walltime: "02:00:00"
-      n_workers: 10
-      job_extra:
-        - "--exclusive"
-        - "--mail-type=END"
-        - "--mail-user=user@university.edu"
-
-Load and use the configuration:
-
-.. code-block:: python
-
-    import yaml
-    from hyppo.runner import DaskRunner
-    
-    # Load SLURM configuration
-    with open("slurm_config.yaml") as f:
-        config = yaml.safe_load(f)
-    
-    runner_cfg = config["runner"]
-    runner = DaskRunner.slurm(**runner_cfg)
-
-
-Batch Processing on SLURM
---------------------------
-
-Processing Multiple HSI Files
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Distribute multiple HSI files across cluster nodes:
-
-.. code-block:: python
-
-    from pathlib import Path
-    from hyppo.runner import DaskRunner
-    import hyppo
-    
-    # Setup SLURM runner
-    runner = DaskRunner.slurm(
-        queue="normal",
-        project="hyperspectral",
-        cores=4,
-        memory="8GB",
-        walltime="01:00:00",
-        n_workers=20
-    )
-    
-    # Load configuration
-    fs = hyppo.io.load_config_yaml("pipeline.yaml")
-    
-    # Process all files
-    input_dir = Path("hsi_data/")
-    output_dir = Path("features/")
-    output_dir.mkdir(exist_ok=True)
-    
-    for h5_file in input_dir.glob("*.h5"):
-        print(f"Processing {h5_file.name}...")
-        
-        hsi = hyppo.io.load_h5_hsi(str(h5_file))
-        results = fs.extract(hsi, runner)
-        
-        output_file = output_dir / f"{h5_file.stem}_features.h5"
-        results.save(str(output_file))
-
-
-SLURM Job Script
-~~~~~~~~~~~~~~~~
-
-Create a SLURM batch script for automated processing:
-
-.. code-block:: bash
-
-    #!/bin/bash
-    #SBATCH --job-name=hyppo_extraction
-    #SBATCH --partition=normal
-    #SBATCH --time=04:00:00
-    #SBATCH --nodes=1
-    #SBATCH --ntasks=1
-    #SBATCH --cpus-per-task=4
-    #SBATCH --mem=16GB
-    #SBATCH --output=hyppo_%j.out
-    #SBATCH --error=hyppo_%j.err
-    
-    # Load environment
-    module load python/3.11
-    source venv/bin/activate
-    
-    # Run extraction
-    python extraction_script.py --config pipeline.yaml --input hsi_data/ --output features/
-
-Create the Python script ``extraction_script.py``:
-
-.. code-block:: python
-
-    import argparse
-    from pathlib import Path
-    import hyppo
-    from hyppo.runner import DaskRunner
-    
-    def main():
-        parser = argparse.ArgumentParser()
-        parser.add_argument("--config", required=True)
-        parser.add_argument("--input", required=True)
-        parser.add_argument("--output", required=True)
-        args = parser.parse_args()
-        
-        # Load configuration
-        fs = hyppo.io.load_config_yaml(args.config)
-        
-        # Setup SLURM runner
-        runner = DaskRunner.slurm(
-            queue="normal",
-            cores=4,
-            memory="8GB",
-            walltime="01:00:00",
-            n_workers=10
-        )
-        
-        # Process files
-        input_dir = Path(args.input)
-        output_dir = Path(args.output)
-        output_dir.mkdir(exist_ok=True)
-        
-        for h5_file in input_dir.glob("*.h5"):
-            hsi = hyppo.io.load_h5_hsi(str(h5_file))
-            results = fs.extract(hsi, runner)
-            
-            output_file = output_dir / f"{h5_file.stem}_features.h5"
-            results.save(str(output_file))
-    
-    if __name__ == "__main__":
-        main()
-
-
 Monitoring and Debugging
 -------------------------
-
-Monitor SLURM Jobs
-~~~~~~~~~~~~~~~~~~
-
-Check SLURM job status:
-
-.. code-block:: bash
-
-    # Check job status
-    squeue -u $USER
-    
-    # View job details
-    scontrol show job <job_id>
-    
-    # Check job output
-    tail -f hyppo_<job_id>.out
-
 
 Dask Dashboard
 ~~~~~~~~~~~~~~
 
-Access the Dask dashboard for real-time monitoring:
+Access the Dask dashboard for real-time monitoring when using Dask runners:
 
 .. code-block:: python
 
-    from hyppo.runner import DaskRunner
-    
-    runner = DaskRunner.slurm(
-        queue="normal",
-        cores=4,
-        memory="8GB",
-        walltime="02:00:00",
-        n_workers=10,
-        
-        # Enable dashboard
-        scheduler_options={"dashboard_address": ":8787"}
-    )
-    
-    # Dashboard available at http://<scheduler-node>:8787
+    from hyppo.runner import DaskProcessesRunner
+
+    runner = DaskProcessesRunner(num_workers=4)
+
+    # Dashboard available at http://localhost:8787 by default
 
 
 Debug Failed Extractions
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Handle errors gracefully in distributed settings:
+Handle errors gracefully:
 
 .. code-block:: python
 
-    from hyppo.runner import DaskRunner
     import logging
-    
-    # Setup logging
+
     logging.basicConfig(level=logging.INFO)
-    
-    runner = DaskRunner.slurm(
-        queue="normal",
-        cores=4,
-        memory="8GB",
-        walltime="02:00:00",
-        n_workers=10,
-        silence_logs=False  # Show detailed logs
-    )
-    
+
     try:
         results = fs.extract(hsi, runner)
     except Exception as e:
         logging.error(f"Extraction failed: {e}")
-        # Handle error (retry, skip, etc.)
 
 
 Best Practices
@@ -482,7 +235,6 @@ Choosing the Right Runner
 - **Sequential**: Small HSI, few extractors, debugging
 - **Threads**: I/O-bound tasks, shared memory needed
 - **Processes**: CPU-bound tasks, independent extractors
-- **SLURM**: Very large HSI, many files, cluster available
 
 Next Steps
 ----------

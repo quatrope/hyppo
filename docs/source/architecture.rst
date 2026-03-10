@@ -27,7 +27,6 @@ System Overview
            SEQ["SequentialRunner"]
            DT["DaskThreadsRunner"]
            DP["DaskProcessesRunner"]
-           DS["DaskSLURMRunner"]
        end
 
        subgraph Output
@@ -46,7 +45,6 @@ System Overview
        Runner -.-> SEQ
        Runner -.-> DT
        Runner -.-> DP
-       Runner -.-> DS
 
 
 Extraction Pipeline
@@ -190,7 +188,6 @@ Runner Class Hierarchy
        BaseRunner <|-- DaskRunner
        DaskRunner <|-- DaskThreadsRunner
        DaskRunner <|-- DaskProcessesRunner
-       DaskRunner <|-- DaskSLURMRunner
 
 
 Registry Pattern
@@ -215,7 +212,6 @@ lookup by name:
            RR --- R1["'sequential' → SequentialRunner"]
            RR --- R2["'dask-threads' → DaskThreadsRunner"]
            RR --- R3["'dask-processes' → DaskProcessesRunner"]
-           RR --- R4["'dask-slurm' → DaskSLURMRunner"]
        end
 
 The registries are used by the configuration loader to instantiate extractors

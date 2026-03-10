@@ -1,130 +1,177 @@
 """Tests for DWT3DExtractor."""
 
+import numpy as np
 import pytest
+import pywt
 
+from hyppo.core import HSI
 from hyppo.extractor.dwt3d import DWT3DExtractor
 
 
 class TestDWT3DExtractor:
     """Test cases for DWT3DExtractor."""
 
-    @pytest.mark.skip(
-        reason="Paper reference validation pending implementation"
-    )
-    def test_paper_reference_result_1(self, sample_hsi):
-        """Test results match reference values from literature."""
-        # TODO: Implement validation against reference paper results
-        # Qian, Ye, and Zhou (2012): Decomposed hyperspectral images
-        # at different scales, orientations using 3-D wavelets.
-        pass
+    @pytest.fixture
+    def regression_hsi(self):
+        """Deterministic 4x4x5 HSI for regression tests."""
+        rng = np.random.RandomState(42)
+        reflectance = rng.rand(4, 4, 5).astype(np.float32)
+        wavelengths = np.linspace(400, 800, 5).astype(np.float32)
+        return HSI(reflectance=reflectance, wavelengths=wavelengths)
 
-    @pytest.mark.skip(
-        reason="Paper reference validation pending implementation"
-    )
-    def test_paper_reference_result_2(self, sample_hsi):
-        """Test wavelet decomposition follows established theory."""
-        # TODO: Implement validation against theoretical results
-        # Ye et al. (2014): Extracted 3-D DWT coefficients to acquire
-        # spectral–spatial information for classification.
-        pass
+    def test_regression(self, regression_hsi):
+        """Regression test: DWT3D output must not change."""
+        # Arrange
+        extractor = DWT3DExtractor(wavelet="haar", levels=1)
+
+        # Act
+        result = extractor.extract(regression_hsi)
+
+        # Assert
+        expected_pixel00 = np.array([
+            1.1580744, 1.3267143, 1.613299, 1.2463326, 1.2463326,
+            0.20491877, -0.37355867, 0.08697391, 0.2799924, -0.2799924,
+            0.31030437, 0.16835462, -0.20675135, -0.13114832, -0.13114832,
+            -0.2783272, 0.42027694, -0.04517099, -0.03043203, 0.03043203,
+            -0.06960191, 0.51669043, 0.36514568, 0.21303992, 0.21303992,
+            -0.543102, -0.04319032, 0.19473505, -0.04262929, 0.04262929,
+            0.47541592, 0.3679494, 0.11013319, -0.26094973, -0.26094973,
+            -0.19832292, 0.30578944, -0.0479732, 0.41905612, -0.41905612,
+        ], dtype=np.float32)
+        np.testing.assert_allclose(
+            result["features"][0, 0, :], expected_pixel00, rtol=1e-5
+        )
+
+    def test_reference_pywt(self, regression_hsi):
+        """Test DWT3D matches pywt.swtn directly."""
+        # Arrange
+        extractor = DWT3DExtractor(wavelet="haar", levels=1)
+
+        # Act
+        result = extractor.extract(regression_hsi)
+
+        # Assert: compare aaa subband with pywt
+        h, w, b = regression_hsi.shape
+        cube = regression_hsi.reflectance
+
+        # Need padding for spectral dim: 5 bands → pad to 6
+        pad_b = (2 - 5 % 2) % 2  # = 1
+        cube_padded = np.pad(cube, ((0, 0), (0, 0), (0, pad_b)), mode="reflect")
+
+        coeffs = pywt.swtn(
+            cube_padded, "haar", level=1, start_level=0, axes=(0, 1, 2),
+        )
+        coeffs = list(reversed(coeffs))
+        aaa = coeffs[0]["aaa"][:h, :w, :b]
+
+        # First 5 features should be the 'aaa' subband
+        np.testing.assert_allclose(
+            result["features"][:, :, :b], aaa, rtol=1e-5
+        )
+
+    def test_feature_count_formula(self, regression_hsi):
+        """Test n_features = bands * 8 * levels."""
+        # Arrange
+        extractor = DWT3DExtractor(wavelet="haar", levels=1)
+
+        # Act
+        result = extractor.extract(regression_hsi)
+
+        # Assert: 8 subbands per level, bands features per subband
+        bands = regression_hsi.n_bands
+        expected = bands * 8 * 1
+        assert result["n_features"] == expected
+
+    def test_padding_branch(self, small_hsi):
+        """Test extraction with odd-dimension image (requires padding)."""
+        # Arrange: small_hsi is 3x3x5, all odd → needs padding
+        extractor = DWT3DExtractor(wavelet="haar", levels=1)
+
+        # Act
+        result = extractor.extract(small_hsi)
+
+        # Assert
+        assert result["features"].shape[:2] == (
+            small_hsi.height, small_hsi.width,
+        )
+
+    def test_no_padding_branch(self):
+        """Test extraction with even-dimension image (no padding needed)."""
+        # Arrange: 4x4x4, all even, divisor=2 → no padding
+        rng = np.random.RandomState(42)
+        reflectance = rng.rand(4, 4, 4).astype(np.float32)
+        wavelengths = np.linspace(400, 700, 4).astype(np.float32)
+        hsi = HSI(reflectance=reflectance, wavelengths=wavelengths)
+        extractor = DWT3DExtractor(wavelet="haar", levels=1)
+
+        # Act
+        result = extractor.extract(hsi)
+
+        # Assert
+        assert result["features"].shape[:2] == (4, 4)
 
     def test_extract_basic_with_defaults(self, small_hsi):
         """Test extraction with default parameters."""
-        # Arrange: Create extractor with defaults
+        # Arrange
         extractor = DWT3DExtractor()
 
-        # Act: Execute extraction
+        # Act
         result = extractor.extract(small_hsi)
 
-        # Assert: Verify output structure
-        assert "features" in result
-        assert "wavelet" in result
-        assert "levels" in result
-        assert "n_features" in result
-        assert "original_shape" in result
+        # Assert
+        expected_keys = [
+            "features", "wavelet", "levels", "n_features", "original_shape",
+        ]
+        for key in expected_keys:
+            assert key in result
 
-        # Assert: Verify default parameter values
         assert result["wavelet"] == "haar"
         assert result["levels"] == 1
+        assert result["original_shape"] == small_hsi.shape
 
-        # Assert: Verify feature shape matches (H, W, n_features)
         features = result["features"]
-        assert features.shape[0] == small_hsi.height
-        assert features.shape[1] == small_hsi.width
+        assert features.shape[:2] == (small_hsi.height, small_hsi.width)
         assert features.ndim == 3
 
-        # Assert: Verify n_features matches actual feature dimension
-        assert result["n_features"] == features.shape[2]
+    @pytest.mark.parametrize("wavelet", ["haar", "db4", "sym5"])
+    def test_different_wavelets(self, small_hsi, wavelet):
+        """Test extraction with different wavelets."""
+        # Arrange
+        extractor = DWT3DExtractor(wavelet=wavelet)
 
-        # Assert: Verify original shape preserved
-        assert result["original_shape"] == small_hsi.shape
+        # Act
+        result = extractor.extract(small_hsi)
+
+        # Assert
+        assert result["wavelet"] == wavelet
+
+    @pytest.mark.parametrize("levels", [1, 2])
+    def test_different_levels(self, small_hsi, levels):
+        """Test extraction with different decomposition levels."""
+        # Arrange
+        extractor = DWT3DExtractor(levels=levels)
+
+        # Act
+        result = extractor.extract(small_hsi)
+
+        # Assert
+        assert result["levels"] == levels
 
     def test_validate_invalid_wavelet(self, small_hsi):
         """Test validation fails with invalid wavelet name."""
-        # Arrange: Create extractor with invalid wavelet
         extractor = DWT3DExtractor(wavelet="invalid_wavelet_name")
-
-        # Act & Assert: Verify validation raises ValueError
         with pytest.raises(ValueError, match="Wavelet .* not available"):
             extractor.extract(small_hsi)
 
     @pytest.mark.parametrize("levels", [-1, 0, 2.5])
     def test_validate_invalid_levels(self, small_hsi, levels):
         """Test validation fails with invalid decomposition levels."""
-        # Arrange: Create extractor with invalid levels
         extractor = DWT3DExtractor(levels=levels)  # type: ignore
-
-        # Act & Assert: Verify validation raises ValueError
         with pytest.raises(
             ValueError, match="levels must be a positive integer"
         ):
             extractor.extract(small_hsi)
 
-    @pytest.mark.parametrize("wavelet", ["haar", "db4", "sym5", "coif2"])
-    def test_extract_different_wavelets(self, small_hsi, wavelet):
-        """Test extraction with different wavelets."""
-        # Arrange: Create extractor with specific wavelet
-        extractor = DWT3DExtractor(wavelet=wavelet)
-
-        # Act: Execute extraction
-        result = extractor.extract(small_hsi)
-
-        # Assert: Verify successful extraction with correct parameters
-        assert result["wavelet"] == wavelet
-        assert "features" in result
-
     def test_feature_name(self):
         """Test that feature name is correctly generated."""
-        # Arrange & Act: Get feature name
-        name = DWT3DExtractor.feature_name()
-
-        # Assert: Verify correct name
-        assert name == "dwt3d"
-
-    def test_spatial_resolution_preserved(self, small_hsi):
-        """Test that output features maintain original spatial resolution."""
-        # Arrange: Create extractor
-        extractor = DWT3DExtractor(levels=1)
-
-        # Act: Execute extraction
-        result = extractor.extract(small_hsi)
-
-        # Assert: Verify spatial dimensions preserved
-        features = result["features"]
-        assert features.shape[0] == small_hsi.height
-        assert features.shape[1] == small_hsi.width
-
-    @pytest.mark.parametrize("levels", [1, 2])
-    def test_extract_different_levels(self, small_hsi, levels):
-        """Test extraction with different decomposition levels."""
-        # Arrange: Create extractor with specific levels
-        extractor = DWT3DExtractor(levels=levels)
-
-        # Act: Execute extraction
-        result = extractor.extract(small_hsi)
-
-        # Assert: Verify correct levels in result
-        assert result["levels"] == levels
-        assert "features" in result
-        assert result["features"].shape[0] == small_hsi.height
-        assert result["features"].shape[1] == small_hsi.width
+        assert DWT3DExtractor.feature_name() == "dwt3d"

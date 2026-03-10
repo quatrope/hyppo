@@ -206,8 +206,7 @@ class GLCMExtractor(Extractor):
                                     end_idx = feature_idx + len(vals)
                                     features[i + j, feature_idx:end_idx] = vals
                                     feature_idx += len(vals)
-                                except Exception:
-                                    # Fill with zeros if computation fails
+                                except ValueError:
                                     end_idx = feature_idx + len(self.angles)
                                     features[i + j, feature_idx:end_idx] = 0.0
                                     feature_idx += len(self.angles)
@@ -245,7 +244,7 @@ class GLCMExtractor(Extractor):
                                         look_vals
                                     )
                                     feature_idx += 3
-                                except Exception:
+                                except ValueError:
                                     end_idx = feature_idx + 3
                                     features[i + j, feature_idx:end_idx] = 0.0
                                     feature_idx += 3
@@ -266,12 +265,11 @@ class GLCMExtractor(Extractor):
                                     avg_val = np.mean(vals)
                                     features[i + j, feature_idx] = avg_val
                                     feature_idx += 1
-                                except Exception:
+                                except ValueError:
                                     features[i + j, feature_idx] = 0.0
                                     feature_idx += 1
 
-                    except Exception:
-                        # Skip this distance if GLCM computation fails
+                    except ValueError:
                         if self.orientation_mode == "separate":
                             skip_features = len(self.angles) * len(
                                 self.properties

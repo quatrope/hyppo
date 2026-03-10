@@ -104,6 +104,7 @@ class ICAExtractor(Extractor):
 
         # Transform data
         S = self.ica.fit_transform(Xc_valid)
+        n_comp = S.shape[1]
 
         # Rebuild full feature map
         full_S = np.zeros((X_flat.shape[0], n_comp))

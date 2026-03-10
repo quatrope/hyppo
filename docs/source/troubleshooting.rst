@@ -175,18 +175,6 @@ in output.
     results = fs.extract(hsi, runner)
 
 
-dask-jobqueue not installed
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-**Symptom:** ``ImportError: dask-jobqueue is required for SLURM execution``
-
-**Solution:** Install the optional dependency:
-
-.. code-block:: bash
-
-    pip install dask-jobqueue
-
-
 Port conflicts with Dask dashboard
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -210,7 +198,6 @@ Runner            Best for               Avoid when
 Sequential        Debugging, small data  Large datasets
 DaskThreads       I/O-bound extractors   CPU-bound extractors
 DaskProcesses     CPU-bound extractors   Very large shared data
-DaskSLURM         HPC cluster workloads  Local development
 ================= ====================== ==========================
 
 

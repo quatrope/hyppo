@@ -3,6 +3,7 @@
 import numpy as np
 import pytest
 
+from hyppo.core import HSI
 from hyppo.extractor.lbp import LBPExtractor
 
 
@@ -295,3 +296,27 @@ class TestLBPExtractor:
         # Act & Assert: Verify negative band raises ValueError
         with pytest.raises(ValueError, match="Band index .* is out of range"):
             extractor.extract(small_hsi)
+
+    def test_regression(self):
+        """Regression test: LBP output must not change."""
+        # Arrange
+        rng = np.random.RandomState(42)
+        reflectance = rng.rand(5, 5, 3).astype(np.float32)
+        wavelengths = np.array([500.0, 600.0, 700.0])
+        hsi = HSI(reflectance=reflectance, wavelengths=wavelengths)
+        extractor = LBPExtractor(n_points=8, radius=1)
+
+        # Act
+        result = extractor.extract(hsi)
+
+        # Assert
+        expected_row0 = np.array([
+            [2., 0., 0.],
+            [0., 7., 7.],
+            [7., 0., 1.],
+            [1., 8., 0.],
+            [0., 2., 3.],
+        ])
+        np.testing.assert_allclose(
+            result["features"][0, :, :], expected_row0, rtol=1e-5
+        )

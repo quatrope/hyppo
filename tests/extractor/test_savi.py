@@ -331,3 +331,16 @@ class TestSAVIExtractor:
         # Assert: Verify successful extraction
         assert "features" in result
         assert result["features"].shape == (small_hsi.height, small_hsi.width, 1)
+
+    def test_validate_empty_wavelengths(self):
+        """Test validation fails with empty wavelengths."""
+        # Arrange
+        hsi = HSI(
+            reflectance=np.zeros((3, 3, 0), dtype=np.float32),
+            wavelengths=np.array([], dtype=np.float32),
+        )
+        extractor = SAVIExtractor()
+
+        # Act & Assert
+        with pytest.raises(ValueError, match="No wavelength information"):
+            extractor.extract(hsi)

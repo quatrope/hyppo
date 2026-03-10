@@ -235,25 +235,6 @@ Pipelines can include runner configuration for execution control:
         num_workers: 4
         threads_per_worker: 2
 
-.. code-block:: yaml
-
-    # pipeline_slurm.yaml
-    pipeline:
-      pca:
-        extractor: PCAExtractor
-        params:
-          n_components: 10
-
-    runner:
-      type: dask-slurm
-      params:
-        cores: 4
-        memory: "8GB"
-        queue: normal
-        walltime: "02:00:00"
-        num_jobs: 10
-
-
 Usage
 -----
 

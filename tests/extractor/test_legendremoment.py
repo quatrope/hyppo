@@ -4,7 +4,8 @@ import numpy as np
 import pytest
 from scipy.special import legendre
 
-from hyppo.core import HSI
+from hyppo.core import FeatureSpace, HSI
+from hyppo.extractor import PCAExtractor
 from hyppo.extractor.legendremoment import LegendreMomentExtractor
 
 
@@ -19,9 +20,51 @@ class TestLegendreMomentExtractor:
         wavelengths = np.linspace(400, 900, 8).astype(np.float32)
         return HSI(reflectance=reflectance, wavelengths=wavelengths)
 
+    @pytest.fixture
+    def pca_result(self, small_hsi):
+        """Pre-computed PCA result for unit tests."""
+        pca_extractor = PCAExtractor(n_components=3)
+        return pca_extractor.extract(small_hsi)
+
+    @pytest.fixture
+    def pca_result_2(self, small_hsi):
+        """Pre-computed PCA result with 2 components."""
+        pca_extractor = PCAExtractor(n_components=2)
+        return pca_extractor.extract(small_hsi)
+
+    def test_feature_space_integration(self, small_hsi):
+        """Test full pipeline with FeatureSpace dependency resolution."""
+        # Arrange
+        fs = FeatureSpace.from_list(
+            [
+                PCAExtractor(n_components=3),
+                LegendreMomentExtractor(
+                    n_components=3,
+                    max_order=2,
+                    window_sizes=[3],
+                ),
+            ]
+        )
+
+        # Act
+        results = fs.extract(small_hsi)
+
+        # Assert
+        lm_feature = results["legendre_moment"]
+        lm_data = lm_feature.data
+        assert "features" in lm_data
+        assert lm_data["features"].ndim == 3
+        assert lm_data["features"].shape[:2] == (
+            small_hsi.height,
+            small_hsi.width,
+        )
+        assert "explained_variance_ratio" in lm_data
+
     def test_regression(self, regression_hsi):
         """Regression test: LegendreMoment output must not change."""
         # Arrange
+        pca_extractor = PCAExtractor(n_components=2)
+        pca_result = pca_extractor.extract(regression_hsi)
         extractor = LegendreMomentExtractor(
             n_components=2,
             max_order=2,
@@ -29,7 +72,7 @@ class TestLegendreMomentExtractor:
         )
 
         # Act
-        result = extractor.extract(regression_hsi)
+        result = extractor._extract(regression_hsi, pca=pca_result)
 
         # Assert
         expected_row0 = np.array(
@@ -145,7 +188,7 @@ class TestLegendreMomentExtractor:
         expected_l00 = 0.5 * constant_value * 25
         assert np.isclose(moments[0, 0], expected_l00, rtol=1e-5)
 
-    def test_feature_count_formula(self, small_hsi):
+    def test_feature_count_formula(self, small_hsi, pca_result_2):
         """Test feature count matches formula."""
         # Arrange
         n_components = 2
@@ -158,7 +201,7 @@ class TestLegendreMomentExtractor:
         )
 
         # Act
-        result = extractor.extract(small_hsi)
+        result = extractor._extract(small_hsi, pca=pca_result_2)
 
         # Assert
         n_moments = sum(
@@ -168,13 +211,13 @@ class TestLegendreMomentExtractor:
         assert result["features"].shape[2] == expected_features
         assert result["n_moments_per_scale"] == n_moments
 
-    def test_extract_basic_with_defaults(self, small_hsi):
+    def test_extract_basic_with_defaults(self, small_hsi, pca_result):
         """Test extraction with default parameters."""
         # Arrange
         extractor = LegendreMomentExtractor()
 
         # Act
-        result = extractor.extract(small_hsi)
+        result = extractor._extract(small_hsi, pca=pca_result)
 
         # Assert
         expected_keys = [
@@ -196,7 +239,7 @@ class TestLegendreMomentExtractor:
         assert features.shape[:2] == (small_hsi.height, small_hsi.width)
         assert features.ndim == 3
 
-    def test_extract_with_custom_parameters(self, small_hsi):
+    def test_extract_with_custom_parameters(self, small_hsi, pca_result_2):
         """Test extraction with custom parameters."""
         # Arrange
         extractor = LegendreMomentExtractor(
@@ -206,7 +249,7 @@ class TestLegendreMomentExtractor:
         )
 
         # Act
-        result = extractor.extract(small_hsi)
+        result = extractor._extract(small_hsi, pca=pca_result_2)
 
         # Assert
         assert result["n_components"] == 2
@@ -217,52 +260,43 @@ class TestLegendreMomentExtractor:
     def test_different_n_components(self, small_hsi, n_components):
         """Test extraction with different number of components."""
         # Arrange
+        pca_result = PCAExtractor(
+            n_components=n_components,
+        ).extract(small_hsi)
         extractor = LegendreMomentExtractor(n_components=n_components)
 
         # Act
-        result = extractor.extract(small_hsi)
+        result = extractor._extract(small_hsi, pca=pca_result)
 
         # Assert
         assert result["n_components"] == n_components
         assert len(result["explained_variance_ratio"]) == n_components
 
     @pytest.mark.parametrize("max_order", [1, 2, 4])
-    def test_different_max_orders(self, small_hsi, max_order):
+    def test_different_max_orders(self, small_hsi, pca_result, max_order):
         """Test extraction with different max orders."""
         # Arrange
         extractor = LegendreMomentExtractor(max_order=max_order)
 
         # Act
-        result = extractor.extract(small_hsi)
+        result = extractor._extract(small_hsi, pca=pca_result)
 
         # Assert
         assert result["max_order"] == max_order
 
-    def test_pca_variance_explained(self, small_hsi):
+    def test_pca_variance_explained(self, small_hsi, pca_result_2):
         """Test that PCA variance ratios are valid."""
         # Arrange
         extractor = LegendreMomentExtractor(n_components=2)
 
         # Act
-        result = extractor.extract(small_hsi)
+        result = extractor._extract(small_hsi, pca=pca_result_2)
 
         # Assert
         variance_ratio = result["explained_variance_ratio"]
         assert len(variance_ratio) == 2
         assert np.all(variance_ratio >= 0)
         assert np.all(variance_ratio <= 1)
-
-    def test_pca_object_stored(self, small_hsi):
-        """Test that PCA object is stored in extractor."""
-        # Arrange
-        extractor = LegendreMomentExtractor(n_components=3)
-
-        # Act
-        extractor.extract(small_hsi)
-
-        # Assert
-        assert extractor.pca is not None
-        assert hasattr(extractor.pca, "explained_variance_ratio_")
 
     def test_validate_invalid_n_components(self, small_hsi):
         """Test validation fails with invalid n_components."""
@@ -319,12 +353,19 @@ class TestLegendreMomentExtractor:
         ):
             extractor.extract(small_hsi)
 
-    def test_validate_n_components_exceeds_bands(self, small_hsi):
-        """Test validation fails when n_components exceeds spectral bands."""
-        extractor = LegendreMomentExtractor(n_components=100)
-        with pytest.raises(ValueError, match="Number of spectral bands"):
-            extractor.extract(small_hsi)
-
     def test_feature_name(self):
         """Test that feature name is correctly generated."""
         assert LegendreMomentExtractor.feature_name() == "legendre_moment"
+
+    def test_get_input_dependencies(self):
+        """Test that PCA is declared as input dependency."""
+        deps = LegendreMomentExtractor.get_input_dependencies()
+        assert "pca" in deps
+        assert deps["pca"]["extractor"] is PCAExtractor
+        assert deps["pca"]["required"] is False
+
+    def test_get_input_default(self):
+        """Test that default PCA extractor is provided."""
+        default = LegendreMomentExtractor.get_input_default("pca")
+        assert isinstance(default, PCAExtractor)
+        assert default.n_components == 3

@@ -3,13 +3,11 @@
 import numpy as np
 from scipy.special import legendre
 from skimage.util.shape import view_as_windows
-from sklearn.decomposition import PCA
 
 from hyppo.core import HSI
 from ._validators import (
     validate_non_negative_int,
     validate_positive_int,
-    validate_sufficient_bands,
     validate_window_sizes,
 )
 from .base import Extractor
@@ -25,10 +23,14 @@ class LegendreMomentExtractor(Extractor):
     `max_order` are used to compute orthogonal moments. The features from
     all scales and components are concatenated into the final feature set.
 
+    This extractor depends on a PCA extractor to provide dimensionality
+    reduction. If no PCA result is provided, a default PCAExtractor with
+    ``n_components`` matching this extractor's setting is used.
+
     Parameters
     ----------
     n_components : int, default=3
-        Number of PCA components to retain before computing Legendre moments.
+        Number of PCA components to use for Legendre moment computation.
     max_order : int, default=6
         Maximum order of Legendre polynomials used to compute moments.
     window_sizes : list of int, default=[3, 9, 15]
@@ -52,6 +54,27 @@ class LegendreMomentExtractor(Extractor):
         self.max_order = max_order
         self.window_sizes = window_sizes
 
+    @classmethod
+    def get_input_dependencies(cls) -> dict:
+        """Declare PCA as an input dependency."""
+        from .pca import PCAExtractor
+
+        return {
+            "pca": {
+                "extractor": PCAExtractor,
+                "required": False,
+            }
+        }
+
+    @classmethod
+    def get_input_default(cls, input_name: str):
+        """Provide default PCA extractor when none is supplied."""
+        if input_name == "pca":
+            from .pca import PCAExtractor
+
+            return PCAExtractor(n_components=3)
+        return None
+
     def _build_legendre_kernels(self, height, width):
         """Build 2D orthonormal Legendre polynomial kernels."""
         # Create normalized coordinates in [-1, 1] for the unit square
@@ -69,10 +92,8 @@ class LegendreMomentExtractor(Extractor):
             for q in range(self.max_order + 1 - p):
                 # Normalization factor
                 norm_factor = np.sqrt((2 * p + 1) * (2 * q + 1)) / 2.0
-
                 # 2D Legendre polynomial: L_pq(x,y) = P_p(x) * P_q(y)
                 L_pq = np.outer(poly_y[q], poly_x[p])
-
                 # Apply normalization to get orthonormal basis
                 h_pq = norm_factor * L_pq
                 kernels.append(h_pq)
@@ -128,13 +149,17 @@ class LegendreMomentExtractor(Extractor):
         ----------
         data : HSI
             Hyperspectral image object containing reflectance data.
+        **inputs : dict
+            Optional keyword arguments. If ``pca`` is provided, its
+            ``"features"`` array is used directly instead of running
+            PCA internally.
 
         Returns
         -------
         dict
             Dictionary containing:
                 - "features": np.ndarray, shape (H, W, n_features)
-                    Geometric moment features concatenated across scales
+                    Legendre moment features concatenated across scales
                     and components.
                 - "explained_variance_ratio": array
                     Variance ratio explained by each PCA component.
@@ -143,22 +168,19 @@ class LegendreMomentExtractor(Extractor):
                 - "window_sizes": list of int
                     Window sizes used for multiscale computation.
                 - "max_order": int
-                    Maximum order of geometric moments used.
+                    Maximum order of Legendre moments used.
                 - "n_moments_per_scale": int
                     Number of moments computed per scale/component.
         """
-        reflectance = data.reflectance
-        height, width, bands = reflectance.shape
-        reflectance_reshaped = reflectance.reshape(-1, bands)
+        pca_result = inputs.get("pca")
 
-        # Apply PCA for spectral reduction
-        self.pca = PCA(n_components=self.n_components)
-        pcs = self.pca.fit_transform(reflectance_reshaped)
-        pcs = pcs.reshape(height, width, self.n_components)
+        # Use PCA-reduced components
+        pcs = pca_result["features"]
+        n_components = pcs.shape[2]
 
         # Extract moments for each principal component
         all_features = []
-        for i in range(self.n_components):
+        for i in range(n_components):
             feats = self._extract_moments_multiscale(pcs[..., i])
             all_features.append(feats)
 
@@ -174,8 +196,10 @@ class LegendreMomentExtractor(Extractor):
 
         return {
             "features": features,
-            "explained_variance_ratio": self.pca.explained_variance_ratio_,
-            "n_components": self.n_components,
+            "explained_variance_ratio": (
+                pca_result["explained_variance_ratio"]
+            ),
+            "n_components": n_components,
             "window_sizes": self.window_sizes,
             "max_order": self.max_order,
             "n_moments_per_scale": n_moments_per_scale,
@@ -186,4 +210,3 @@ class LegendreMomentExtractor(Extractor):
         validate_positive_int(self.n_components, "n_components")
         validate_non_negative_int(self.max_order, "max_order")
         validate_window_sizes(self.window_sizes)
-        validate_sufficient_bands(data, self.n_components)

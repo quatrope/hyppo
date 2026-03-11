@@ -110,21 +110,48 @@ class PPExtractor(Extractor):
 
         return X_sphered, pca, pca_components
 
+    def _evaluate_candidate(self, candidate, X):
+        """Evaluate a candidate projection vector. Returns (vector, score)."""
+        norm = np.linalg.norm(candidate)
+        if norm < 1e-10:
+            return None, -np.inf
+
+        normalized = candidate / norm
+        projection_scores = X @ normalized
+
+        # Compute information divergence
+        try:
+            score = self._compute_information_divergence(projection_scores)
+            return normalized, score
+        except (ValueError, FloatingPointError):
+            return None, -np.inf
+
+    def _random_fallback_projection(self, n_features):
+        """Generate a random fallback projection vector."""
+        warnings.warn("PP: fallback to random projection vector")
+        candidate_vector = self.rng.standard_normal(n_features)
+        projection = candidate_vector / (
+            np.linalg.norm(candidate_vector) + 1e-10
+        )
+        return projection, 0.0, -1
+
+    def _sample_candidates(self, X):
+        """Sample candidate vectors from the data points."""
+        n_samples = X.shape[0]
+        if n_samples > self.sample_size:
+            sample_indices = self.rng.choice(
+                n_samples, size=self.sample_size, replace=False
+            )
+            return X[sample_indices], sample_indices
+        return X, np.arange(n_samples)
+
     def _find_best_projection(self, X):
         """
         Find projection vector maximizing information divergence.
         Candidate vectors are sampled directly from the data points.
         """
-        n_samples, n_features = X.shape
-
-        if n_samples > self.sample_size:
-            sample_indices = self.rng.choice(
-                n_samples, size=self.sample_size, replace=False
-            )
-            X_sample = X[sample_indices]
-        else:
-            X_sample = X
-            sample_indices = np.arange(n_samples)
+        n_features = X.shape[1]
+        X_sample, sample_indices = self._sample_candidates(X)
 
         best_projection = None
         best_score = -np.inf
@@ -132,31 +159,16 @@ class PPExtractor(Extractor):
 
         # Test each pixel as a candidate projection vector
         for i, candidate_vector in enumerate(X_sample):
-            norm = np.linalg.norm(candidate_vector)
-            if norm < 1e-10:
-                continue
-
-            candidate_vector = candidate_vector / norm
-            projection_scores = X @ candidate_vector
-
-            # Compute information divergence
-            try:
-                score = self._compute_information_divergence(projection_scores)
-                if score > best_score:
-                    best_score = score
-                    best_projection = candidate_vector.copy()
-                    best_pixel_idx = sample_indices[i]
-            except (ValueError, FloatingPointError):
-                continue  # Skip if divergence computation fails
+            vector, score = self._evaluate_candidate(
+                candidate_vector, X
+            )
+            if vector is not None and score > best_score:
+                best_score = score
+                best_projection = vector.copy()
+                best_pixel_idx = sample_indices[i]
 
         if best_projection is None:
-            warnings.warn("PP: fallback to random projection vector")
-            candidate_vector = self.rng.standard_normal(n_features)
-            best_projection = candidate_vector / (
-                np.linalg.norm(candidate_vector) + 1e-10
-            )
-            best_score = 0.0
-            best_pixel_idx = -1
+            return self._random_fallback_projection(n_features)
 
         return best_projection, best_score, best_pixel_idx
 
@@ -257,11 +269,8 @@ class PPExtractor(Extractor):
 
     def _validate(self, data: HSI, **inputs):
         """Validate extractor parameters."""
-        if self.n_projections <= 0:
-            raise ValueError("n_projections must be positive")
-        if self.n_bins <= 0:
-            raise ValueError("n_bins must be positive")
-        if self.sample_size <= 0:
-            raise ValueError("sample_size must be positive")
+        for attr in ["n_projections", "n_bins", "sample_size"]:
+            if getattr(self, attr) <= 0:
+                raise ValueError(f"{attr} must be positive")
         if self.pca_components is not None and self.pca_components <= 0:
             raise ValueError("pca_components must be positive if specified")

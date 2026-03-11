@@ -5,6 +5,7 @@ import pywt
 
 from hyppo.core import HSI
 from .base import Extractor
+from ._validators import validate_positive_int
 
 
 class DWT1DExtractor(Extractor):
@@ -133,8 +134,7 @@ class DWT1DExtractor(Extractor):
             raise ValueError(f"Mode '{self.mode}' not available")
 
         if self.levels is not None:
-            if not isinstance(self.levels, int) or self.levels <= 0:
-                raise ValueError("levels must be a positive integer or None")
+            validate_positive_int(self.levels, "levels")
 
             # Validate that levels don't exceed maximum
             max_level = pywt.dwt_max_level(
@@ -142,6 +142,9 @@ class DWT1DExtractor(Extractor):
             )
             if self.levels > max_level:
                 raise ValueError(
-                    f"levels={self.levels} exceeds maximum level {max_level} "
-                    f"for signal length {data.reflectance.shape[2]} and wavelet '{self.wavelet}'"
+                    f"levels={self.levels} exceeds maximum "
+                    f"level {max_level} "
+                    f"for signal length "
+                    f"{data.reflectance.shape[2]} "
+                    f"and wavelet '{self.wavelet}'"
                 )

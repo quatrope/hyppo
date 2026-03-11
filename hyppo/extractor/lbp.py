@@ -5,6 +5,12 @@ from skimage.feature import local_binary_pattern
 
 from hyppo.core import HSI
 from .base import Extractor
+from ._validators import (
+    validate_band_indices,
+    validate_optional_non_empty_list,
+    validate_positive_int,
+    validate_positive_number,
+)
 
 
 class LBPExtractor(Extractor):
@@ -51,21 +57,11 @@ class LBPExtractor(Extractor):
 
     def _compute_lbp_responses(self, reflectance):
         """Compute LBP for all specified bands."""
+        bands_to_process = validate_band_indices(
+            self.bands, reflectance.shape[2]
+        )
+
         responses = {}
-        if self.bands is None:
-            bands_to_process = list(range(reflectance.shape[2]))
-        else:
-            bands_to_process = self.bands
-
-            # Validate band indices
-            max_band_index = reflectance.shape[2] - 1
-            for band in bands_to_process:
-                if band < 0 or band > max_band_index:
-                    raise ValueError(
-                        f"Band index {band} is out of range for input "
-                        f"with {max_band_index + 1} bands."
-                    )
-
         for band_idx in bands_to_process:
             band = reflectance[:, :, band_idx]
             # Normalize band to [0, 1] range for better LBP computation
@@ -133,20 +129,12 @@ class LBPExtractor(Extractor):
 
     def _validate(self, data: HSI, **inputs):
         """Validate extractor parameters."""
-        if self.bands is not None and (
-            not isinstance(self.bands, list) or not self.bands
-        ):
-            raise ValueError(
-                "bands must be None or a non-empty list of integers."
-            )
-
-        if not isinstance(self.radius, (int, float)) or self.radius <= 0:
-            raise ValueError("radius must be a positive number.")
-
-        if not isinstance(self.n_points, int) or self.n_points <= 0:
-            raise ValueError("n_points must be a positive integer.")
-
+        validate_optional_non_empty_list(self.bands, "bands")
+        validate_positive_number(self.radius, "radius")
+        validate_positive_int(self.n_points, "n_points")
         if self.n_points < 3:
             raise ValueError(
-                "n_points must be at least 3 for meaningful LBP computation."
+                "n_points must be at least 3 for meaningful "
+                "LBP computation."
             )
+        validate_band_indices(self.bands, data.reflectance.shape[2])

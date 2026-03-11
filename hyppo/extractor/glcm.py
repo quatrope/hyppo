@@ -6,6 +6,11 @@ from skimage.util.shape import view_as_windows
 
 from hyppo.core import HSI
 from .base import Extractor
+from ._validators import (
+    validate_non_empty_list,
+    validate_optional_non_empty_list,
+    validate_window_sizes,
+)
 
 
 class GLCMExtractor(Extractor):
@@ -150,23 +155,124 @@ class GLCMExtractor(Extractor):
         normalized = (band - band_min) / (band_max - band_min) * (levels - 1)
         return normalized.astype(np.uint8)
 
+    def _features_per_distance(self):
+        """Calculate number of features per distance based on mode."""
+        if self.orientation_mode == "separate":
+            # Use all orientations separately (paper's recommendation)
+            return len(self.angles) * len(self.properties)
+        elif self.orientation_mode == "look_direction":
+            # Use look direction approach: 0°, 90°, and average of 45°/135°
+            return 3 * len(self.properties)
+        else:
+            # Average all orientations
+            return len(self.properties)
+
+    def _compute_mode_separate(self, patch, distance, levels):
+        """Compute GLCM features in separate orientation mode."""
+        # Compute GLCM for each angle separately
+        glcm = graycomatrix(
+            patch,
+            distances=[distance],
+            angles=self.angles,
+            levels=levels,
+            symmetric=self.symmetric,
+        )
+
+        values = []
+        # Extract properties for each angle
+        for prop in self.properties:
+            try:
+                # All angles for this distance
+                vals = graycoprops(glcm, prop)[0, :]
+                values.extend(vals)
+            except ValueError:
+                values.extend([0.0] * len(self.angles))
+        return values
+
+    def _compute_mode_look_direction(self, patch, distance, levels):
+        """Compute GLCM features in look direction mode."""
+        # Paper's look direction approach:
+        # 0°, 90°, avg(45°,135°)
+        angles_look = [
+            0,
+            np.pi / 2,
+            np.pi / 4,
+            3 * np.pi / 4,
+        ]
+        glcm = graycomatrix(
+            patch,
+            distances=[distance],
+            angles=angles_look,
+            levels=levels,
+            symmetric=self.symmetric,
+        )
+
+        values = []
+        for prop in self.properties:
+            try:
+                vals = graycoprops(glcm, prop)[
+                    0, :
+                ]  # [0°, 90°, 45°, 135°]
+                # Use 0°, 90°, and average of 45°/135°
+                values.extend([
+                    vals[0],
+                    vals[1],
+                    (vals[2] + vals[3]) / 2,
+                ])
+            except ValueError:
+                values.extend([0.0] * 3)
+        return values
+
+    def _compute_mode_average(self, patch, distance, levels):
+        """Compute GLCM features in average orientation mode."""
+        # Average all orientations
+        glcm = graycomatrix(
+            patch,
+            distances=[distance],
+            angles=self.angles,
+            levels=levels,
+            symmetric=self.symmetric,
+        )
+
+        values = []
+        for prop in self.properties:
+            try:
+                vals = graycoprops(glcm, prop)[0, :]
+                avg_val = np.mean(vals)
+                values.append(avg_val)
+            except ValueError:
+                values.append(0.0)
+        return values
+
+    def _compute_patch_features(self, patch, levels, compute, n_per_dist):
+        """Compute GLCM features for a single patch."""
+        # Skip patches with insufficient variation
+        if patch.max() - patch.min() < 2:
+            return None
+
+        values = []
+        for distance in self.distances:
+            try:
+                vals = compute(patch, distance, levels)
+                values.extend(vals)
+            except ValueError:
+                values.extend([0.0] * n_per_dist)
+        return values
+
     def _compute_glcm_features_optimized(self, patches, levels):
         """Optimized GLCM computation based on paper's recommendations."""
         N, height, width = patches.shape
 
-        if self.orientation_mode == "separate":
-            # Use all orientations separately (paper's recommendation)
-            n_features = (
-                len(self.distances) * len(self.angles) * len(self.properties)
-            )
-        elif self.orientation_mode == "look_direction":
-            # Use look direction approach: 0°, 90°, and average of 45°/135°
-            n_features = len(self.distances) * 3 * len(self.properties)
-        else:
-            # Average all orientations
-            n_features = len(self.distances) * len(self.properties)
+        n_features_per_dist = self._features_per_distance()
+        n_features = len(self.distances) * n_features_per_dist
 
         features = np.zeros((N, n_features), dtype=np.float32)
+
+        compute = {
+            "separate": self._compute_mode_separate,
+            "look_direction": self._compute_mode_look_direction,
+            "average": self._compute_mode_average,
+        }[self.orientation_mode]
 
         # Process in blocks to manage memory
         block_size = 500
@@ -178,110 +284,11 @@ class GLCMExtractor(Extractor):
             batch_size = batch.shape[0]
 
             for j in range(batch_size):
-                patch = batch[j]
-
-                # Skip patches with insufficient variation
-                if patch.max() - patch.min() < 2:
-                    continue
-
-                feature_idx = 0
-
-                for distance in self.distances:
-                    try:
-                        if self.orientation_mode == "separate":
-                            # Compute GLCM for each angle separately
-                            glcm = graycomatrix(
-                                patch,
-                                distances=[distance],
-                                angles=self.angles,
-                                levels=levels,
-                                symmetric=self.symmetric,
-                            )
-
-                            # Extract properties for each angle
-                            for prop in self.properties:
-                                try:
-                                    # All angles for this distance
-                                    vals = graycoprops(glcm, prop)[0, :]
-                                    end_idx = feature_idx + len(vals)
-                                    features[i + j, feature_idx:end_idx] = vals
-                                    feature_idx += len(vals)
-                                except ValueError:
-                                    end_idx = feature_idx + len(self.angles)
-                                    features[i + j, feature_idx:end_idx] = 0.0
-                                    feature_idx += len(self.angles)
-
-                        elif self.orientation_mode == "look_direction":
-                            # Paper's look direction approach:
-                            # 0°, 90°, avg(45°,135°)
-                            angles_look = [
-                                0,
-                                np.pi / 2,
-                                np.pi / 4,
-                                3 * np.pi / 4,
-                            ]
-                            glcm = graycomatrix(
-                                patch,
-                                distances=[distance],
-                                angles=angles_look,
-                                levels=levels,
-                                symmetric=self.symmetric,
-                            )
-
-                            for prop in self.properties:
-                                try:
-                                    vals = graycoprops(glcm, prop)[
-                                        0, :
-                                    ]  # [0°, 90°, 45°, 135°]
-                                    # Use 0°, 90°, and average of 45°/135°
-                                    look_vals = [
-                                        vals[0],
-                                        vals[1],
-                                        (vals[2] + vals[3]) / 2,
-                                    ]
-                                    end_idx = feature_idx + 3
-                                    features[i + j, feature_idx:end_idx] = (
-                                        look_vals
-                                    )
-                                    feature_idx += 3
-                                except ValueError:
-                                    end_idx = feature_idx + 3
-                                    features[i + j, feature_idx:end_idx] = 0.0
-                                    feature_idx += 3
-
-                        else:  # average mode
-                            # Average all orientations
-                            glcm = graycomatrix(
-                                patch,
-                                distances=[distance],
-                                angles=self.angles,
-                                levels=levels,
-                                symmetric=self.symmetric,
-                            )
-
-                            for prop in self.properties:
-                                try:
-                                    vals = graycoprops(glcm, prop)[0, :]
-                                    avg_val = np.mean(vals)
-                                    features[i + j, feature_idx] = avg_val
-                                    feature_idx += 1
-                                except ValueError:
-                                    features[i + j, feature_idx] = 0.0
-                                    feature_idx += 1
-
-                    except ValueError:
-                        if self.orientation_mode == "separate":
-                            skip_features = len(self.angles) * len(
-                                self.properties
-                            )
-                        elif self.orientation_mode == "look_direction":
-                            skip_features = 3 * len(self.properties)
-                        else:
-                            skip_features = len(self.properties)
-
-                        end_idx = feature_idx + skip_features
-                        features[i + j, feature_idx:end_idx] = 0.0
-                        feature_idx += skip_features
+                result = self._compute_patch_features(
+                    batch[j], levels, compute, n_features_per_dist
+                )
+                if result is not None:
+                    features[i + j, :] = result
 
         return features
 
@@ -373,44 +380,19 @@ class GLCMExtractor(Extractor):
         }
 
     def _validate(self, data: HSI, **inputs):
-        if self.bands is not None and (
-            not isinstance(self.bands, list) or not self.bands
-        ):
-            raise ValueError(
-                "bands must be None or a non-empty list of integers."
-            )
-
-        if not self.distances or not isinstance(self.distances, list):
-            raise ValueError("distances must be a non-empty list of integers.")
-
-        if not self.angles or not isinstance(self.angles, list):
-            raise ValueError(
-                "angles must be a non-empty list of floats (radians)."
-            )
-
-        if (
-            not isinstance(self.window_sizes, (list, tuple))
-            or len(self.window_sizes) == 0
-        ):
-            raise ValueError("window_sizes must be a non-empty list or tuple.")
-
-        for w in self.window_sizes:
-            if not isinstance(w, int) or w < 3 or w % 2 == 0:
-                raise ValueError(
-                    f"Each window size must be an odd integer ≥ 3. Got: {w}"
-                )
-
+        validate_optional_non_empty_list(self.bands, "bands")
+        validate_non_empty_list(self.distances, "distances")
+        validate_non_empty_list(self.angles, "angles")
+        validate_window_sizes(self.window_sizes)
         if self.levels is not None and self.levels <= 1:
             raise ValueError(
-                "levels must be greater than 1 or None for auto-determination."
+                "levels must be greater than 1 or None "
+                "for auto-determination."
             )
-
-        if not isinstance(self.properties, list) or len(self.properties) == 0:
-            raise ValueError("properties must be a non-empty list.")
-
+        validate_non_empty_list(self.properties, "properties")
         valid_modes = ["separate", "look_direction", "average"]
         if self.orientation_mode not in valid_modes:
             raise ValueError(
-                "orientation_mode must be 'separate', 'look_direction', "
-                "or 'average'."
+                "orientation_mode must be 'separate', "
+                "'look_direction', or 'average'."
             )

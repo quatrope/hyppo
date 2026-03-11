@@ -6,6 +6,7 @@ import numpy as np
 
 from hyppo.core import HSI
 from .base import Extractor
+from ._spectral_utils import find_and_validate_bands
 
 
 class SAVIExtractor(Extractor):
@@ -78,42 +79,26 @@ class SAVIExtractor(Extractor):
             - original_shape : tuple of int
                 Shape of the original HSI cube.
         """
-        reflectance = data.reflectance
-        wavelength = data.wavelengths
-
-        # Check wavelength availability
-        if len(wavelength) == 0:
-            raise ValueError("No wavelength information available")
-
-        # Find closest band
-        red_idx = np.argmin(np.abs(wavelength - self.red_wavelength))
-        nir_idx = np.argmin(np.abs(wavelength - self.nir_wavelength))
-
-        red = reflectance[:, :, red_idx].astype(float)
-        nir = reflectance[:, :, nir_idx].astype(float)
-
-        # Check if wavelengths are far from target
-        red_diff = abs(wavelength[red_idx] - self.red_wavelength)
-        nir_diff = abs(wavelength[nir_idx] - self.nir_wavelength)
-
-        if red_diff > 50 or nir_diff > 50:  # 50nm tolerance
-            warnings.warn(
-                f"Bands far from target wavelengths: "
-                f"{'Red' if red_diff > 50 else ''} "
-                f"{'NIR' if nir_diff > 50 else ''}".strip()
-            )
+        (red_idx, red), (nir_idx, nir) = find_and_validate_bands(
+            data,
+            [
+                (self.red_wavelength, "Red"),
+                (self.nir_wavelength, "NIR"),
+            ],
+        )
 
         # Calculate SAVI
         savi = ((nir - red) * (1 + self.L)) / (nir + red + self.L)
         features = savi[:, :, np.newaxis]
 
+        wavelength = data.wavelengths
         return {
             "features": features,
             "red_idx": red_idx,
             "nir_idx": nir_idx,
             "wavelength_used": (wavelength[red_idx], wavelength[nir_idx]),
             "brightness_correction": self.L,
-            "original_shape": reflectance.shape,
+            "original_shape": data.reflectance.shape,
         }
 
     def _validate(self, data: HSI, **inputs):

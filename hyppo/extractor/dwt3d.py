@@ -5,6 +5,7 @@ import pywt
 
 from hyppo.core import HSI
 from .base import Extractor
+from ._dwt_utils import apply_swt_padding, calculate_swt_padding
 
 
 class DWT3DExtractor(Extractor):
@@ -65,24 +66,14 @@ class DWT3DExtractor(Extractor):
         h, w, b = reflectance.shape
 
         # Calculate required padding for SWT
-
-        divisor = 2**self.levels
-
-        pad_h = (divisor - h % divisor) % divisor
-        pad_w = (divisor - w % divisor) % divisor
-        pad_b = (divisor - b % divisor) % divisor
-
-        needs_padding = pad_h > 0 or pad_w > 0 or pad_b > 0
+        padding, needs_padding = calculate_swt_padding(
+            (h, w, b), self.levels
+        )
 
         # Apply padding if necessary
-        if needs_padding:
-            cube_padded = np.pad(
-                reflectance,
-                ((0, pad_h), (0, pad_w), (0, pad_b)),
-                mode="reflect",
-            )
-        else:
-            cube_padded = reflectance
+        cube_padded = apply_swt_padding(
+            reflectance, padding, needs_padding
+        )
 
         # Apply 3D Stationary Wavelet Transform
         coeffs = pywt.swtn(

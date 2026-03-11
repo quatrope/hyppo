@@ -9,6 +9,7 @@ import numpy as np
 
 from hyppo.core import HSI
 from .base import Extractor
+from ._spectral_utils import find_and_validate_bands
 
 
 class NDVIExtractor(Extractor):
@@ -72,41 +73,25 @@ class NDVIExtractor(Extractor):
             - original_shape : tuple of int
                 Shape of the original HSI cube.
         """
-        reflectance = data.reflectance
-        wavelengths = data.wavelengths
-
-        # Check wavelength availability
-        if len(wavelengths) == 0:
-            raise ValueError("No wavelength information available")
-
-        # Find closest band
-        red_idx = np.argmin(np.abs(wavelengths - self.red_wavelength))
-        nir_idx = np.argmin(np.abs(wavelengths - self.nir_wavelength))
-
-        red = reflectance[:, :, red_idx].astype(float)
-        nir = reflectance[:, :, nir_idx].astype(float)
-
-        # Check if wavelengths are far from target
-        red_diff = abs(wavelengths[red_idx] - self.red_wavelength)
-        nir_diff = abs(wavelengths[nir_idx] - self.nir_wavelength)
-
-        if red_diff > 50 or nir_diff > 50:  # 50nm tolerance
-            warnings.warn(
-                f"Bands far from target wavelengths: "
-                f"{'Red' if red_diff > 50 else ''} "
-                f"{'NIR' if nir_diff > 50 else ''}".strip()
-            )
+        (red_idx, red), (nir_idx, nir) = find_and_validate_bands(
+            data,
+            [
+                (self.red_wavelength, "Red"),
+                (self.nir_wavelength, "NIR"),
+            ],
+        )
 
         # Calculate NDVI
         ndvi = (nir - red) / (nir + red + 1e-6)
         features = ndvi[:, :, np.newaxis]
 
+        wavelengths = data.wavelengths
         return {
             "features": features,
             "red_idx": red_idx,
             "nir_idx": nir_idx,
             "wavelength_used": (wavelengths[red_idx], wavelengths[nir_idx]),
-            "original_shape": reflectance.shape,
+            "original_shape": data.reflectance.shape,
         }
 
     def _validate(self, data: HSI, **inputs):

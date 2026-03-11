@@ -5,6 +5,7 @@ import pywt
 
 from hyppo.core import HSI
 from .base import Extractor
+from ._dwt_utils import apply_swt_padding, calculate_swt_padding
 
 
 class DWT2DExtractor(Extractor):
@@ -56,6 +57,24 @@ class DWT2DExtractor(Extractor):
         """Return the feature name."""
         return "dwt2d"
 
+    def _crop_and_stack_coeffs(
+        self, coeffs, h, w, needs_padding, features_list
+    ):
+        """Crop coefficients to original size and stack subbands."""
+        for level_coeffs in coeffs:
+            cA, (cH, cV, cD) = level_coeffs
+
+            # Crop back to original size if padding was applied
+            if needs_padding:
+                cA = cA[:h, :w]
+                cH = cH[:h, :w]
+                cV = cV[:h, :w]
+                cD = cD[:h, :w]
+
+            # Stack the four subbands: LL, LH, HL, HH
+            level_features = np.stack([cA, cH, cV, cD], axis=-1)
+            features_list.append(level_features)
+
     def _extract(self, data: HSI, **inputs):
         """
         Extract 2D DWT features from a hyperspectral image.
@@ -79,25 +98,19 @@ class DWT2DExtractor(Extractor):
 
         features_list = []
 
-        # Calculate required divisor for SWT
-        divisor = 2**self.levels
-
-        # Calculate padding
-        pad_h = (divisor - h % divisor) % divisor
-        pad_w = (divisor - w % divisor) % divisor
-        needs_padding = pad_h > 0 or pad_w > 0
+        # Calculate padding for SWT
+        padding, needs_padding = calculate_swt_padding(
+            (h, w), self.levels
+        )
 
         # Process each band separately
         for band_idx in range(bands):
             band_img = reflectance[:, :, band_idx]
 
             # Apply padding if necessary
-            if needs_padding:
-                band_img_padded = np.pad(
-                    band_img, ((0, pad_h), (0, pad_w)), mode="reflect"
-                )
-            else:
-                band_img_padded = band_img
+            band_img_padded = apply_swt_padding(
+                band_img, padding, needs_padding
+            )
 
             # Perform 2D wavelet decomposition using SWT
             coeffs = pywt.swt2(
@@ -108,19 +121,9 @@ class DWT2DExtractor(Extractor):
             coeffs = list(reversed(coeffs))
 
             # Extract all subbands from all levels
-            for level_coeffs in coeffs:
-                cA, (cH, cV, cD) = level_coeffs
-
-                # Crop back to original size if padding was applied
-                if needs_padding:
-                    cA = cA[:h, :w]
-                    cH = cH[:h, :w]
-                    cV = cV[:h, :w]
-                    cD = cD[:h, :w]
-
-                # Stack the four subbands: LL, LH, HL, HH
-                level_features = np.stack([cA, cH, cV, cD], axis=-1)
-                features_list.append(level_features)
+            self._crop_and_stack_coeffs(
+                coeffs, h, w, needs_padding, features_list
+            )
 
         # Concatenate all features
         features = np.concatenate(features_list, axis=-1)

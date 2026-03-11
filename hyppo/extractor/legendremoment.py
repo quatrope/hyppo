@@ -7,6 +7,12 @@ from sklearn.decomposition import PCA
 
 from hyppo.core import HSI
 from .base import Extractor
+from ._validators import (
+    validate_non_negative_int,
+    validate_positive_int,
+    validate_sufficient_bands,
+    validate_window_sizes,
+)
 
 
 class LegendreMomentExtractor(Extractor):
@@ -46,10 +52,8 @@ class LegendreMomentExtractor(Extractor):
         self.max_order = max_order
         self.window_sizes = window_sizes
 
-    def _legendre_moments(self, patches):
-        """Compute Legendre moments for a set of patches."""
-        N, height, width = patches.shape
-
+    def _build_legendre_kernels(self, height, width):
+        """Build 2D orthonormal Legendre polynomial kernels."""
         # Create normalized coordinates in [-1, 1] for the unit square
         x = np.linspace(-1, 1, width)
         y = np.linspace(-1, 1, height)
@@ -73,7 +77,13 @@ class LegendreMomentExtractor(Extractor):
                 h_pq = norm_factor * L_pq
                 kernels.append(h_pq)
 
-        kernels = np.stack(kernels, axis=0)  # (M, h, w)
+        return np.stack(kernels, axis=0)  # (M, h, w)
+
+    def _legendre_moments(self, patches):
+        """Compute Legendre moments for a set of patches."""
+        N, height, width = patches.shape
+
+        kernels = self._build_legendre_kernels(height, width)
         M = kernels.shape[0]
 
         # Compute moments
@@ -173,25 +183,7 @@ class LegendreMomentExtractor(Extractor):
 
     def _validate(self, data: HSI, **inputs):
         """Validate extractor parameters."""
-        if not isinstance(self.n_components, int) or self.n_components <= 0:
-            raise ValueError("n_components must be a positive integer.")
-
-        if not isinstance(self.max_order, int) or self.max_order < 0:
-            raise ValueError("max_order must be a non-negative integer.")
-
-        if (
-            not isinstance(self.window_sizes, (list, tuple))
-            or len(self.window_sizes) == 0
-        ):
-            raise ValueError("window_sizes must be a non-empty list or tuple.")
-
-        for w in self.window_sizes:
-            if not isinstance(w, int) or w < 3 or w % 2 == 0:
-                raise ValueError(
-                    f"Each window size must be an odd integer ≥ 3. Got: {w}"
-                )
-        if data.reflectance.shape[-1] < self.n_components:
-            raise ValueError(
-                f"Number of spectral bands ({data.reflectance.shape[-1]}) "
-                f"is less than n_components ({self.n_components})."
-            )
+        validate_positive_int(self.n_components, "n_components")
+        validate_non_negative_int(self.max_order, "max_order")
+        validate_window_sizes(self.window_sizes)
+        validate_sufficient_bands(data, self.n_components)

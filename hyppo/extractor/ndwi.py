@@ -9,6 +9,7 @@ import numpy as np
 
 from hyppo.core import HSI
 from .base import Extractor
+from ._spectral_utils import find_and_validate_bands
 
 
 class NDWIExtractor(Extractor):
@@ -71,41 +72,25 @@ class NDWIExtractor(Extractor):
             - original_shape : tuple of int
                 Shape of the original HSI cube.
         """
-        reflectance = data.reflectance
-        wavelength = data.wavelengths
-
-        # Check wavelength availability
-        if len(wavelength) == 0:
-            raise ValueError("No wavelength information available")
-
-        # Find closest band
-        green_idx = np.argmin(np.abs(wavelength - self.green_wavelength))
-        nir_idx = np.argmin(np.abs(wavelength - self.nir_wavelength))
-
-        green = reflectance[:, :, green_idx].astype(float)
-        nir = reflectance[:, :, nir_idx].astype(float)
-
-        # Check if wavelengths are far from target
-        green_diff = abs(wavelength[green_idx] - self.green_wavelength)
-        nir_diff = abs(wavelength[nir_idx] - self.nir_wavelength)
-
-        if green_diff > 50 or nir_diff > 50:  # 50nm tolerance
-            warnings.warn(
-                f"Bands far from target wavelengths: "
-                f"{'Green' if green_diff > 50 else ''} "
-                f"{'NIR' if nir_diff > 50 else ''}".strip()
-            )
+        (green_idx, green), (nir_idx, nir) = find_and_validate_bands(
+            data,
+            [
+                (self.green_wavelength, "Green"),
+                (self.nir_wavelength, "NIR"),
+            ],
+        )
 
         # Calculate NDWI
         ndwi = (green - nir) / (green + nir + 1e-6)
         features = ndwi[:, :, np.newaxis]
 
+        wavelength = data.wavelengths
         return {
             "features": features,
             "green_idx": green_idx,
             "nir_idx": nir_idx,
             "wavelength_used": (wavelength[green_idx], wavelength[nir_idx]),
-            "original_shape": reflectance.shape,
+            "original_shape": data.reflectance.shape,
         }
 
     def _validate(self, data: HSI, **inputs):

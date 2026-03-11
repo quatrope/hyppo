@@ -14,6 +14,13 @@ from skimage.morphology import (
 from sklearn.decomposition import PCA
 from hyppo.core import HSI
 from .base import Extractor
+from ._validators import (
+    validate_all_in_set,
+    validate_non_empty_list,
+    validate_positive_int,
+    validate_positive_int_list,
+    validate_sufficient_bands,
+)
 
 
 class MPExtractor(Extractor):
@@ -219,28 +226,13 @@ class MPExtractor(Extractor):
 
     def _validate(self, data: HSI, **inputs):
         """Validate extractor parameters."""
-        if not isinstance(self.n_components, int) or self.n_components <= 0:
-            raise ValueError("n_components must be a positive integer.")
-
-        if not isinstance(self.radii, (list, tuple)) or len(self.radii) == 0:
-            raise ValueError("radii must be a non-empty list or tuple.")
-
-        if any(not isinstance(r, int) or r <= 0 for r in self.radii):
-            raise ValueError("All radii must be positive integers.")
-
-        if not isinstance(self.shapes, (list, tuple)) or len(self.shapes) == 0:
-            raise ValueError("shapes must be a non-empty list or tuple.")
-
-        valid_shapes = {"disk", "square", "diamond", "line"}
-        for shape in self.shapes:
-            if shape not in valid_shapes:
-                raise ValueError(
-                    f"Invalid shape '{shape}'. "
-                    f"Valid shapes: {valid_shapes}"
-                )
-
-        if data.reflectance.shape[-1] < self.n_components:
-            raise ValueError(
-                f"Number of spectral bands ({data.reflectance.shape[-1]}) "
-                f"is less than n_components ({self.n_components})."
-            )
+        validate_positive_int(self.n_components, "n_components")
+        validate_non_empty_list(self.radii, "radii")
+        validate_positive_int_list(self.radii, "radii")
+        validate_non_empty_list(self.shapes, "shapes")
+        validate_all_in_set(
+            self.shapes,
+            {"disk", "square", "diamond", "line"},
+            "shape",
+        )
+        validate_sufficient_bands(data, self.n_components)

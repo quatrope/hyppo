@@ -6,13 +6,13 @@ from skimage.util.shape import view_as_windows
 from sklearn.decomposition import PCA
 
 from hyppo.core import HSI
-from .base import Extractor
 from ._validators import (
     validate_non_negative_int,
     validate_positive_int,
     validate_sufficient_bands,
     validate_window_sizes,
 )
+from .base import Extractor
 
 
 class ZernikeMomentExtractor(Extractor):
@@ -108,7 +108,7 @@ class ZernikeMomentExtractor(Extractor):
             # Compute radial polynomial R_pq(r)
             R_pq = self._zernike_radial_poly(p, q, R)
 
-            # Compute complex Zernike polynomial V_pq(r,θ) = R_pq(r) * exp(j*q*θ)
+            # V_pq(r,θ) = R_pq(r) * exp(j*q*θ)
             # Use the complex conjugate: V_pq* = R_pq(r) * exp(-j*q*θ)
             V_pq_star = R_pq * np.exp(-1j * q * Theta)
 

@@ -146,8 +146,8 @@ class PPExtractor(Extractor):
         return X, np.arange(n_samples)
 
     def _find_best_projection(self, X):
-        """
-        Find projection vector maximizing information divergence.
+        """Find projection maximizing information divergence.
+
         Candidate vectors are sampled directly from the data points.
         """
         n_features = X.shape[1]
@@ -159,9 +159,7 @@ class PPExtractor(Extractor):
 
         # Test each pixel as a candidate projection vector
         for i, candidate_vector in enumerate(X_sample):
-            vector, score = self._evaluate_candidate(
-                candidate_vector, X
-            )
+            vector, score = self._evaluate_candidate(candidate_vector, X)
             if vector is not None and score > best_score:
                 best_score = score
                 best_projection = vector.copy()

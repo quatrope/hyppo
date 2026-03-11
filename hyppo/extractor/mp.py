@@ -9,11 +9,11 @@ from skimage.morphology import (
     erosion,
     footprint_rectangle,
     opening,
-    reconstruction as morph_reconstruction,
 )
+from skimage.morphology import reconstruction as morph_reconstruction
 from sklearn.decomposition import PCA
+
 from hyppo.core import HSI
-from .base import Extractor
 from ._validators import (
     validate_all_in_set,
     validate_non_empty_list,
@@ -21,6 +21,7 @@ from ._validators import (
     validate_positive_int_list,
     validate_sufficient_bands,
 )
+from .base import Extractor
 
 
 class MPExtractor(Extractor):
@@ -44,7 +45,8 @@ class MPExtractor(Extractor):
         List of structuring element shapes to use. Supported shapes:
         'disk', 'square', 'diamond', 'line'.
     use_reconstruction : bool, default=False
-        If True, use opening/closing by reconstruction (preserves edges better).
+        If True, use opening/closing by reconstruction
+        (preserves edges better).
         If False, use standard opening/closing operations.
 
     References
@@ -71,7 +73,7 @@ class MPExtractor(Extractor):
         self.use_reconstruction = use_reconstruction
 
     def _get_structuring_element(self, shape, radius):
-        """Returns the structuring element based on shape and radius."""
+        """Return the structuring element based on shape and radius."""
         if shape == "disk":
             return disk(radius)
         elif shape == "square":
@@ -88,16 +90,20 @@ class MPExtractor(Extractor):
             )
 
     def _opening_by_reconstruction(self, img, se):
-        """Opening by reconstruction (geodesic opening). Removes bright
-        structures smaller than SE while preserving edges of remaining
-        structures better than standard opening."""
+        """Open by reconstruction (geodesic opening).
+
+        Remove bright structures smaller than SE while preserving
+        edges of remaining structures better than standard opening.
+        """
         # Erosion followed by dilation reconstruction
         eroded = erosion(img, se)
         return morph_reconstruction(eroded, img, method="dilation")
 
     def _closing_by_reconstruction(self, img, se):
-        """Closing by reconstruction (geodesic closing).
-        Fills dark structures smaller than SE while preserving edges."""
+        """Close by reconstruction (geodesic closing).
+
+        Fill dark structures smaller than SE while preserving edges.
+        """
         # Dilation followed by erosion reconstruction
         dilated = dilation(img, se)
         return morph_reconstruction(dilated, img, method="erosion")

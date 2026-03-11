@@ -28,23 +28,61 @@ class TestDWT1DExtractor:
         result = extractor.extract(regression_hsi)
 
         # Assert
-        expected_row0 = np.array([
-            [ 1.3279533e+00,  6.1813641e-01, -2.6990175e-03,
-             -3.0612329e-01, -4.0741667e-01,  9.4282389e-02,
-              1.7061830e-05, -5.7140774e-01],
-            [ 1.1498410e+00,  7.0500565e-01,  1.5934661e-01,
-              3.3977616e-01, -7.5630486e-02, -6.7127436e-01,
-              4.3847942e-01, -1.1169016e-03],
-            [ 7.7608645e-01,  7.0492661e-01,  5.2912265e-02,
-              4.6420127e-02, -1.5592706e-01,  9.9501163e-02,
-              3.3400828e-01, -5.2479491e-02],
-            [ 9.7757703e-01,  7.0846689e-01,  2.6366884e-01,
-             -6.9601983e-02, -2.3271310e-01, -2.2242795e-01,
-              3.8605493e-01,  3.0902031e-01],
-            [ 1.3939831e+00,  7.6333565e-01, -3.8004607e-01,
-             -3.6104983e-01, -6.2496501e-01,  1.1118168e-01,
-              1.4632985e-01,  1.7259100e-01],
-        ], dtype=np.float32)
+        expected_row0 = np.array(
+            [
+                [
+                    1.3279533e00,
+                    6.1813641e-01,
+                    -2.6990175e-03,
+                    -3.0612329e-01,
+                    -4.0741667e-01,
+                    9.4282389e-02,
+                    1.7061830e-05,
+                    -5.7140774e-01,
+                ],
+                [
+                    1.1498410e00,
+                    7.0500565e-01,
+                    1.5934661e-01,
+                    3.3977616e-01,
+                    -7.5630486e-02,
+                    -6.7127436e-01,
+                    4.3847942e-01,
+                    -1.1169016e-03,
+                ],
+                [
+                    7.7608645e-01,
+                    7.0492661e-01,
+                    5.2912265e-02,
+                    4.6420127e-02,
+                    -1.5592706e-01,
+                    9.9501163e-02,
+                    3.3400828e-01,
+                    -5.2479491e-02,
+                ],
+                [
+                    9.7757703e-01,
+                    7.0846689e-01,
+                    2.6366884e-01,
+                    -6.9601983e-02,
+                    -2.3271310e-01,
+                    -2.2242795e-01,
+                    3.8605493e-01,
+                    3.0902031e-01,
+                ],
+                [
+                    1.3939831e00,
+                    7.6333565e-01,
+                    -3.8004607e-01,
+                    -3.6104983e-01,
+                    -6.2496501e-01,
+                    1.1118168e-01,
+                    1.4632985e-01,
+                    1.7259100e-01,
+                ],
+            ],
+            dtype=np.float32,
+        )
         np.testing.assert_allclose(
             result["features"][0, :, :], expected_row0, rtol=1e-5
         )
@@ -80,7 +118,8 @@ class TestDWT1DExtractor:
 
         # Verify it uses max_level by comparing with explicit max_level
         extractor_explicit = DWT1DExtractor(
-            wavelet="haar", levels=max_level,
+            wavelet="haar",
+            levels=max_level,
         )
         result_explicit = extractor_explicit.extract(regression_hsi)
         np.testing.assert_allclose(
@@ -106,8 +145,12 @@ class TestDWT1DExtractor:
 
         # Assert
         expected_keys = [
-            "features", "wavelet", "mode", "levels",
-            "n_features", "original_shape",
+            "features",
+            "wavelet",
+            "mode",
+            "levels",
+            "n_features",
+            "original_shape",
         ]
         for key in expected_keys:
             assert key in result
@@ -119,7 +162,8 @@ class TestDWT1DExtractor:
 
         features = result["features"]
         assert features.shape[:2] == (
-            large_spectral_hsi.height, large_spectral_hsi.width,
+            large_spectral_hsi.height,
+            large_spectral_hsi.width,
         )
         assert features.ndim == 3
 

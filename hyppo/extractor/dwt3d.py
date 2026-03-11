@@ -4,19 +4,21 @@ import numpy as np
 import pywt
 
 from hyppo.core import HSI
-from .base import Extractor
 from ._dwt_utils import apply_swt_padding, calculate_swt_padding
+from .base import Extractor
 
 
 class DWT3DExtractor(Extractor):
     """
     3D Discrete Wavelet Transform feature extractor.
 
-    Applies 3D Stationary Wavelet Transform (SWT) to the hyperspectral cube
-    (Spatial + Spectral dimensions) to extract joint spectral-spatial texture features.
+    Applies 3D Stationary Wavelet Transform (SWT) to the
+    hyperspectral cube (Spatial + Spectral dimensions) to extract
+    joint spectral-spatial texture features.
 
-    As described in Qian et al. (2013), 3D DWT decomposes the data into 8 subbands
-    capturing correlations across spatial and spectral domains simultaneously.
+    As described in Qian et al. (2013), 3D DWT decomposes the data
+    into 8 subbands capturing correlations across spatial and
+    spectral domains simultaneously.
 
     Parameters
     ----------
@@ -29,7 +31,8 @@ class DWT3DExtractor(Extractor):
     ----------
     Qian, Y., Ye, M., & Zhou, J. (2013). Hyperspectral Image Classification
     Based on Structured Sparse Logistic Regression and Three-Dimensional
-    Wavelet Texture Features. *IEEE Transactions on Geoscience and Remote Sensing*,
+    Wavelet Texture Features.
+    *IEEE Transactions on Geoscience and Remote Sensing*,
     51(4), 2276-2291.
     """
 
@@ -66,14 +69,10 @@ class DWT3DExtractor(Extractor):
         h, w, b = reflectance.shape
 
         # Calculate required padding for SWT
-        padding, needs_padding = calculate_swt_padding(
-            (h, w, b), self.levels
-        )
+        padding, needs_padding = calculate_swt_padding((h, w, b), self.levels)
 
         # Apply padding if necessary
-        cube_padded = apply_swt_padding(
-            reflectance, padding, needs_padding
-        )
+        cube_padded = apply_swt_padding(reflectance, padding, needs_padding)
 
         # Apply 3D Stationary Wavelet Transform
         coeffs = pywt.swtn(

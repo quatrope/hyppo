@@ -22,35 +22,89 @@ class TestGeometricMomentExtractor:
         """Regression test: GeometricMoment output must not change."""
         # Arrange
         extractor = GeometricMomentExtractor(
-            n_components=2, max_order=2, window_sizes=[3],
+            n_components=2,
+            max_order=2,
+            window_sizes=[3],
         )
 
         # Act
         result = extractor.extract(regression_hsi)
 
         # Assert
-        expected_row0 = np.array([
-            [ 1.99521767,  0.,          0.42895742,
-              0.,          0.,          1.45023517,
-             -0.69350639,  0.,          0.06905615,
-              0.,          0.,         -0.52726471],
-            [ 0.85928748,  0.,         -0.22416729,
-             -0.95579509,  0.,          0.13416989,
-             -0.6369716,   0.,         -0.61138147,
-             -0.04085589,  0.,         -0.37333924],
-            [ 0.05483723,  0.,         -0.97393776,
-             -0.98458534,  0.,          0.46564984,
-             -1.59885263,  0.,         -0.86192501,
-             -0.86449035,  0.,         -1.39175506],
-            [ 1.16846047,  0.,          0.37595657,
-              2.24955343,  0.,          1.42792822,
-             -0.37816548,  0.,         -0.74650255,
-              1.16415236,  0.,          0.74995723],
-            [ 1.31980532,  0.,          0.46607953,
-              0.,          0.,         -0.5189355,
-             -1.29919061,  0.,         -1.29710695,
-              0.,          0.,         -2.2562454],
-        ])
+        expected_row0 = np.array(
+            [
+                [
+                    1.99521767,
+                    0.0,
+                    0.42895742,
+                    0.0,
+                    0.0,
+                    1.45023517,
+                    -0.69350639,
+                    0.0,
+                    0.06905615,
+                    0.0,
+                    0.0,
+                    -0.52726471,
+                ],
+                [
+                    0.85928748,
+                    0.0,
+                    -0.22416729,
+                    -0.95579509,
+                    0.0,
+                    0.13416989,
+                    -0.6369716,
+                    0.0,
+                    -0.61138147,
+                    -0.04085589,
+                    0.0,
+                    -0.37333924,
+                ],
+                [
+                    0.05483723,
+                    0.0,
+                    -0.97393776,
+                    -0.98458534,
+                    0.0,
+                    0.46564984,
+                    -1.59885263,
+                    0.0,
+                    -0.86192501,
+                    -0.86449035,
+                    0.0,
+                    -1.39175506,
+                ],
+                [
+                    1.16846047,
+                    0.0,
+                    0.37595657,
+                    2.24955343,
+                    0.0,
+                    1.42792822,
+                    -0.37816548,
+                    0.0,
+                    -0.74650255,
+                    1.16415236,
+                    0.0,
+                    0.74995723,
+                ],
+                [
+                    1.31980532,
+                    0.0,
+                    0.46607953,
+                    0.0,
+                    0.0,
+                    -0.5189355,
+                    -1.29919061,
+                    0.0,
+                    -1.29710695,
+                    0.0,
+                    0.0,
+                    -2.2562454,
+                ],
+            ]
+        )
         np.testing.assert_allclose(
             result["features"][0, :, :], expected_row0, rtol=1e-5
         )
@@ -63,7 +117,8 @@ class TestGeometricMomentExtractor:
         """
         # Arrange
         extractor = GeometricMomentExtractor(
-            max_order=2, normalize_coords=True,
+            max_order=2,
+            normalize_coords=True,
         )
         constant_value = 2.0
         patches = np.full((1, 3, 3), constant_value)
@@ -82,7 +137,8 @@ class TestGeometricMomentExtractor:
         """
         # Arrange
         extractor = GeometricMomentExtractor(
-            max_order=2, normalize_coords=True,
+            max_order=2,
+            normalize_coords=True,
         )
         patches = np.ones((1, 5, 5))
 
@@ -98,7 +154,9 @@ class TestGeometricMomentExtractor:
         """Test extraction with normalize_coords=False."""
         # Arrange
         extractor = GeometricMomentExtractor(
-            n_components=2, max_order=2, window_sizes=[3],
+            n_components=2,
+            max_order=2,
+            window_sizes=[3],
             normalize_coords=False,
         )
 
@@ -108,18 +166,23 @@ class TestGeometricMomentExtractor:
         # Assert
         assert result["features"].ndim == 3
         assert result["features"].shape[:2] == (
-            small_hsi.height, small_hsi.width,
+            small_hsi.height,
+            small_hsi.width,
         )
 
     def test_normalize_coords_produces_different_results(self, small_hsi):
         """Test that normalize_coords=True and False give different results."""
         # Arrange
         ext_norm = GeometricMomentExtractor(
-            n_components=2, max_order=2, window_sizes=[3],
+            n_components=2,
+            max_order=2,
+            window_sizes=[3],
             normalize_coords=True,
         )
         ext_no_norm = GeometricMomentExtractor(
-            n_components=2, max_order=2, window_sizes=[3],
+            n_components=2,
+            max_order=2,
+            window_sizes=[3],
             normalize_coords=False,
         )
 
@@ -129,7 +192,8 @@ class TestGeometricMomentExtractor:
 
         # Assert
         assert not np.allclose(
-            result_norm["features"], result_no_norm["features"],
+            result_norm["features"],
+            result_no_norm["features"],
         )
 
     def test_feature_count_formula(self, small_hsi):
@@ -139,18 +203,17 @@ class TestGeometricMomentExtractor:
         max_order = 3
         window_sizes = [3, 5]
         extractor = GeometricMomentExtractor(
-            n_components=n_components, max_order=max_order,
+            n_components=n_components,
+            max_order=max_order,
             window_sizes=window_sizes,
         )
 
         # Act
         result = extractor.extract(small_hsi)
 
-        # Assert: n_moments = sum(1 for p in 0..max_order for q in 0..max_order-p)
+        # Assert: n_moments = sum(1 for p,q valid pairs)
         n_moments = sum(
-            1
-            for p in range(max_order + 1)
-            for q in range(max_order + 1 - p)
+            1 for p in range(max_order + 1) for q in range(max_order + 1 - p)
         )
         expected_features = n_components * len(window_sizes) * n_moments
         assert result["features"].shape[2] == expected_features
@@ -166,8 +229,12 @@ class TestGeometricMomentExtractor:
 
         # Assert: Verify output structure
         expected_keys = [
-            "features", "explained_variance_ratio", "n_components",
-            "window_sizes", "max_order", "n_moments_per_scale",
+            "features",
+            "explained_variance_ratio",
+            "n_components",
+            "window_sizes",
+            "max_order",
+            "n_moments_per_scale",
         ]
         for key in expected_keys:
             assert key in result
@@ -184,7 +251,9 @@ class TestGeometricMomentExtractor:
         """Test extraction with custom parameters."""
         # Arrange
         extractor = GeometricMomentExtractor(
-            n_components=2, max_order=2, window_sizes=[3, 5],
+            n_components=2,
+            max_order=2,
+            window_sizes=[3, 5],
         )
 
         # Act

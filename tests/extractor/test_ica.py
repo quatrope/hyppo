@@ -30,13 +30,15 @@ class TestICAExtractor:
         result = extractor.extract(regression_hsi)
 
         # Assert
-        expected_row0 = np.array([
-            [ 0.28009173, -0.8886466,  -1.18073642],
-            [-0.99395734, -1.47108257,  1.66003823],
-            [-0.43766952, -0.32563734, -0.43849036],
-            [-0.82276291, -0.35997638,  0.53501362],
-            [-0.32476985, -1.07117653, -1.39925683],
-        ])
+        expected_row0 = np.array(
+            [
+                [0.28009173, -0.8886466, -1.18073642],
+                [-0.99395734, -1.47108257, 1.66003823],
+                [-0.43766952, -0.32563734, -0.43849036],
+                [-0.82276291, -0.35997638, 0.53501362],
+                [-0.32476985, -1.07117653, -1.39925683],
+            ]
+        )
         np.testing.assert_allclose(
             result["features"][0, :, :], expected_row0, rtol=1e-5
         )
@@ -62,7 +64,8 @@ class TestICAExtractor:
         X_centered = X_flat - mean
 
         sklearn_ica = FastICA(
-            n_components=n_components, whiten="unit-variance",
+            n_components=n_components,
+            whiten="unit-variance",
             random_state=42,
         )
         sklearn_features = sklearn_ica.fit_transform(X_centered)
@@ -105,9 +108,15 @@ class TestICAExtractor:
 
         # Assert
         expected_keys = [
-            "features", "components", "mixing_matrix", "mean",
-            "n_components", "original_shape", "n_iter",
-            "reconstruction_error", "valid_pixel_mask",
+            "features",
+            "components",
+            "mixing_matrix",
+            "mean",
+            "n_components",
+            "original_shape",
+            "n_iter",
+            "reconstruction_error",
+            "valid_pixel_mask",
         ]
         for key in expected_keys:
             assert key in result
@@ -121,7 +130,9 @@ class TestICAExtractor:
         """Test extraction with custom parameters."""
         # Arrange
         extractor = ICAExtractor(
-            n_components=3, whiten="arbitrary-variance", random_state=123,
+            n_components=3,
+            whiten="arbitrary-variance",
+            random_state=123,
         )
 
         # Act
@@ -163,7 +174,8 @@ class TestICAExtractor:
 
         # Act: mock inverse_transform to raise ValueError
         with mock_patch.object(
-            FastICA, "inverse_transform",
+            FastICA,
+            "inverse_transform",
             side_effect=ValueError("mock"),
         ):
             result = extractor.extract(small_hsi)
@@ -171,9 +183,7 @@ class TestICAExtractor:
         # Assert
         assert result["reconstruction_error"] is None
 
-    @pytest.mark.parametrize(
-        "whiten", ["unit-variance", "arbitrary-variance"]
-    )
+    @pytest.mark.parametrize("whiten", ["unit-variance", "arbitrary-variance"])
     def test_different_whiten_strategies(self, small_hsi, whiten):
         """Test extraction with different whiten strategies."""
         # Arrange

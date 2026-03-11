@@ -4,17 +4,18 @@ import numpy as np
 import pywt
 
 from hyppo.core import HSI
-from .base import Extractor
 from ._dwt_utils import apply_swt_padding, calculate_swt_padding
+from .base import Extractor
 
 
 class DWT2DExtractor(Extractor):
     """
-    2D Discrete Wavelet Transform feature extractor for spatial texture analysis.
+    2D DWT feature extractor for spatial texture analysis.
 
-    Applies 2D DWT band-by-band to extract spatial texture features from
-    hyperspectral images. Based on the approach described in Kumar & Dikshit (2015)
-    for integrating spectral and textural features.
+    Applies 2D DWT band-by-band to extract spatial texture features
+    from hyperspectral images. Based on the approach described in
+    Kumar & Dikshit (2015) for integrating spectral and textural
+    features.
     Captures spatial texture information per band.
 
     Uses Stationary Wavelet Transform (SWT) to maintain spatial resolution
@@ -99,9 +100,7 @@ class DWT2DExtractor(Extractor):
         features_list = []
 
         # Calculate padding for SWT
-        padding, needs_padding = calculate_swt_padding(
-            (h, w), self.levels
-        )
+        padding, needs_padding = calculate_swt_padding((h, w), self.levels)
 
         # Process each band separately
         for band_idx in range(bands):

@@ -29,13 +29,15 @@ class TestPPExtractor:
         result = extractor.extract(regression_hsi)
 
         # Assert
-        expected_row0 = np.array([
-            [-0.79909122,  0.20852612,  0.03628006],
-            [ 1.96342134, -0.2751492,   1.53290534],
-            [ 0.18659377,  0.77047849,  1.17713058],
-            [ 0.92933339,  0.55912536,  0.60846531],
-            [ 0.15774821,  1.43000901, -2.0064218],
-        ])
+        expected_row0 = np.array(
+            [
+                [-0.79909122, 0.20852612, 0.03628006],
+                [1.96342134, -0.2751492, 1.53290534],
+                [0.18659377, 0.77047849, 1.17713058],
+                [0.92933339, 0.55912536, 0.60846531],
+                [0.15774821, 1.43000901, -2.0064218],
+            ]
+        )
         np.testing.assert_allclose(
             result["features"][0, :, :], expected_row0, rtol=1e-5
         )
@@ -72,9 +74,7 @@ class TestPPExtractor:
         extractor = PPExtractor()
 
         # Act
-        divergence = extractor._compute_information_divergence(
-            gaussian_scores
-        )
+        divergence = extractor._compute_information_divergence(gaussian_scores)
 
         # Assert: divergence from Gaussian should be small
         assert divergence < 0.1
@@ -88,9 +88,7 @@ class TestPPExtractor:
         extractor = PPExtractor()
 
         # Act
-        div_uniform = extractor._compute_information_divergence(
-            uniform_scores
-        )
+        div_uniform = extractor._compute_information_divergence(uniform_scores)
         div_gaussian = extractor._compute_information_divergence(
             gaussian_scores
         )
@@ -140,7 +138,9 @@ class TestPPExtractor:
         wavelengths = np.linspace(400, 800, 5).astype(np.float32)
         hsi = HSI(reflectance=reflectance, wavelengths=wavelengths)
         extractor = PPExtractor(
-            n_projections=2, sample_size=20, random_state=42,
+            n_projections=2,
+            sample_size=20,
+            random_state=42,
         )
 
         # Act
@@ -182,7 +182,8 @@ class TestPPExtractor:
 
         # Act
         with mock_patch.object(
-            extractor, "_compute_information_divergence",
+            extractor,
+            "_compute_information_divergence",
             side_effect=mock_divergence,
         ):
             result = extractor.extract(small_hsi)
@@ -197,7 +198,8 @@ class TestPPExtractor:
 
         # Act: mock divergence to always raise
         with mock_patch.object(
-            extractor, "_compute_information_divergence",
+            extractor,
+            "_compute_information_divergence",
             side_effect=ValueError("always fail"),
         ):
             with pytest.warns(UserWarning, match="fallback to random"):
@@ -230,7 +232,8 @@ class TestPPExtractor:
         # Assert: all valid for clean data
         assert np.all(result["valid_pixel_mask"])
         assert result["valid_pixel_mask"].shape == (
-            small_hsi.height, small_hsi.width,
+            small_hsi.height,
+            small_hsi.width,
         )
 
     def test_deflation_produces_different_projections(self, regression_hsi):
@@ -257,10 +260,15 @@ class TestPPExtractor:
 
         # Assert: Verify output structure
         expected_keys = [
-            "features", "projection_vectors", "n_features",
-            "original_shape", "divergence_scores",
-            "pca_components_used", "pca_model",
-            "selected_pixel_indices", "valid_pixel_mask",
+            "features",
+            "projection_vectors",
+            "n_features",
+            "original_shape",
+            "divergence_scores",
+            "pca_components_used",
+            "pca_model",
+            "selected_pixel_indices",
+            "valid_pixel_mask",
         ]
         for key in expected_keys:
             assert key in result
@@ -292,24 +300,18 @@ class TestPPExtractor:
         result2 = extractor2.extract(small_hsi)
 
         # Assert
-        np.testing.assert_allclose(
-            result1["features"], result2["features"]
-        )
+        np.testing.assert_allclose(result1["features"], result2["features"])
 
     def test_validate_invalid_n_projections(self, small_hsi):
         """Test validation fails with non-positive n_projections."""
         extractor = PPExtractor(n_projections=0)
-        with pytest.raises(
-            ValueError, match="n_projections must be positive"
-        ):
+        with pytest.raises(ValueError, match="n_projections must be positive"):
             extractor.extract(small_hsi)
 
     def test_validate_negative_n_projections(self, small_hsi):
         """Test validation fails with negative n_projections."""
         extractor = PPExtractor(n_projections=-5)
-        with pytest.raises(
-            ValueError, match="n_projections must be positive"
-        ):
+        with pytest.raises(ValueError, match="n_projections must be positive"):
             extractor.extract(small_hsi)
 
     def test_validate_invalid_n_bins(self, small_hsi):

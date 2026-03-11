@@ -1,7 +1,8 @@
 """Independent Component Analysis (ICA) feature extractor for HSI."""
 
-import numpy as np
 import warnings
+
+import numpy as np
 from sklearn.decomposition import FastICA
 
 from hyppo.core import HSI

@@ -124,7 +124,11 @@ class TestFeatureCollection:
         extractor = NDVIExtractor()
 
         collection = FeatureCollection.from_features(
-            {"mean_ext": Feature({"n_d_v_i": [1, 2, 3]}, extractor, ["input1"])}
+            {
+                "mean_ext": Feature(
+                    {"n_d_v_i": [1, 2, 3]}, extractor, ["input1"]
+                )
+            }
         )
 
         metadata = collection.get_metadata()

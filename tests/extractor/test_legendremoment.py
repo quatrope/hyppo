@@ -23,35 +23,89 @@ class TestLegendreMomentExtractor:
         """Regression test: LegendreMoment output must not change."""
         # Arrange
         extractor = LegendreMomentExtractor(
-            n_components=2, max_order=2, window_sizes=[3],
+            n_components=2,
+            max_order=2,
+            window_sizes=[3],
         )
 
         # Act
         result = extractor.extract(regression_hsi)
 
         # Assert
-        expected_row0 = np.array([
-            [ 9.97608833e-01,  0.00000000e+00, -3.95977124e-01,
-              0.00000000e+00,  0.00000000e+00,  1.31675774e+00,
-             -3.46753195e-01,  0.00000000e+00,  5.03492547e-01,
-              0.00000000e+00,  0.00000000e+00, -4.96567950e-01],
-            [ 4.29643739e-01,  0.00000000e+00, -8.56296285e-01,
-             -8.27742833e-01,  0.00000000e+00, -2.55346555e-01,
-             -3.18485800e-01,  0.00000000e+00, -6.69239948e-01,
-             -3.53822404e-02,  0.00000000e+00, -2.70030995e-01],
-            [ 2.74186172e-02,  0.00000000e+00, -1.66399822e+00,
-             -8.52675914e-01,  0.00000000e+00,  7.50263569e-01,
-             -7.99426313e-01,  0.00000000e+00, -5.51706389e-01,
-             -7.48670600e-01,  0.00000000e+00, -1.44025840e+00],
-            [ 5.84230237e-01,  0.00000000e+00, -2.26909347e-02,
-              1.94817042e+00,  0.00000000e+00,  1.74151917e+00,
-             -1.89082738e-01,  0.00000000e+00, -1.04052191e+00,
-              1.00818552e+00,  0.00000000e+00,  1.46911743e+00],
-            [ 6.59902662e-01,  0.00000000e+00,  4.38455338e-02,
-              0.00000000e+00,  0.00000000e+00, -1.60807490e+00,
-             -6.49595305e-01,  0.00000000e+00, -1.44904486e+00,
-              0.00000000e+00,  0.00000000e+00, -3.05756894e+00],
-        ])
+        expected_row0 = np.array(
+            [
+                [
+                    9.97608833e-01,
+                    0.00000000e00,
+                    -3.95977124e-01,
+                    0.00000000e00,
+                    0.00000000e00,
+                    1.31675774e00,
+                    -3.46753195e-01,
+                    0.00000000e00,
+                    5.03492547e-01,
+                    0.00000000e00,
+                    0.00000000e00,
+                    -4.96567950e-01,
+                ],
+                [
+                    4.29643739e-01,
+                    0.00000000e00,
+                    -8.56296285e-01,
+                    -8.27742833e-01,
+                    0.00000000e00,
+                    -2.55346555e-01,
+                    -3.18485800e-01,
+                    0.00000000e00,
+                    -6.69239948e-01,
+                    -3.53822404e-02,
+                    0.00000000e00,
+                    -2.70030995e-01,
+                ],
+                [
+                    2.74186172e-02,
+                    0.00000000e00,
+                    -1.66399822e00,
+                    -8.52675914e-01,
+                    0.00000000e00,
+                    7.50263569e-01,
+                    -7.99426313e-01,
+                    0.00000000e00,
+                    -5.51706389e-01,
+                    -7.48670600e-01,
+                    0.00000000e00,
+                    -1.44025840e00,
+                ],
+                [
+                    5.84230237e-01,
+                    0.00000000e00,
+                    -2.26909347e-02,
+                    1.94817042e00,
+                    0.00000000e00,
+                    1.74151917e00,
+                    -1.89082738e-01,
+                    0.00000000e00,
+                    -1.04052191e00,
+                    1.00818552e00,
+                    0.00000000e00,
+                    1.46911743e00,
+                ],
+                [
+                    6.59902662e-01,
+                    0.00000000e00,
+                    4.38455338e-02,
+                    0.00000000e00,
+                    0.00000000e00,
+                    -1.60807490e00,
+                    -6.49595305e-01,
+                    0.00000000e00,
+                    -1.44904486e00,
+                    0.00000000e00,
+                    0.00000000e00,
+                    -3.05756894e00,
+                ],
+            ]
+        )
         np.testing.assert_allclose(
             result["features"][0, :, :], expected_row0, atol=1e-5
         )
@@ -72,9 +126,9 @@ class TestLegendreMomentExtractor:
                 Pm = legendre(m)(x)
                 Pn = legendre(n)(x)
                 integral = np.sum(Pm * Pn) * dx
-                assert np.isclose(integral, 0.0, atol=1e-3), (
-                    f"P_{m} and P_{n} not orthogonal: integral={integral}"
-                )
+                assert np.isclose(
+                    integral, 0.0, atol=1e-3
+                ), f"P_{m} and P_{n} not orthogonal: integral={integral}"
 
     def test_m00_for_constant_patch(self):
         """Test L00 moment for a constant patch equals value * area * norm."""
@@ -98,7 +152,8 @@ class TestLegendreMomentExtractor:
         max_order = 3
         window_sizes = [3, 5]
         extractor = LegendreMomentExtractor(
-            n_components=n_components, max_order=max_order,
+            n_components=n_components,
+            max_order=max_order,
             window_sizes=window_sizes,
         )
 
@@ -107,9 +162,7 @@ class TestLegendreMomentExtractor:
 
         # Assert
         n_moments = sum(
-            1
-            for p in range(max_order + 1)
-            for q in range(max_order + 1 - p)
+            1 for p in range(max_order + 1) for q in range(max_order + 1 - p)
         )
         expected_features = n_components * len(window_sizes) * n_moments
         assert result["features"].shape[2] == expected_features
@@ -125,8 +178,12 @@ class TestLegendreMomentExtractor:
 
         # Assert
         expected_keys = [
-            "features", "explained_variance_ratio", "n_components",
-            "window_sizes", "max_order", "n_moments_per_scale",
+            "features",
+            "explained_variance_ratio",
+            "n_components",
+            "window_sizes",
+            "max_order",
+            "n_moments_per_scale",
         ]
         for key in expected_keys:
             assert key in result
@@ -143,7 +200,9 @@ class TestLegendreMomentExtractor:
         """Test extraction with custom parameters."""
         # Arrange
         extractor = LegendreMomentExtractor(
-            n_components=2, max_order=2, window_sizes=[3, 5],
+            n_components=2,
+            max_order=2,
+            window_sizes=[3, 5],
         )
 
         # Act

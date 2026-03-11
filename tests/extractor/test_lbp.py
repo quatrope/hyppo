@@ -310,13 +310,15 @@ class TestLBPExtractor:
         result = extractor.extract(hsi)
 
         # Assert
-        expected_row0 = np.array([
-            [2., 0., 0.],
-            [0., 7., 7.],
-            [7., 0., 1.],
-            [1., 8., 0.],
-            [0., 2., 3.],
-        ])
+        expected_row0 = np.array(
+            [
+                [2.0, 0.0, 0.0],
+                [0.0, 7.0, 7.0],
+                [7.0, 0.0, 1.0],
+                [1.0, 8.0, 0.0],
+                [0.0, 2.0, 3.0],
+            ]
+        )
         np.testing.assert_allclose(
             result["features"][0, :, :], expected_row0, rtol=1e-5
         )

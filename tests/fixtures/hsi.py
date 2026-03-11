@@ -31,7 +31,7 @@ def sample_hsi(sample_hsi_data):
 
 @pytest.fixture
 def large_spectral_hsi():
-    """Create an HSI with enough spectral bands for DWT extractors (levels=3)."""
+    """Create HSI with enough bands for DWT extractors."""
     spatial_size = (5, 5)
     spectral_bands = 100
     reflectance = np.random.rand(*spatial_size, spectral_bands) * 0.8

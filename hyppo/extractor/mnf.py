@@ -1,7 +1,8 @@
 """Minimum Noise Fraction (MNF) feature extractor for hyperspectral images."""
 
-import numpy as np
 import warnings
+
+import numpy as np
 
 from hyppo.core import HSI
 from .base import Extractor

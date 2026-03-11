@@ -22,25 +22,69 @@ class TestZernikeMomentExtractor:
         """Regression test: ZernikeMoment output must not change."""
         # Arrange
         extractor = ZernikeMomentExtractor(
-            n_components=2, max_order=2, window_sizes=[3],
+            n_components=2,
+            max_order=2,
+            window_sizes=[3],
         )
 
         # Act
         result = extractor.extract(regression_hsi)
 
         # Assert
-        expected_row0 = np.array([
-            [5.83703470e-01, 0.0, 1.22115461e+00, 9.75248418e-01,
-             4.43472353e-01, 0.0, 2.21736579e+00, 5.69444482e-01],
-            [3.70571385e-01, 7.37852909e-02, 1.18976310e-01, 3.42186807e-01,
-             1.03215616e-01, 2.17034350e-01, 1.48131480e+00, 2.27313583e-01],
-            [1.45270217e-01, 2.68388451e-01, 1.27210722e-01, 1.37470489e+00,
-             3.39800163e-01, 2.33354049e-01, 1.25524617e+00, 5.05950432e-01],
-            [9.87498268e-02, 1.56948669e-01, 1.29275631e-01, 1.00455894e+00,
-             1.63246309e-01, 2.34462147e-01, 1.81331206e-02, 1.42901382e+00],
-            [7.27131087e-01, 0.0, 1.40194733e+00, 9.40620071e-01,
-             1.47438067e-01, 0.0, 4.96917920e-01, 9.15909755e-01],
-        ])
+        expected_row0 = np.array(
+            [
+                [
+                    5.83703470e-01,
+                    0.0,
+                    1.22115461e00,
+                    9.75248418e-01,
+                    4.43472353e-01,
+                    0.0,
+                    2.21736579e00,
+                    5.69444482e-01,
+                ],
+                [
+                    3.70571385e-01,
+                    7.37852909e-02,
+                    1.18976310e-01,
+                    3.42186807e-01,
+                    1.03215616e-01,
+                    2.17034350e-01,
+                    1.48131480e00,
+                    2.27313583e-01,
+                ],
+                [
+                    1.45270217e-01,
+                    2.68388451e-01,
+                    1.27210722e-01,
+                    1.37470489e00,
+                    3.39800163e-01,
+                    2.33354049e-01,
+                    1.25524617e00,
+                    5.05950432e-01,
+                ],
+                [
+                    9.87498268e-02,
+                    1.56948669e-01,
+                    1.29275631e-01,
+                    1.00455894e00,
+                    1.63246309e-01,
+                    2.34462147e-01,
+                    1.81331206e-02,
+                    1.42901382e00,
+                ],
+                [
+                    7.27131087e-01,
+                    0.0,
+                    1.40194733e00,
+                    9.40620071e-01,
+                    1.47438067e-01,
+                    0.0,
+                    4.96917920e-01,
+                    9.15909755e-01,
+                ],
+            ]
+        )
         np.testing.assert_allclose(
             result["features"][0, :, :], expected_row0, atol=1e-5
         )
@@ -49,7 +93,9 @@ class TestZernikeMomentExtractor:
         """Test Zernike moment magnitudes are always non-negative."""
         # Arrange
         extractor = ZernikeMomentExtractor(
-            n_components=2, max_order=4, window_sizes=[3],
+            n_components=2,
+            max_order=4,
+            window_sizes=[3],
         )
 
         # Act
@@ -66,13 +112,15 @@ class TestZernikeMomentExtractor:
         """
         # Arrange: create a simple asymmetric patch and its 90-degree rotation
         extractor = ZernikeMomentExtractor(max_order=4)
-        patch = np.array([
-            [1.0, 2.0, 3.0, 4.0, 5.0],
-            [0.0, 1.0, 2.0, 3.0, 4.0],
-            [0.0, 0.0, 1.0, 2.0, 3.0],
-            [0.0, 0.0, 0.0, 1.0, 2.0],
-            [0.0, 0.0, 0.0, 0.0, 1.0],
-        ])
+        patch = np.array(
+            [
+                [1.0, 2.0, 3.0, 4.0, 5.0],
+                [0.0, 1.0, 2.0, 3.0, 4.0],
+                [0.0, 0.0, 1.0, 2.0, 3.0],
+                [0.0, 0.0, 0.0, 1.0, 2.0],
+                [0.0, 0.0, 0.0, 0.0, 1.0],
+            ]
+        )
         rotated = np.rot90(patch)
 
         patches = np.stack([patch, rotated])
@@ -127,7 +175,8 @@ class TestZernikeMomentExtractor:
         max_order = 4
         window_sizes = [3, 5]
         extractor = ZernikeMomentExtractor(
-            n_components=n_components, max_order=max_order,
+            n_components=n_components,
+            max_order=max_order,
             window_sizes=window_sizes,
         )
 
@@ -155,8 +204,12 @@ class TestZernikeMomentExtractor:
 
         # Assert
         expected_keys = [
-            "features", "explained_variance_ratio", "n_components",
-            "window_sizes", "max_order", "n_moments_per_scale",
+            "features",
+            "explained_variance_ratio",
+            "n_components",
+            "window_sizes",
+            "max_order",
+            "n_moments_per_scale",
         ]
         for key in expected_keys:
             assert key in result
@@ -173,7 +226,9 @@ class TestZernikeMomentExtractor:
         """Test extraction with custom parameters."""
         # Arrange
         extractor = ZernikeMomentExtractor(
-            n_components=2, max_order=4, window_sizes=[3, 5],
+            n_components=2,
+            max_order=4,
+            window_sizes=[3, 5],
         )
 
         # Act

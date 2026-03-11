@@ -7,8 +7,8 @@ from hyppo.runner import (
     DaskProcessesRunner,
     DaskThreadsRunner,
     LocalProcessRunner,
-    SequentialRunner,
     registry,
+    SequentialRunner,
 )
 
 
@@ -81,17 +81,13 @@ class TestCreateRunner:
     def test_create_dask_processes_with_threads_per_worker(self):
         """Should create DaskProcessesRunner with threads per worker."""
         runner = registry.get(
-            "dask-processes",
-            {"num_workers": 4, "threads_per_worker": 2}
+            "dask-processes", {"num_workers": 4, "threads_per_worker": 2}
         )
         assert isinstance(runner, DaskProcessesRunner)
 
     def test_create_dask_processes_with_memory_limit(self):
         """Should create DaskProcessesRunner with memory limit."""
-        runner = registry.get(
-            "dask-processes",
-            {"memory_limit": "8GB"}
-        )
+        runner = registry.get("dask-processes", {"memory_limit": "8GB"})
         assert isinstance(runner, DaskProcessesRunner)
 
     def test_create_runner_unknown_type(self):
@@ -128,6 +124,7 @@ class TestRunnerRegistryRegister:
 
     def test_register_non_baserunner_raises_error(self):
         """Test registering non-BaseRunner class raises TypeError."""
+
         class NotARunner:
             pass
 
@@ -135,7 +132,8 @@ class TestRunnerRegistryRegister:
             registry.register("not-runner", NotARunner)
 
     def test_register_same_name_different_class_raises_error(self):
-        """Test registering different class with same name raises ValueError."""
+        """Test registering different class with same name raises."""
+
         class AnotherSequential(BaseRunner):
             def resolve(self, data, feature_space):
                 pass
@@ -159,6 +157,7 @@ class TestRunnerRegistryGetName:
 
     def test_get_name_unregistered_class(self):
         """Test get_name returns None for unregistered class."""
+
         class UnregisteredRunner(BaseRunner):
             def resolve(self, data, feature_space):
                 pass

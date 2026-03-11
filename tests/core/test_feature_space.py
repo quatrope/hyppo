@@ -233,15 +233,18 @@ class TestFeature:
     def test_get_all_features_non_dict_data(self):
         """Test get_all_features with feature whose data is not a dict."""
         # Arrange: Create FeatureCollection with non-dict data feature
-        from hyppo.core import Feature, FeatureCollection
+        from hyppo.core import FeatureCollection
         from hyppo.utils.bunch import Bunch
 
-        feature = Bunch("Feature", {
-            "result": None,
-            "data": "raw_value",
-            "extractor": None,
-            "inputs_used": [],
-        })
+        feature = Bunch(
+            "Feature",
+            {
+                "result": None,
+                "data": "raw_value",
+                "extractor": None,
+                "inputs_used": [],
+            },
+        )
         collection = FeatureCollection({"test": feature})
 
         # Act: Get all features

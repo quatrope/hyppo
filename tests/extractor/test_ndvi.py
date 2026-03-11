@@ -259,7 +259,11 @@ class TestNDVIExtractor:
 
         # Assert: Verify successful extraction
         assert "features" in result
-        assert result["features"].shape == (small_hsi.height, small_hsi.width, 1)
+        assert result["features"].shape == (
+            small_hsi.height,
+            small_hsi.width,
+            1,
+        )
 
     def test_validate_empty_wavelengths(self):
         """Test validation fails with empty wavelengths."""

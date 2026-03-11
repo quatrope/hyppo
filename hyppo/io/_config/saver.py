@@ -10,14 +10,15 @@ from typing import TYPE_CHECKING
 import yaml
 
 from hyppo.runner import registry as runner_registry
-
 from .config import Config
 
 if TYPE_CHECKING:
     from hyppo.core import FeatureSpace
 
 
-def save_config_yaml(config: Config | "FeatureSpace", path: Path | str) -> None:
+def save_config_yaml(
+    config: Config | "FeatureSpace", path: Path | str
+) -> None:
     """
     Save Config or FeatureSpace to YAML file.
 
@@ -42,7 +43,9 @@ def save_config_yaml(config: Config | "FeatureSpace", path: Path | str) -> None:
         yaml.dump(config_dict, f, default_flow_style=False, sort_keys=False)
 
 
-def save_config_json(config: Config | "FeatureSpace", path: Path | str) -> None:
+def save_config_json(
+    config: Config | "FeatureSpace", path: Path | str
+) -> None:
     """
     Save Config or FeatureSpace to JSON file.
 

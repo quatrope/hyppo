@@ -22,7 +22,9 @@ class TestGaborExtractor:
         """Regression test: aggregated Gabor output must not change."""
         # Arrange
         extractor = GaborExtractor(
-            frequencies=[0.1], thetas=[0], sigma=2.0,
+            frequencies=[0.1],
+            thetas=[0],
+            sigma=2.0,
             aggregate_bands=True,
         )
 
@@ -30,13 +32,16 @@ class TestGaborExtractor:
         result = extractor.extract(regression_hsi)
 
         # Assert: magnitude channel
-        expected_mag = np.array([
-            [0.03452614, 0.01580214, 0.01378948, 0.03779187, 0.06052897],
-            [0.01190707, 0.01840728, 0.01215288, 0.03013321, 0.03749559],
-            [0.03887709, 0.03123867, 0.00349533, 0.01892294, 0.03669482],
-            [0.03999638, 0.02957242, 0.0183285,  0.03695732, 0.0643043],
-            [0.04014437, 0.03036051, 0.03252354, 0.03821342, 0.05668537],
-        ], dtype=np.float32)
+        expected_mag = np.array(
+            [
+                [0.03452614, 0.01580214, 0.01378948, 0.03779187, 0.06052897],
+                [0.01190707, 0.01840728, 0.01215288, 0.03013321, 0.03749559],
+                [0.03887709, 0.03123867, 0.00349533, 0.01892294, 0.03669482],
+                [0.03999638, 0.02957242, 0.0183285, 0.03695732, 0.0643043],
+                [0.04014437, 0.03036051, 0.03252354, 0.03821342, 0.05668537],
+            ],
+            dtype=np.float32,
+        )
         np.testing.assert_allclose(
             result["features"][:, :, 0], expected_mag, rtol=1e-5
         )
@@ -45,7 +50,9 @@ class TestGaborExtractor:
         """Regression test: non-aggregated output must not change."""
         # Arrange
         extractor = GaborExtractor(
-            frequencies=[0.1], thetas=[0], sigma=2.0,
+            frequencies=[0.1],
+            thetas=[0],
+            sigma=2.0,
             aggregate_bands=False,
         )
 
@@ -53,13 +60,16 @@ class TestGaborExtractor:
         result = extractor.extract(regression_hsi)
 
         # Assert: first band magnitude
-        expected_band0_mag = np.array([
-            [0.07486316, 0.03604601, 0.01936384, 0.03977295, 0.0602481],
-            [0.0063432,  0.01912639, 0.00610931, 0.02293983, 0.01873096],
-            [0.04274749, 0.0487608,  0.00548443, 0.01778967, 0.04337907],
-            [0.02857731, 0.03567681, 0.01647201, 0.02737262, 0.05940717],
-            [0.01565858, 0.02815348, 0.00658716, 0.0070907,  0.0340844],
-        ], dtype=np.float32)
+        expected_band0_mag = np.array(
+            [
+                [0.07486316, 0.03604601, 0.01936384, 0.03977295, 0.0602481],
+                [0.0063432, 0.01912639, 0.00610931, 0.02293983, 0.01873096],
+                [0.04274749, 0.0487608, 0.00548443, 0.01778967, 0.04337907],
+                [0.02857731, 0.03567681, 0.01647201, 0.02737262, 0.05940717],
+                [0.01565858, 0.02815348, 0.00658716, 0.0070907, 0.0340844],
+            ],
+            dtype=np.float32,
+        )
         np.testing.assert_allclose(
             result["features"][:, :, 0], expected_band0_mag, rtol=1e-5
         )
@@ -126,17 +136,21 @@ class TestGaborExtractor:
         # Assert: features[:,:,0]=magnitude, features[:,:,1]=magnitude^2
         mag = features[:, :, 0]
         energy = features[:, :, 1]
-        np.testing.assert_allclose(energy, mag ** 2)
+        np.testing.assert_allclose(energy, mag**2)
 
     def test_aggregate_bands_averages(self, regression_hsi):
         """Test that aggregate=True computes mean across bands."""
         # Arrange
         extractor = GaborExtractor(
-            frequencies=[0.1], thetas=[0], sigma=2.0,
+            frequencies=[0.1],
+            thetas=[0],
+            sigma=2.0,
             aggregate_bands=True,
         )
         ext_no_agg = GaborExtractor(
-            frequencies=[0.1], thetas=[0], sigma=2.0,
+            frequencies=[0.1],
+            thetas=[0],
+            sigma=2.0,
             aggregate_bands=False,
         )
 
@@ -149,7 +163,7 @@ class TestGaborExtractor:
         n_feat_per_band = 2  # 1 freq * 1 theta * 2
         manual_mean = np.mean(
             [
-                no_agg[:, :, i * n_feat_per_band:(i + 1) * n_feat_per_band]
+                no_agg[:, :, i * n_feat_per_band : (i + 1) * n_feat_per_band]
                 for i in range(n_bands)
             ],
             axis=0,
@@ -176,15 +190,15 @@ class TestGaborExtractor:
     def test_nan_in_masked_regions(self):
         """Test that masked pixels are NaN."""
         # Arrange
-        reflectance = np.random.RandomState(0).rand(
-            5, 5, 3
-        ).astype(np.float32)
+        reflectance = np.random.RandomState(0).rand(5, 5, 3).astype(np.float32)
         wavelengths = np.array([500.0, 600.0, 700.0])
         mask = np.ones((5, 5), dtype=bool)
         mask[0, 0] = False
         mask[2, 3] = False
         hsi = HSI(
-            reflectance=reflectance, wavelengths=wavelengths, mask=mask,
+            reflectance=reflectance,
+            wavelengths=wavelengths,
+            mask=mask,
         )
         extractor = GaborExtractor(frequencies=[0.1], thetas=[0])
 
@@ -203,7 +217,9 @@ class TestGaborExtractor:
         freqs = [0.05, 0.1]
         thetas = [0, np.pi / 2, np.pi / 4]
         extractor = GaborExtractor(
-            frequencies=freqs, thetas=thetas, aggregate_bands=True,
+            frequencies=freqs,
+            thetas=thetas,
+            aggregate_bands=True,
         )
 
         # Act
@@ -219,7 +235,9 @@ class TestGaborExtractor:
         thetas = [0]
         n_bands = regression_hsi.reflectance.shape[2]
         extractor = GaborExtractor(
-            frequencies=freqs, thetas=thetas, aggregate_bands=False,
+            frequencies=freqs,
+            thetas=thetas,
+            aggregate_bands=False,
         )
 
         # Act
@@ -247,7 +265,9 @@ class TestGaborExtractor:
         """Test extraction with custom frequencies and orientations."""
         # Arrange
         extractor = GaborExtractor(
-            frequencies=[0.1, 0.2], thetas=[0, np.pi / 2], sigma=2.0,
+            frequencies=[0.1, 0.2],
+            thetas=[0, np.pi / 2],
+            sigma=2.0,
         )
 
         # Act
@@ -255,7 +275,8 @@ class TestGaborExtractor:
 
         # Assert
         assert result["features"].shape[:2] == (
-            small_hsi.height, small_hsi.width
+            small_hsi.height,
+            small_hsi.width,
         )
 
     @pytest.mark.parametrize("sigma", [2.0, 3.0, 5.0])

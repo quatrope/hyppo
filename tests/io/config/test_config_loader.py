@@ -337,7 +337,9 @@ class TestConfigLoader:
         """Test extractor with empty params dict."""
         # Arrange: Config with empty params
         config_data = {
-            "pipeline": {"n_d_v_i": {"extractor": "NDVIExtractor", "params": {}}}
+            "pipeline": {
+                "n_d_v_i": {"extractor": "NDVIExtractor", "params": {}}
+            }
         }
         config_path = tmp_path / "config.yaml"
         with open(config_path, "w") as f:
@@ -457,9 +459,7 @@ class TestRunnerConfiguration:
     def test_load_config_without_runner_defaults_to_sequential(self, tmp_path):
         """Test that missing runner section defaults to SequentialRunner."""
         # Arrange: Config without runner section
-        config_data = {
-            "pipeline": {"n_d_v_i": {"extractor": "NDVIExtractor"}}
-        }
+        config_data = {"pipeline": {"n_d_v_i": {"extractor": "NDVIExtractor"}}}
         config_path = tmp_path / "config.yaml"
         with open(config_path, "w") as f:
             yaml.dump(config_data, f)
@@ -503,6 +503,7 @@ class TestRunnerConfiguration:
 
         # Assert: Local runner configured
         from hyppo.runner import LocalProcessRunner
+
         assert isinstance(config.runner, LocalProcessRunner)
 
     def test_load_config_with_dask_threads_runner(self, tmp_path):
@@ -521,6 +522,7 @@ class TestRunnerConfiguration:
 
         # Assert: Dask threads runner configured
         from hyppo.runner import DaskThreadsRunner
+
         assert isinstance(config.runner, DaskThreadsRunner)
 
     def test_load_config_with_dask_processes_runner(self, tmp_path):
@@ -542,6 +544,7 @@ class TestRunnerConfiguration:
 
         # Assert: Dask processes runner configured
         from hyppo.runner import DaskProcessesRunner
+
         assert isinstance(config.runner, DaskProcessesRunner)
 
     def test_runner_missing_type_raises_error(self, tmp_path):

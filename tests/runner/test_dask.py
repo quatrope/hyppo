@@ -357,4 +357,3 @@ class TestDaskRunner:
         # Cleanup
         runner._client.close()
         runner._cluster.close()
-

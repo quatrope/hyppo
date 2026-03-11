@@ -28,16 +28,51 @@ class TestDWT3DExtractor:
         result = extractor.extract(regression_hsi)
 
         # Assert
-        expected_pixel00 = np.array([
-            1.1580744, 1.3267143, 1.613299, 1.2463326, 1.2463326,
-            0.20491877, -0.37355867, 0.08697391, 0.2799924, -0.2799924,
-            0.31030437, 0.16835462, -0.20675135, -0.13114832, -0.13114832,
-            -0.2783272, 0.42027694, -0.04517099, -0.03043203, 0.03043203,
-            -0.06960191, 0.51669043, 0.36514568, 0.21303992, 0.21303992,
-            -0.543102, -0.04319032, 0.19473505, -0.04262929, 0.04262929,
-            0.47541592, 0.3679494, 0.11013319, -0.26094973, -0.26094973,
-            -0.19832292, 0.30578944, -0.0479732, 0.41905612, -0.41905612,
-        ], dtype=np.float32)
+        expected_pixel00 = np.array(
+            [
+                1.1580744,
+                1.3267143,
+                1.613299,
+                1.2463326,
+                1.2463326,
+                0.20491877,
+                -0.37355867,
+                0.08697391,
+                0.2799924,
+                -0.2799924,
+                0.31030437,
+                0.16835462,
+                -0.20675135,
+                -0.13114832,
+                -0.13114832,
+                -0.2783272,
+                0.42027694,
+                -0.04517099,
+                -0.03043203,
+                0.03043203,
+                -0.06960191,
+                0.51669043,
+                0.36514568,
+                0.21303992,
+                0.21303992,
+                -0.543102,
+                -0.04319032,
+                0.19473505,
+                -0.04262929,
+                0.04262929,
+                0.47541592,
+                0.3679494,
+                0.11013319,
+                -0.26094973,
+                -0.26094973,
+                -0.19832292,
+                0.30578944,
+                -0.0479732,
+                0.41905612,
+                -0.41905612,
+            ],
+            dtype=np.float32,
+        )
         np.testing.assert_allclose(
             result["features"][0, 0, :], expected_pixel00, rtol=1e-5
         )
@@ -56,10 +91,16 @@ class TestDWT3DExtractor:
 
         # Need padding for spectral dim: 5 bands → pad to 6
         pad_b = (2 - 5 % 2) % 2  # = 1
-        cube_padded = np.pad(cube, ((0, 0), (0, 0), (0, pad_b)), mode="reflect")
+        cube_padded = np.pad(
+            cube, ((0, 0), (0, 0), (0, pad_b)), mode="reflect"
+        )
 
         coeffs = pywt.swtn(
-            cube_padded, "haar", level=1, start_level=0, axes=(0, 1, 2),
+            cube_padded,
+            "haar",
+            level=1,
+            start_level=0,
+            axes=(0, 1, 2),
         )
         coeffs = list(reversed(coeffs))
         aaa = coeffs[0]["aaa"][:h, :w, :b]
@@ -92,7 +133,8 @@ class TestDWT3DExtractor:
 
         # Assert
         assert result["features"].shape[:2] == (
-            small_hsi.height, small_hsi.width,
+            small_hsi.height,
+            small_hsi.width,
         )
 
     def test_no_padding_branch(self):
@@ -120,7 +162,11 @@ class TestDWT3DExtractor:
 
         # Assert
         expected_keys = [
-            "features", "wavelet", "levels", "n_features", "original_shape",
+            "features",
+            "wavelet",
+            "levels",
+            "n_features",
+            "original_shape",
         ]
         for key in expected_keys:
             assert key in result

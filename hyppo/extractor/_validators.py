@@ -21,20 +21,13 @@ def validate_positive_number(value, name):
 
 def validate_non_empty_list(value, name):
     """Validate that value is a non-empty list or tuple."""
-    if (
-        not isinstance(value, (list, tuple))
-        or len(value) == 0
-    ):
-        raise ValueError(
-            f"{name} must be a non-empty list or tuple."
-        )
+    if not isinstance(value, (list, tuple)) or len(value) == 0:
+        raise ValueError(f"{name} must be a non-empty list or tuple.")
 
 
 def validate_optional_non_empty_list(value, name):
     """Validate that value is None or a non-empty list."""
-    if value is not None and (
-        not isinstance(value, list) or not value
-    ):
+    if value is not None and (not isinstance(value, list) or not value):
         raise ValueError(
             f"{name} must be None or a non-empty list of integers."
         )
@@ -65,8 +58,7 @@ def validate_membership(value, valid_set, name):
     """Validate that value is a member of valid_set."""
     if value not in valid_set:
         raise ValueError(
-            f"Invalid {name} '{value}'. "
-            f"Valid {name}s: {valid_set}"
+            f"Invalid {name} '{value}'. " f"Valid {name}s: {valid_set}"
         )
 
 
@@ -75,8 +67,7 @@ def validate_all_in_set(values, valid_set, name):
     for v in values:
         if v not in valid_set:
             raise ValueError(
-                f"Invalid {name} '{v}'. "
-                f"Valid {name}s: {valid_set}"
+                f"Invalid {name} '{v}'. " f"Valid {name}s: {valid_set}"
             )
 
 

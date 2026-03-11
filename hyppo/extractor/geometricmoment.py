@@ -5,13 +5,13 @@ from skimage.util.shape import view_as_windows
 from sklearn.decomposition import PCA
 
 from hyppo.core import HSI
-from .base import Extractor
 from ._validators import (
     validate_non_negative_int,
     validate_positive_int,
     validate_sufficient_bands,
     validate_window_sizes,
 )
+from .base import Extractor
 
 
 class GeometricMomentExtractor(Extractor):
@@ -168,7 +168,6 @@ class GeometricMomentExtractor(Extractor):
                 - "n_moments_per_scale": int
                     Number of moments computed per scale/component.
         """
-
         reflectance = data.reflectance
         height, width, bands = reflectance.shape
         reflectance_reshaped = reflectance.reshape(-1, bands)

@@ -6,13 +6,13 @@ from skimage.util.shape import view_as_windows
 from sklearn.decomposition import PCA
 
 from hyppo.core import HSI
-from .base import Extractor
 from ._validators import (
     validate_non_negative_int,
     validate_positive_int,
     validate_sufficient_bands,
     validate_window_sizes,
 )
+from .base import Extractor
 
 
 class LegendreMomentExtractor(Extractor):

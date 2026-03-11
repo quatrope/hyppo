@@ -66,7 +66,8 @@ class TestExtractorRegistryRegister:
         assert registry.get("DummyExtractor") is DummyExtractor
 
     def test_register_non_extractor_raises_error(self):
-        """Test registering non-Extractor class raises TypeError."""
+        """Test non-Extractor class raises TypeError."""  # noqa: D202
+
         # Arrange: Non-extractor class
         class NotAnExtractor:
             pass
@@ -88,8 +89,11 @@ class TestExtractorRegistryRegister:
         # Assert: Still registered
         assert "DummyExtractor" in registry
 
-    def test_register_different_class_same_name_raises_error(self):
-        """Test registering different class with same name raises ValueError."""
+    def test_register_different_class_same_name_raises_error(
+        self,
+    ):
+        """Test different class same name raises ValueError."""  # noqa: D202
+
         # Arrange: Create class with same name
         class DummyExtractor(Extractor):  # noqa: F811
             def _extract(self, data, **inputs):
@@ -100,6 +104,7 @@ class TestExtractorRegistryRegister:
             from tests.extractor.test_registry import (
                 DummyExtractor as OriginalDummy,
             )
+
             registry.register(OriginalDummy)
 
         # Act & Assert: ValueError

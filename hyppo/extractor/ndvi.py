@@ -8,8 +8,8 @@ import warnings
 import numpy as np
 
 from hyppo.core import HSI
-from .base import Extractor
 from ._spectral_utils import find_and_validate_bands
+from .base import Extractor
 
 
 class NDVIExtractor(Extractor):

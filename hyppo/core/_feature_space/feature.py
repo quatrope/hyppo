@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 
 from hyppo.utils.bunch import Bunch

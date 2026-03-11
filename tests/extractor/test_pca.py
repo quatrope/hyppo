@@ -2,7 +2,6 @@
 
 import numpy as np
 import pytest
-
 from sklearn.decomposition import PCA
 
 from hyppo.core import HSI
@@ -25,13 +24,16 @@ class TestPCAExtractor:
         result = extractor.extract(hsi)
 
         # Assert
-        expected_row0 = np.array([
-            [ 0.2774842,   0.46440527,  0.06909234],
-            [ 0.644388,   -0.6134839,  -0.01987338],
-            [ 0.16158254,  0.12348851, -0.1538901],
-            [ 0.22280443, -0.24693222, -0.18409398],
-            [ 0.40811694,  0.4917808,  -0.13342306],
-        ], dtype=np.float32)
+        expected_row0 = np.array(
+            [
+                [0.2774842, 0.46440527, 0.06909234],
+                [0.644388, -0.6134839, -0.01987338],
+                [0.16158254, 0.12348851, -0.1538901],
+                [0.22280443, -0.24693222, -0.18409398],
+                [0.40811694, 0.4917808, -0.13342306],
+            ],
+            dtype=np.float32,
+        )
         np.testing.assert_allclose(
             result["features"][0, :, :], expected_row0, rtol=1e-5
         )
@@ -39,8 +41,9 @@ class TestPCAExtractor:
     def test_pca_reference_sklearn(self):
         """Test PCA results match sklearn.decomposition.PCA directly.
 
-        Reference: Jolliffe, I.T., "Principal Component Analysis", Springer, 2002.
-        Implementation uses sklearn which follows the standard PCA algorithm.
+        Reference: Jolliffe, I.T., "Principal Component Analysis",
+        Springer, 2002. Implementation uses sklearn which follows
+        the standard PCA algorithm.
         """
         # Arrange: Create HSI with known data
         np.random.seed(42)

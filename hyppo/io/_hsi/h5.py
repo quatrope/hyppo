@@ -111,15 +111,11 @@ def _parse_h5_hsi(
 def _validate_provided_dataset(f, provided_path, ndim, label):
     """Validate a user-provided dataset path exists and has correct ndim."""
     if provided_path not in f:
-        raise ValueError(
-            f"Provided {label} path '{provided_path}' is invalid"
-        )
+        raise ValueError(f"Provided {label} path '{provided_path}' is invalid")
 
     node = f[provided_path]
     if not isinstance(node, h5py.Dataset) or node.ndim != ndim:
-        raise ValueError(
-            f"Provided {label} path '{provided_path}' is invalid"
-        )
+        raise ValueError(f"Provided {label} path '{provided_path}' is invalid")
 
     return node
 

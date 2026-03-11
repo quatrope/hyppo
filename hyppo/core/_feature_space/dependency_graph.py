@@ -59,7 +59,9 @@ class FeatureDependencyGraph:
         # Validate types and requirements
         self._validate_types_and_requirements()
 
-    def _check_required_input(self, node_name, input_name, dep_spec, input_mapping):
+    def _check_required_input(
+        self, node_name, input_name, dep_spec, input_mapping
+    ):
         """Check that a required input is present in the mapping."""
         is_required = dep_spec.get("required", True)
         if is_required and input_name not in input_mapping:
@@ -73,7 +75,9 @@ class FeatureDependencyGraph:
         self, node_name, input_name, dep_spec, input_mapping
     ) -> None:
         """Validate a single input dependency for an extractor."""
-        self._check_required_input(node_name, input_name, dep_spec, input_mapping)
+        self._check_required_input(
+            node_name, input_name, dep_spec, input_mapping
+        )
 
         if input_name not in input_mapping:
             return

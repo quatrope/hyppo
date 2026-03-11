@@ -40,14 +40,10 @@ def _save_feature_metadata(feature, metadata_subgroup):
         ).__name__
 
     if hasattr(feature, "inputs_used"):
-        metadata_subgroup.attrs["inputs_used"] = str(
-            feature.inputs_used
-        )
+        metadata_subgroup.attrs["inputs_used"] = str(feature.inputs_used)
 
     if _has_dict_data(feature):
-        metadata_subgroup.attrs["feature_keys"] = list(
-            feature.data.keys()
-        )
+        metadata_subgroup.attrs["feature_keys"] = list(feature.data.keys())
 
 
 def save_feature_collection(

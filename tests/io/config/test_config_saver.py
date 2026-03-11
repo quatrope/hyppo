@@ -9,7 +9,6 @@ import yaml
 from hyppo import io
 from hyppo.core import FeatureSpace, HSI
 from hyppo.extractor import (
-    PCAExtractor,
     NDVIExtractor,
     PCAExtractor,
     SAVIExtractor,
@@ -156,7 +155,9 @@ class TestSaveConfigYAML:
         assert set(loaded_config.feature_space.extractors.keys()) == set(
             original_fs.extractors.keys()
         )
-        assert len(loaded_config.feature_space.extractors) == len(original_fs.extractors)
+        assert len(loaded_config.feature_space.extractors) == len(
+            original_fs.extractors
+        )
 
     def test_save_config_yaml_skip_underscore_params(self, tmp_path):
         """Test that parameters starting with underscore are skipped."""
@@ -304,7 +305,9 @@ class TestSaveConfigJSON:
         assert set(loaded_config.feature_space.extractors.keys()) == set(
             original_fs.extractors.keys()
         )
-        assert len(loaded_config.feature_space.extractors) == len(original_fs.extractors)
+        assert len(loaded_config.feature_space.extractors) == len(
+            original_fs.extractors
+        )
 
 
 class TestConfigSaveMethod:
@@ -394,7 +397,9 @@ class TestConfigSaveMethod:
         # Arrange: Create Config
         from hyppo.io import Config
 
-        original_fs = FeatureSpace.from_list([NDVIExtractor(), SAVIExtractor()])
+        original_fs = FeatureSpace.from_list(
+            [NDVIExtractor(), SAVIExtractor()]
+        )
         original_config = Config(feature_space=original_fs)
         yaml_path = tmp_path / "config.yaml"
 
@@ -486,7 +491,9 @@ class TestFeatureSpaceSaveConfigMethod:
     def test_save_config_roundtrip_yaml(self, tmp_path):
         """Test save_config and load_config_yaml roundtrip."""
         # Arrange: Create FeatureSpace
-        original_fs = FeatureSpace.from_list([NDVIExtractor(), SAVIExtractor()])
+        original_fs = FeatureSpace.from_list(
+            [NDVIExtractor(), SAVIExtractor()]
+        )
         yaml_path = tmp_path / "config.yaml"
 
         # Act: Save and reload

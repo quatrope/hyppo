@@ -143,7 +143,9 @@ def _execute_extractor_task(extractor, hsi_data, *args):
     input_names = args[-2]
     defaults = args[-1]
 
-    input_kwargs = _build_kwargs_from_dependencies(input_names, dependency_results)
+    input_kwargs = _build_kwargs_from_dependencies(
+        input_names, dependency_results
+    )
     _apply_default_extractors(input_kwargs, defaults, hsi_data)
 
     return extractor.extract(hsi_data, **input_kwargs)

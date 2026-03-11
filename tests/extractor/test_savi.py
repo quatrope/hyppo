@@ -37,7 +37,9 @@ class TestSAVIExtractor:
         reflectance[:, :, 1] = nir_val
         hsi = HSI(reflectance=reflectance, wavelengths=wavelengths)
 
-        expected_savi = ((nir_val - red_val) * (1 + L)) / (nir_val + red_val + L)
+        expected_savi = ((nir_val - red_val) * (1 + L)) / (
+            nir_val + red_val + L
+        )
         extractor = SAVIExtractor(red_wavelength=660, nir_wavelength=850, L=L)
 
         # Act
@@ -330,7 +332,11 @@ class TestSAVIExtractor:
 
         # Assert: Verify successful extraction
         assert "features" in result
-        assert result["features"].shape == (small_hsi.height, small_hsi.width, 1)
+        assert result["features"].shape == (
+            small_hsi.height,
+            small_hsi.width,
+            1,
+        )
 
     def test_validate_empty_wavelengths(self):
         """Test validation fails with empty wavelengths."""

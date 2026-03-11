@@ -4,13 +4,13 @@ import numpy as np
 from skimage.feature import local_binary_pattern
 
 from hyppo.core import HSI
-from .base import Extractor
 from ._validators import (
     validate_band_indices,
     validate_optional_non_empty_list,
     validate_positive_int,
     validate_positive_number,
 )
+from .base import Extractor
 
 
 class LBPExtractor(Extractor):

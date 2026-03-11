@@ -12,13 +12,10 @@ def find_band_index(wavelengths, target):
 
 def warn_wavelength_tolerance(diffs_and_names, tolerance=50):
     """Emit a warning if any wavelength diff exceeds tolerance."""
-    far_bands = [
-        name for diff, name in diffs_and_names if diff > tolerance
-    ]
+    far_bands = [name for diff, name in diffs_and_names if diff > tolerance]
     if far_bands:
         warnings.warn(
-            "Bands far from target wavelengths: "
-            + " ".join(far_bands)
+            "Bands far from target wavelengths: " + " ".join(far_bands)
         )
 
 

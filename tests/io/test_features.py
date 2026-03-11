@@ -29,7 +29,9 @@ class TestSaveFeatureCollection:
         mean_feature = Feature(mean_result, mean_ext, {})
         std_feature = Feature(std_result, std_ext, {})
 
-        return FeatureCollection({"n_d_v_i": mean_feature, "s_a_v_i": std_feature})
+        return FeatureCollection(
+            {"n_d_v_i": mean_feature, "s_a_v_i": std_feature}
+        )
 
     def test_save_feature_collection_creates_file(
         self, sample_feature_collection
@@ -277,12 +279,15 @@ class TestFeatureCollectionSaveMethod:
         # Arrange: Create Feature with non-dict data
         from hyppo.utils.bunch import Bunch
 
-        feature = Bunch("Feature", {
-            "result": None,
-            "data": "not_a_dict",
-            "extractor": None,
-            "inputs_used": [],
-        })
+        feature = Bunch(
+            "Feature",
+            {
+                "result": None,
+                "data": "not_a_dict",
+                "extractor": None,
+                "inputs_used": [],
+            },
+        )
         collection = FeatureCollection({"test": feature})
 
         with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp:

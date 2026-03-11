@@ -25,8 +25,12 @@ class TestGLCMExtractor:
         """Regression test: separate mode output must not change."""
         # Arrange
         extractor = GLCMExtractor(
-            bands=[0], properties=["contrast"], angles=[0],
-            distances=[1], window_sizes=[3], levels=16,
+            bands=[0],
+            properties=["contrast"],
+            angles=[0],
+            distances=[1],
+            window_sizes=[3],
+            levels=16,
             orientation_mode="separate",
         )
 
@@ -34,13 +38,16 @@ class TestGLCMExtractor:
         result = extractor.extract(regression_hsi)
 
         # Assert
-        expected = np.array([
-            [ 16.       ,  26.833334 ,  40.833332 ,  23.       ,   2.       ],
-            [ 19.       ,  42.333332 ,  52.833332 ,  26.833334 ,  13.666667 ],
-            [ 15.       ,  28.333334 ,  24.833334 ,  18.333334 ,  28.666666 ],
-            [  9.666667 ,  24.5      ,  49.166668 ,  81.166664 , 103.333336 ],
-            [  2.6666667,   5.8333335,  34.       ,  83.333336 , 107.666664 ],
-        ], dtype=np.float32)
+        expected = np.array(
+            [
+                [16.0, 26.833334, 40.833332, 23.0, 2.0],
+                [19.0, 42.333332, 52.833332, 26.833334, 13.666667],
+                [15.0, 28.333334, 24.833334, 18.333334, 28.666666],
+                [9.666667, 24.5, 49.166668, 81.166664, 103.333336],
+                [2.6666667, 5.8333335, 34.0, 83.333336, 107.666664],
+            ],
+            dtype=np.float32,
+        )
         np.testing.assert_allclose(
             result["features"][:, :, 0], expected, rtol=1e-5
         )
@@ -49,8 +56,11 @@ class TestGLCMExtractor:
         """Regression test: look_direction mode output must not change."""
         # Arrange
         extractor = GLCMExtractor(
-            bands=[0], properties=["contrast"],
-            distances=[1], window_sizes=[3], levels=16,
+            bands=[0],
+            properties=["contrast"],
+            distances=[1],
+            window_sizes=[3],
+            levels=16,
             orientation_mode="look_direction",
         )
 
@@ -58,13 +68,16 @@ class TestGLCMExtractor:
         result = extractor.extract(regression_hsi)
 
         # Assert: first row, 3 direction features
-        expected_row0 = np.array([
-            [16.       ,  9.       , 25.       ],
-            [26.833334 ,  7.3333335, 33.75     ],
-            [40.833332 ,  9.666667 , 46.25     ],
-            [23.       , 15.       , 36.25     ],
-            [ 2.       , 19.       , 22.5      ],
-        ], dtype=np.float32)
+        expected_row0 = np.array(
+            [
+                [16.0, 9.0, 25.0],
+                [26.833334, 7.3333335, 33.75],
+                [40.833332, 9.666667, 46.25],
+                [23.0, 15.0, 36.25],
+                [2.0, 19.0, 22.5],
+            ],
+            dtype=np.float32,
+        )
         np.testing.assert_allclose(
             result["features"][0, :, :], expected_row0, rtol=1e-5
         )
@@ -73,8 +86,11 @@ class TestGLCMExtractor:
         """Regression test: average mode output must not change."""
         # Arrange
         extractor = GLCMExtractor(
-            bands=[0], properties=["contrast"],
-            distances=[1], window_sizes=[3], levels=16,
+            bands=[0],
+            properties=["contrast"],
+            distances=[1],
+            window_sizes=[3],
+            levels=16,
             orientation_mode="average",
         )
 
@@ -82,13 +98,16 @@ class TestGLCMExtractor:
         result = extractor.extract(regression_hsi)
 
         # Assert
-        expected = np.array([
-            [18.75    , 25.416666, 35.75    , 27.625   , 16.5     ],
-            [38.625   , 43.625   , 39.3125  , 23.416666, 18.083334],
-            [35.416668, 36.979168, 28.145834, 22.125   , 26.875   ],
-            [13.625   , 23.75    , 34.708332, 56.791668, 73.291664],
-            [12.75    , 24.291666, 36.125   , 70.291664, 95.75    ],
-        ], dtype=np.float32)
+        expected = np.array(
+            [
+                [18.75, 25.416666, 35.75, 27.625, 16.5],
+                [38.625, 43.625, 39.3125, 23.416666, 18.083334],
+                [35.416668, 36.979168, 28.145834, 22.125, 26.875],
+                [13.625, 23.75, 34.708332, 56.791668, 73.291664],
+                [12.75, 24.291666, 36.125, 70.291664, 95.75],
+            ],
+            dtype=np.float32,
+        )
         np.testing.assert_allclose(
             result["features"][:, :, 0], expected, rtol=1e-5
         )
@@ -116,9 +135,7 @@ class TestGLCMExtractor:
             window_sizes=[7],
         )
         patches = patch.reshape(1, 7, 7)
-        features = extractor._compute_glcm_features_optimized(
-            patches, levels
-        )
+        features = extractor._compute_glcm_features_optimized(patches, levels)
 
         # Assert: Uniform image → contrast=0, dissimilarity=0
         assert ref_contrast == 0.0
@@ -155,9 +172,7 @@ class TestGLCMExtractor:
             window_sizes=[7],
         )
         patches = patch.reshape(1, 7, 7)
-        features = extractor._compute_glcm_features_optimized(
-            patches, levels
-        )
+        features = extractor._compute_glcm_features_optimized(patches, levels)
 
         # Assert: Match skimage reference
         np.testing.assert_allclose(features[0], expected, rtol=1e-5)
@@ -210,9 +225,7 @@ class TestGLCMExtractor:
         )
 
         # Assert: 3 features: 0°, 90°, avg(45°,135°)
-        np.testing.assert_allclose(
-            features[0], expected, rtol=1e-5
-        )
+        np.testing.assert_allclose(features[0], expected, rtol=1e-5)
 
     def test_average_mode_averages_all_angles(self):
         """Test average mode returns mean across all orientations."""
@@ -364,9 +377,9 @@ class TestGLCMExtractor:
         n_dists = len(distances)
 
         wavelengths = np.linspace(400, 900, 5)
-        reflectance = np.random.RandomState(0).rand(
-            10, 10, 5
-        ).astype(np.float32)
+        reflectance = (
+            np.random.RandomState(0).rand(10, 10, 5).astype(np.float32)
+        )
         hsi = HSI(reflectance=reflectance, wavelengths=wavelengths)
 
         extractor = GLCMExtractor(
@@ -397,10 +410,18 @@ class TestGLCMExtractor:
 
         # Assert: Verify output structure
         expected_keys = [
-            "features", "bands_used", "distances", "angles",
-            "properties", "levels_used", "window_sizes",
-            "orientation_mode", "n_features_per_scale",
-            "n_features_per_band", "total_features", "original_shape",
+            "features",
+            "bands_used",
+            "distances",
+            "angles",
+            "properties",
+            "levels_used",
+            "window_sizes",
+            "orientation_mode",
+            "n_features_per_scale",
+            "n_features_per_band",
+            "total_features",
+            "original_shape",
         ]
         for key in expected_keys:
             assert key in result
@@ -408,7 +429,10 @@ class TestGLCMExtractor:
         # Assert: Verify defaults
         assert result["distances"] == [1]
         assert result["properties"] == [
-            "contrast", "entropy", "correlation", "dissimilarity",
+            "contrast",
+            "entropy",
+            "correlation",
+            "dissimilarity",
         ]
         assert result["window_sizes"] == [7]
         assert result["orientation_mode"] == "separate"
@@ -510,9 +534,11 @@ class TestGLCMExtractor:
             properties=["contrast"],
             angles=[0],
         )
-        image = np.random.RandomState(0).randint(
-            0, 100, size=(10, 10)
-        ).astype(np.float32)
+        image = (
+            np.random.RandomState(0)
+            .randint(0, 100, size=(10, 10))
+            .astype(np.float32)
+        )
 
         # Act
         features, levels = extractor._extract_glcm_multiscale(image)

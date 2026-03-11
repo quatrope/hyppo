@@ -261,7 +261,11 @@ class TestNDWIExtractor:
 
         # Assert: Verify successful extraction
         assert "features" in result
-        assert result["features"].shape == (small_hsi.height, small_hsi.width, 1)
+        assert result["features"].shape == (
+            small_hsi.height,
+            small_hsi.width,
+            1,
+        )
 
     def test_mcfeeters_variant(self, small_hsi):
         """Test McFeeters NDWI variant (green-NIR)."""

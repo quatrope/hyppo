@@ -5,12 +5,12 @@ from skimage.feature import graycomatrix, graycoprops
 from skimage.util.shape import view_as_windows
 
 from hyppo.core import HSI
-from .base import Extractor
 from ._validators import (
     validate_non_empty_list,
     validate_optional_non_empty_list,
     validate_window_sizes,
 )
+from .base import Extractor
 
 
 class GLCMExtractor(Extractor):
@@ -210,15 +210,15 @@ class GLCMExtractor(Extractor):
         values = []
         for prop in self.properties:
             try:
-                vals = graycoprops(glcm, prop)[
-                    0, :
-                ]  # [0°, 90°, 45°, 135°]
+                vals = graycoprops(glcm, prop)[0, :]  # [0°, 90°, 45°, 135°]
                 # Use 0°, 90°, and average of 45°/135°
-                values.extend([
-                    vals[0],
-                    vals[1],
-                    (vals[2] + vals[3]) / 2,
-                ])
+                values.extend(
+                    [
+                        vals[0],
+                        vals[1],
+                        (vals[2] + vals[3]) / 2,
+                    ]
+                )
             except ValueError:
                 values.extend([0.0] * 3)
         return values

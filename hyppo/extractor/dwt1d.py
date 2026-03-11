@@ -4,8 +4,8 @@ import numpy as np
 import pywt
 
 from hyppo.core import HSI
-from .base import Extractor
 from ._validators import validate_positive_int
+from .base import Extractor
 
 
 class DWT1DExtractor(Extractor):
@@ -76,7 +76,6 @@ class DWT1DExtractor(Extractor):
             - "n_features": Total number of features per pixel
             - "original_shape": Original HSI shape (H, W, bands)
         """
-
         reflectance = data.reflectance
         h, w, bands = reflectance.shape
 

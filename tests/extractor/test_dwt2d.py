@@ -28,12 +28,31 @@ class TestDWT2DExtractor:
         result = extractor.extract(regression_hsi)
 
         # Assert
-        expected_pixel00 = np.array([
-            0.9637817, -0.4332471, 0.02261129, 0.19593434, 0.6739828,
-            0.33481514, 0.41622537, 0.47640532, 1.2022746, 0.39589548,
-            -0.17813599, 0.04395375, 1.0792749, 0.12049852, -0.11425456,
-            0.1117981, 0.6833058, 0.18078543, -0.07121718, -0.48083675,
-        ], dtype=np.float32)
+        expected_pixel00 = np.array(
+            [
+                0.9637817,
+                -0.4332471,
+                0.02261129,
+                0.19593434,
+                0.6739828,
+                0.33481514,
+                0.41622537,
+                0.47640532,
+                1.2022746,
+                0.39589548,
+                -0.17813599,
+                0.04395375,
+                1.0792749,
+                0.12049852,
+                -0.11425456,
+                0.1117981,
+                0.6833058,
+                0.18078543,
+                -0.07121718,
+                -0.48083675,
+            ],
+            dtype=np.float32,
+        )
         np.testing.assert_allclose(
             result["features"][0, 0, :], expected_pixel00, rtol=1e-5
         )
@@ -84,7 +103,8 @@ class TestDWT2DExtractor:
 
         # Assert: output preserves original spatial size
         assert result["features"].shape[:2] == (
-            small_hsi.height, small_hsi.width,
+            small_hsi.height,
+            small_hsi.width,
         )
 
     def test_no_padding_branch(self, regression_hsi):
@@ -108,7 +128,11 @@ class TestDWT2DExtractor:
 
         # Assert
         expected_keys = [
-            "features", "wavelet", "levels", "n_features", "original_shape",
+            "features",
+            "wavelet",
+            "levels",
+            "n_features",
+            "original_shape",
         ]
         for key in expected_keys:
             assert key in result

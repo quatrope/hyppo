@@ -3,13 +3,11 @@
 import numpy as np
 import pytest
 from skimage.morphology import (
-    closing,
-    disk,
     dilation,
+    disk,
     erosion,
-    opening,
-    reconstruction as morph_reconstruction,
 )
+from skimage.morphology import reconstruction as morph_reconstruction
 
 from hyppo.core import HSI
 from hyppo.extractor.mp import MPExtractor
@@ -30,7 +28,9 @@ class TestMPExtractor:
         """Regression test: standard morphology output must not change."""
         # Arrange
         extractor = MPExtractor(
-            n_components=2, radii=[2], shapes=["disk"],
+            n_components=2,
+            radii=[2],
+            shapes=["disk"],
             use_reconstruction=False,
         )
 
@@ -38,33 +38,86 @@ class TestMPExtractor:
         result = extractor.extract(regression_hsi)
 
         # Assert: first row of features
-        expected_row0 = np.array([
-            [-0.11318319,  0.46192884,  0.46192884,
-             -0.18764016, -0.11295304, 0.4068605],
-            [-0.11318319,  0.1809916,   0.45977724,
-             -0.18764016,  0.471562,    0.471562],
-            [-0.11318319,  0.7830266,   0.7830266,
-             -0.18764016, -0.18764016,  0.43718913],
-            [-0.11318319,  0.16598114,  0.4098053,
-             -0.18764016, -0.00796717,  0.43718913],
-            [-0.50394624, -0.32658696,  0.1787864,
-             -0.28407675, -0.10926706,  0.43718913],
-            [-0.50394624, -0.1775336,  -0.1775336,
-             -0.28407675, -0.28407675,  0.43718913],
-            [-0.6796765,  -0.6796765,  -0.1775336,
-             -0.28407675,  0.550995,    0.550995],
-            [-0.7141775,  -0.54331136, -0.1775336,
-             -0.28407675, -0.04963359,  0.54758525],
-        ], dtype=np.float32)
+        expected_row0 = np.array(
+            [
+                [
+                    -0.11318319,
+                    0.46192884,
+                    0.46192884,
+                    -0.18764016,
+                    -0.11295304,
+                    0.4068605,
+                ],
+                [
+                    -0.11318319,
+                    0.1809916,
+                    0.45977724,
+                    -0.18764016,
+                    0.471562,
+                    0.471562,
+                ],
+                [
+                    -0.11318319,
+                    0.7830266,
+                    0.7830266,
+                    -0.18764016,
+                    -0.18764016,
+                    0.43718913,
+                ],
+                [
+                    -0.11318319,
+                    0.16598114,
+                    0.4098053,
+                    -0.18764016,
+                    -0.00796717,
+                    0.43718913,
+                ],
+                [
+                    -0.50394624,
+                    -0.32658696,
+                    0.1787864,
+                    -0.28407675,
+                    -0.10926706,
+                    0.43718913,
+                ],
+                [
+                    -0.50394624,
+                    -0.1775336,
+                    -0.1775336,
+                    -0.28407675,
+                    -0.28407675,
+                    0.43718913,
+                ],
+                [
+                    -0.6796765,
+                    -0.6796765,
+                    -0.1775336,
+                    -0.28407675,
+                    0.550995,
+                    0.550995,
+                ],
+                [
+                    -0.7141775,
+                    -0.54331136,
+                    -0.1775336,
+                    -0.28407675,
+                    -0.04963359,
+                    0.54758525,
+                ],
+            ],
+            dtype=np.float32,
+        )
         np.testing.assert_allclose(
             result["features"][0, :, :], expected_row0, rtol=1e-5
         )
 
     def test_regression_reconstruction(self, regression_hsi):
-        """Regression test: reconstruction morphology output must not change."""
+        """Regression: reconstruction morphology must not change."""
         # Arrange
         extractor = MPExtractor(
-            n_components=2, radii=[2], shapes=["disk"],
+            n_components=2,
+            radii=[2],
+            shapes=["disk"],
             use_reconstruction=True,
         )
 
@@ -72,24 +125,75 @@ class TestMPExtractor:
         result = extractor.extract(regression_hsi)
 
         # Assert: first row of features
-        expected_row0 = np.array([
-            [-0.11318319,  0.46192884,  0.46192884,
-             -0.18764016, -0.11295304, 0.29060462],
-            [-0.11318319,  0.1809916,   0.1809916,
-             -0.18764016,  0.471562,    0.471562],
-            [-0.11318319,  0.7830266,   0.7830266,
-             -0.18764016, -0.18764016,  0.29060462],
-            [-0.11318319,  0.16598114,  0.16598114,
-             -0.18764016, -0.00796717,  0.29060462],
-            [-0.32658696, -0.32658696, -0.1775336,
-             -0.18764016, -0.10926706,  0.29060462],
-            [-0.1775336,  -0.1775336,  -0.1775336,
-             -0.28407675, -0.28407675,  0.29060462],
-            [-0.6796765,  -0.6796765,  -0.1775336,
-             -0.18764016,  0.550995,    0.550995],
-            [-0.54331136, -0.54331136, -0.1775336,
-             -0.18764016, -0.04963359,  0.29060462],
-        ], dtype=np.float32)
+        expected_row0 = np.array(
+            [
+                [
+                    -0.11318319,
+                    0.46192884,
+                    0.46192884,
+                    -0.18764016,
+                    -0.11295304,
+                    0.29060462,
+                ],
+                [
+                    -0.11318319,
+                    0.1809916,
+                    0.1809916,
+                    -0.18764016,
+                    0.471562,
+                    0.471562,
+                ],
+                [
+                    -0.11318319,
+                    0.7830266,
+                    0.7830266,
+                    -0.18764016,
+                    -0.18764016,
+                    0.29060462,
+                ],
+                [
+                    -0.11318319,
+                    0.16598114,
+                    0.16598114,
+                    -0.18764016,
+                    -0.00796717,
+                    0.29060462,
+                ],
+                [
+                    -0.32658696,
+                    -0.32658696,
+                    -0.1775336,
+                    -0.18764016,
+                    -0.10926706,
+                    0.29060462,
+                ],
+                [
+                    -0.1775336,
+                    -0.1775336,
+                    -0.1775336,
+                    -0.28407675,
+                    -0.28407675,
+                    0.29060462,
+                ],
+                [
+                    -0.6796765,
+                    -0.6796765,
+                    -0.1775336,
+                    -0.18764016,
+                    0.550995,
+                    0.550995,
+                ],
+                [
+                    -0.54331136,
+                    -0.54331136,
+                    -0.1775336,
+                    -0.18764016,
+                    -0.04963359,
+                    0.29060462,
+                ],
+            ],
+            dtype=np.float32,
+        )
         np.testing.assert_allclose(
             result["features"][0, :, :], expected_row0, rtol=1e-5
         )
@@ -149,7 +253,9 @@ class TestMPExtractor:
         rng = np.random.RandomState(7)
         img = rng.rand(12, 12).astype(np.float64)
         extractor = MPExtractor(
-            radii=[2], shapes=["disk"], use_reconstruction=True,
+            radii=[2],
+            shapes=["disk"],
+            use_reconstruction=True,
         )
 
         # Act
@@ -163,7 +269,7 @@ class TestMPExtractor:
         assert np.all(original_vals <= closing_vals + 1e-10)
 
     def test_profile_ordering(self):
-        """Test profile structure: [Open_n,...,Open_1, Original, Close_1,...,Close_n]."""
+        """Test profile: [Open_n,..,Open_1, Orig, Close_1,..,Close_n]."""
         # Arrange
         rng = np.random.RandomState(0)
         img = rng.rand(10, 10).astype(np.float64)
@@ -222,8 +328,13 @@ class TestMPExtractor:
 
         # Assert: Verify output structure and defaults
         expected_keys = [
-            "features", "explained_variance_ratio", "n_components",
-            "shapes", "radii", "n_features", "use_reconstruction",
+            "features",
+            "explained_variance_ratio",
+            "n_components",
+            "shapes",
+            "radii",
+            "n_features",
+            "use_reconstruction",
         ]
         for key in expected_keys:
             assert key in result
@@ -241,7 +352,9 @@ class TestMPExtractor:
         """Test extraction with custom parameters."""
         # Arrange
         extractor = MPExtractor(
-            n_components=2, radii=[1, 3], shapes=["disk"],
+            n_components=2,
+            radii=[1, 3],
+            shapes=["disk"],
             use_reconstruction=True,
         )
 
@@ -327,7 +440,9 @@ class TestMPExtractor:
         radii = [1, 2]
         shapes = ["disk"]
         extractor = MPExtractor(
-            n_components=n_components, radii=radii, shapes=shapes,
+            n_components=n_components,
+            radii=radii,
+            shapes=shapes,
         )
 
         # Act
@@ -342,10 +457,14 @@ class TestMPExtractor:
         """Test that reconstruction mode differs from standard morphology."""
         # Arrange
         extractor_std = MPExtractor(
-            shapes=["disk"], radii=[2], use_reconstruction=False,
+            shapes=["disk"],
+            radii=[2],
+            use_reconstruction=False,
         )
         extractor_rec = MPExtractor(
-            shapes=["disk"], radii=[2], use_reconstruction=True,
+            shapes=["disk"],
+            radii=[2],
+            use_reconstruction=True,
         )
 
         # Act
@@ -354,9 +473,7 @@ class TestMPExtractor:
 
         # Assert: same shape but different values
         assert result_std["features"].shape == result_rec["features"].shape
-        assert not np.allclose(
-            result_std["features"], result_rec["features"]
-        )
+        assert not np.allclose(result_std["features"], result_rec["features"])
 
     def test_pca_variance_explained(self, small_hsi):
         """Test that PCA variance ratios are valid."""

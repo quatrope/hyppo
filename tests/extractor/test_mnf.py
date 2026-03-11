@@ -29,13 +29,15 @@ class TestMNFExtractor:
         result = extractor.extract(regression_hsi)
 
         # Assert
-        expected_row0 = np.array([
-            [ 0.16387971, -3.07541917, -1.66650856],
-            [-0.81401273, -0.81344,     0.33103433],
-            [-0.40692347,  0.41655914,  0.29755285],
-            [ 1.17871348,  0.1943873,  -0.26803931],
-            [ 3.42934909, -1.99904697,  0.10944771],
-        ])
+        expected_row0 = np.array(
+            [
+                [0.16387971, -3.07541917, -1.66650856],
+                [-0.81401273, -0.81344, 0.33103433],
+                [-0.40692347, 0.41655914, 0.29755285],
+                [1.17871348, 0.1943873, -0.26803931],
+                [3.42934909, -1.99904697, 0.10944771],
+            ]
+        )
         np.testing.assert_allclose(
             result["features"][0, :, :], expected_row0, rtol=1e-5
         )
@@ -132,9 +134,16 @@ class TestMNFExtractor:
 
         # Assert: Verify output structure
         expected_keys = [
-            "features", "n_features", "original_shape", "mean",
-            "noise_eigenvalues", "snr_eigenvalues", "snr_estimates",
-            "snr_ratio", "cumulative_snr_ratio", "whitening_matrix",
+            "features",
+            "n_features",
+            "original_shape",
+            "mean",
+            "noise_eigenvalues",
+            "snr_eigenvalues",
+            "snr_estimates",
+            "snr_ratio",
+            "cumulative_snr_ratio",
+            "whitening_matrix",
             "projection_matrix",
         ]
         for key in expected_keys:
@@ -223,9 +232,9 @@ class TestMNFExtractor:
     def test_negative_eigenvalues_warning(self):
         """Test warning is emitted when noise eigenvalues are negative."""
         # Arrange
-        reflectance = np.random.RandomState(42).rand(
-            4, 4, 5
-        ).astype(np.float32)
+        reflectance = (
+            np.random.RandomState(42).rand(4, 4, 5).astype(np.float32)
+        )
         wavelengths = np.linspace(400, 800, 5).astype(np.float32)
         hsi = HSI(reflectance=reflectance, wavelengths=wavelengths)
         extractor = MNFExtractor(n_components=3)
@@ -252,9 +261,9 @@ class TestMNFExtractor:
     def test_total_snr_zero_fallback(self):
         """Test snr_ratio is zeros when total_snr is zero."""
         # Arrange
-        reflectance = np.random.RandomState(42).rand(
-            4, 4, 5
-        ).astype(np.float32)
+        reflectance = (
+            np.random.RandomState(42).rand(4, 4, 5).astype(np.float32)
+        )
         wavelengths = np.linspace(400, 800, 5).astype(np.float32)
         hsi = HSI(reflectance=reflectance, wavelengths=wavelengths)
         extractor = MNFExtractor(n_components=3)

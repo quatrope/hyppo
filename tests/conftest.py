@@ -2,7 +2,12 @@
 
 import logging
 
-from .fixtures.hsi import large_spectral_hsi, sample_hsi, sample_hsi_data, small_hsi
+from .fixtures.hsi import (
+    large_spectral_hsi,
+    sample_hsi,
+    sample_hsi_data,
+    small_hsi,
+)
 
 __all__ = ["large_spectral_hsi", "sample_hsi", "small_hsi", "sample_hsi_data"]
 

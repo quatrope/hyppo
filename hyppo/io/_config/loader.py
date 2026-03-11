@@ -9,7 +9,6 @@ import yaml
 from hyppo.core import FeatureSpace
 from hyppo.extractor import registry
 from hyppo.runner import registry as runner_registry
-
 from .config import Config
 
 
@@ -109,7 +108,9 @@ def _validate_pipeline(config_dict: Dict[str, Any]) -> dict:
     return pipeline
 
 
-def _validate_extractor_spec(feature_name: str, extractor_spec) -> tuple[str, dict]:
+def _validate_extractor_spec(
+    feature_name: str, extractor_spec
+) -> tuple[str, dict]:
     """Validate extractor spec structure and return type and params."""
     if not isinstance(extractor_spec, dict):
         raise ValueError(

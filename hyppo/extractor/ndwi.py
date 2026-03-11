@@ -15,7 +15,7 @@ from .base import Extractor
 class NDWIExtractor(Extractor):
     """Normalized Difference Water Index (NDWI) extractor.
 
-    NDWI is a water-related vegetation index computed as:
+    NDWI is a water-related vegetation index [1]_, computed as:
 
         NDWI = (Green - NIR) / (Green + NIR)
 

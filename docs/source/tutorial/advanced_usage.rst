@@ -2,13 +2,14 @@ Advanced Usage
 ==============
 
 This tutorial covers advanced features of HYPPO including complex extractor dependencies,
-parallel execution with different runners.
+parallel execution with different runners, and creating custom extractors.
+
 
 Complex Extractor Dependencies
 -------------------------------
 
 Understanding Dependencies
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Some extractors depend on outputs from other extractors. HYPPO automatically
 manages these dependencies:
@@ -17,16 +18,16 @@ manages these dependencies:
 
     from hyppo.core import FeatureSpace
     from hyppo.extractor import PCAExtractor, ICAExtractor
-    
+
     # Create extractors with dependencies
     config = {
         "pca": (PCAExtractor(n_components=10), {}),
         # ICA depends on PCA output
         "ica": (ICAExtractor(n_components=5), {"pca_features": "pca"})
     }
-    
+
     fs = FeatureSpace(config)
-    
+
     # HYPPO resolves execution order automatically
     results = fs.extract(hsi)
 
@@ -39,18 +40,18 @@ Define explicit input mappings for complex pipelines:
 .. code-block:: python
 
     from hyppo.extractor import (
-        MeanExtractor, StdExtractor, 
+        MeanExtractor, StdExtractor,
         PCAExtractor, CompositeExtractor
     )
-    
+
     config = {
         # Base extractors (no dependencies)
         "mean": (MeanExtractor(), {}),
         "std": (StdExtractor(), {}),
-        
+
         # PCA on original data
         "pca": (PCAExtractor(n_components=20), {}),
-        
+
         # Composite extractor using outputs from mean, std, and pca
         "composite": (
             CompositeExtractor(),
@@ -61,7 +62,7 @@ Define explicit input mappings for complex pipelines:
             }
         )
     }
-    
+
     fs = FeatureSpace(config)
 
 
@@ -74,7 +75,7 @@ Visualize the dependency graph to understand execution order:
 
     # Get extractors in topologically sorted order
     extractors = fs.get_extractors()
-    
+
     print("Execution order:")
     for idx, (name, extractor) in enumerate(extractors):
         deps = extractor.get_input_dependencies()
@@ -85,7 +86,7 @@ Visualize the dependency graph to understand execution order:
 
 
 Parallel Execution
-------------------
+-------------------
 
 Sequential Runner (Default)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -95,7 +96,7 @@ The default runner executes extractors sequentially:
 .. code-block:: python
 
     from hyppo.runner import SequentialRunner
-    
+
     # Explicitly use sequential runner
     runner = SequentialRunner()
     results = fs.extract(hsi, runner)
@@ -109,13 +110,13 @@ Use Dask with threads for I/O-bound tasks:
 .. code-block:: python
 
     from hyppo.runner import DaskRunner
-    
+
     # Create thread-based runner
     runner = DaskRunner.threads(num_threads=8)
-    
+
     # Extract features in parallel
     results = fs.extract(hsi, runner)
-    
+
     # Runner automatically handles dependencies and parallelizes
     # independent extractors
 
@@ -132,10 +133,10 @@ Use process-based parallelism for CPU-intensive tasks:
         num_workers=4,
         threads_per_worker=2
     )
-    
+
     # Extract with process-based parallelism
     results = fs.extract(hsi, runner)
-    
+
     # Best for CPU-bound extractors (PCA, GLCM, etc.)
 
 
@@ -148,14 +149,14 @@ Compare different runner strategies:
 
     import time
     from hyppo.runner import SequentialRunner, DaskRunner
-    
+
     runners = {
         "sequential": SequentialRunner(),
         "threads_4": DaskRunner.threads(num_threads=4),
         "threads_8": DaskRunner.threads(num_threads=8),
         "processes_4": DaskRunner.processes(num_workers=4),
     }
-    
+
     for name, runner in runners.items():
         start = time.time()
         results = fs.extract(hsi, runner)
@@ -163,82 +164,10 @@ Compare different runner strategies:
         print(f"{name}: {elapsed:.2f} seconds")
 
 
-Monitoring and Debugging
--------------------------
-
-Dask Dashboard
-~~~~~~~~~~~~~~
-
-Access the Dask dashboard for real-time monitoring when using Dask runners:
-
-.. code-block:: python
-
-    from hyppo.runner import DaskProcessesRunner
-
-    runner = DaskProcessesRunner(num_workers=4)
-
-    # Dashboard available at http://localhost:8787 by default
-
-
-Debug Failed Extractions
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Handle errors gracefully:
-
-.. code-block:: python
-
-    import logging
-
-    logging.basicConfig(level=logging.INFO)
-
-    try:
-        results = fs.extract(hsi, runner)
-    except Exception as e:
-        logging.error(f"Extraction failed: {e}")
-
-
-Best Practices
---------------
-
-1. **Start small**: Test on small datasets before scaling to cluster
-2. **Use checkpoints**: Save intermediate results to avoid re-computation
-3. **Monitor resources**: Check CPU, memory, and I/O usage
-4. **Profile first**: Identify bottlenecks before parallelizing
-5. **Balance workers**: Don't over-subscribe cluster resources
-6. **Handle failures**: Implement retry logic for transient errors
-7. **Clean up**: Close runners and delete temporary files
-8. **Log everything**: Keep detailed logs for debugging
-
-Performance Optimization Tips
-------------------------------
-
-Memory Management
-~~~~~~~~~~~~~~~~~
-
-.. code-block:: python
-
-    # Process in chunks for large HSI
-    # Use memory-efficient extractors
-    # Clear intermediate results
-    
-    results = fs.extract(hsi, runner)
-    results.save("output.h5")
-    
-    # Free memory
-    del hsi
-    del results
-
-
-Choosing the Right Runner
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-- **Sequential**: Small HSI, few extractors, debugging
-- **Threads**: I/O-bound tasks, shared memory needed
-- **Processes**: CPU-bound tasks, independent extractors
 
 Next Steps
 ----------
 
+- See :doc:`adding_extractors` for creating custom extractors
 - Review :doc:`basic_usage` for fundamentals
 - Check :doc:`config` for pipeline management
-- Explore :doc:`hsi_io` for data handling

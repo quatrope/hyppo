@@ -15,8 +15,9 @@ class DaskRunner(BaseRunner):
     This class contains the core Dask graph building and execution logic
     shared by all Dask-based runners. It should not be instantiated directly;
     instead use one of the concrete runner classes:
-        - DaskThreadsRunner: Thread-based parallelism
-        - DaskProcessesRunner: Process-based parallelism
+
+    - DaskThreadsRunner: Thread-based parallelism
+    - DaskProcessesRunner: Process-based parallelism
     """
 
     def __init__(self, client: Client):

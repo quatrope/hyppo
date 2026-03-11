@@ -11,7 +11,7 @@ from .base import Extractor
 
 class ICAExtractor(Extractor):
     """
-    Independent Component Analysis (ICA) extractor for hyperspectral images.
+    ICA extractor for hyperspectral images [1]_.
 
     Parameters
     ----------

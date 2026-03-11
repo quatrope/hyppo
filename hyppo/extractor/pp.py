@@ -13,7 +13,7 @@ class PPExtractor(Extractor):
     """
     Projection Pursuit feature extractor for hyperspectral images (HSI).
 
-    Implements the method of Ifarraguerri & Chang (2000) to find projections
+    Implements the method of Ifarraguerri & Chang [1]_ to find projections
     that maximize non-Gaussianity, using information divergence from a Gaussian
     distribution as the projection index.
 
@@ -34,8 +34,8 @@ class PPExtractor(Extractor):
     References
     ----------
     .. [1] Ifarraguerri, A., & Chang, C. I. (2000). Unsupervised hyperspectral
-    image analysis with projection pursuit. IEEE Transactions on Geoscience
-    and Remote Sensing, 38(6), 2529-2538.
+       image analysis with projection pursuit. IEEE Transactions on Geoscience
+       and Remote Sensing, 38(6), 2529-2538.
     """
 
     def __init__(

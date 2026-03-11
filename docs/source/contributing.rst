@@ -20,55 +20,22 @@ Clone the repository and install in development mode:
 Running Tests
 -------------
 
-Run the full test suite with pytest:
+Use tox to run tests and coverage:
 
 .. code-block:: bash
 
-    # Run all tests
-    pytest
+    # Run tests with coverage
+    tox -e py311
 
-    # Run with coverage report
-    pytest --cov=hyppo --cov-report=term-missing
+    # Coverage report (requires py311 first)
+    tox -e coverage
 
-    # Run a specific test file
-    pytest tests/extractor/test_ndvi.py
-
-    # Run tests matching a pattern
-    pytest -k "test_pca"
-
-Use tox to run tests across configurations:
-
-.. code-block:: bash
-
-    # Run tests in isolated environment
+    # Run all environments
     tox
-
-    # Build documentation
-    tox -e mkdocs
 
 
 Code Standards
 --------------
-
-Imports
-~~~~~~~
-
-All imports must be at the top of the file, never inside functions.
-Organize them in three groups separated by blank lines:
-
-.. code-block:: python
-
-    # Standard library
-    import json
-    from pathlib import Path
-
-    # Third-party
-    import numpy as np
-
-    # Local
-    from hyppo.core import HSI
-    from .base import Extractor
-
 
 Docstrings
 ~~~~~~~~~~
@@ -114,13 +81,8 @@ Follow the AAA pattern (Arrange, Act, Assert) with descriptive comments:
         # Assert
         assert result["features"].shape == (10, 10, 5)
 
-Coverage targets:
+Coverage target: 100% across all modules.
 
-- **Core modules** (io, core, extractor base): 100%
-- **Feature extractors**: 95%+
-- **Utilities**: 90%+
-
-See ``tests/CLAUDE.md`` for complete testing guidelines.
 
 
 Project Structure
@@ -154,40 +116,128 @@ Project Structure
     ├── runner/                # Runner tests
     ├── io/                    # I/O tests
     ├── fixtures/              # Shared test fixtures
-    └── CLAUDE.md              # Testing conventions
+    └── conftest.py            # Shared test fixtures
     docs/
     └── source/                # Sphinx documentation source
 
 
-Adding New Features
--------------------
+Adding New Extractors
+---------------------
 
-Extractors
-~~~~~~~~~~
+See :doc:`tutorial/adding_extractors` for how to create the extractor class
+itself. This section covers the steps to integrate it into the project.
 
-See :doc:`tutorial/adding_extractors` for a complete step-by-step guide.
+Register the Extractor
+~~~~~~~~~~~~~~~~~~~~~~
 
-Runners
-~~~~~~~
+Add your extractor to ``hyppo/extractor/__init__.py``:
 
-1. Inherit from ``BaseRunner`` (or ``DaskRunner`` for Dask-based runners)
-2. Implement ``resolve(data, feature_space) -> FeatureCollection``
-3. Register in ``hyppo/runner/__init__.py``
-4. Add tests in ``tests/runner/``
-5. Add API documentation page in ``docs/source/api/runner/``
+.. code-block:: python
+
+    from .myfeature import MyFeatureExtractor
+
+    # Add to __all__
+    __all__ = [
+        # ... existing entries ...
+        "MyFeatureExtractor",
+    ]
+
+    # Register with the registry
+    registry.register(MyFeatureExtractor)
+
+After registration, the extractor is available by class name in configuration
+files:
+
+.. code-block:: yaml
+
+    pipeline:
+      my_feature:
+        extractor: MyFeatureExtractor
+        params:
+          param1: 20
 
 
-Commit Messages
----------------
+Add Documentation
+~~~~~~~~~~~~~~~~~
 
-Write concise commit messages that focus on the *why*, not the *what*:
+Create an API documentation page at ``docs/source/api/extractor/myfeature.rst``.
+Follow the same pattern as existing pages (e.g., ``api/extractor/pca.rst``):
+use the ``automodule`` directive with ``:members:``, ``:undoc-members:``, and
+``:show-inheritance:`` options. Docstrings in the source code are the single
+source of truth.
+
+
+Write Tests
+~~~~~~~~~~~
+
+Create tests in ``tests/extractor/test_myfeature.py``:
+
+.. code-block:: python
+
+    import numpy as np
+    import pytest
+
+    from hyppo.core import HSI
+    from hyppo.extractor import MyFeatureExtractor
+
+
+    class TestMyFeatureExtractor:
+
+        def test_basic_extraction(self, sample_hsi):
+            extractor = MyFeatureExtractor()
+            result = extractor.extract(sample_hsi)
+
+            assert "features" in result
+            assert result["features"].ndim == 3
+
+        def test_custom_params(self, sample_hsi):
+            extractor = MyFeatureExtractor(param1=20)
+            result = extractor.extract(sample_hsi)
+            assert "features" in result
+
+        def test_invalid_param(self, sample_hsi):
+            extractor = MyFeatureExtractor(param1=-1)
+            with pytest.raises(ValueError, match="param1 must be positive"):
+                extractor.extract(sample_hsi)
+
+See ``tests/extractor/test_base.py`` for additional test patterns.
+
+
+Feature Naming
+~~~~~~~~~~~~~~
+
+The ``feature_name()`` class method auto-generates a name from the class name
+by splitting on CamelCase boundaries:
+
+- ``MyFeatureExtractor`` → ``my_feature``
+- ``NDVIExtractor`` → ``ndvi``
+- ``DWT1DExtractor`` → ``d_w_t1_d`` (acronyms may need override)
+
+Override ``feature_name()`` if the auto-generated name is not suitable:
+
+.. code-block:: python
+
+    @classmethod
+    def feature_name(cls) -> str:
+        return "my_custom_name"
+
+
+Extractor Checklist
+~~~~~~~~~~~~~~~~~~~
+
+Before submitting a new extractor, verify:
 
 .. code-block:: text
 
-    # Good
-    fix: align test suite with current extractor implementations
-    add paper reference validation tests for NDVI, NDWI, SAVI
+    [ ] Inherits from Extractor
+    [ ] Implements _extract() (not extract())
+    [ ] Returns dict with "features" key
+    [ ] Has NumPy-style docstring with Parameters, Returns, References
+    [ ] Registered in __init__.py
+    [ ] Has .rst documentation page
+    [ ] Has tests with 100% coverage
+    [ ] _validate() checks all user-facing parameters
 
-    # Avoid
-    update files
-    fix stuff
+
+
+

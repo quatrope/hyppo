@@ -13,7 +13,7 @@ class MNFExtractor(Extractor):
     Minimum Noise Fraction (MNF) feature extractor for hyperspectral images.
 
     MNF is a noise-adjusted transformation that orders components by decreasing
-    signal-to-noise ratio (SNR), following Green et al. (1988). The algorithm
+    signal-to-noise ratio (SNR), following Green et al. [1]_. The algorithm
     consists of:
     1. Noise covariance estimation from spatial differences
     2. Noise whitening transformation

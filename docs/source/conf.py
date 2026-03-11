@@ -319,7 +319,6 @@ EXPORT_CONFIG = ["GIT_HASH"]
 
 def setup(app):
     app.add_css_file("css/hyppo.css")
-    app.add_js_file("js/hyppo.js")
     for k, v in globals().items():
         if k in EXPORT_CONFIG:
             app.config[k] = v

@@ -53,14 +53,19 @@ Memory errors with large images
 
 - Verify available RAM is sufficient for the image size
   (``rows × cols × bands × 8 bytes`` for float64)
-- Use process-based runners to distribute memory across workers:
+- Use ``LocalProcessRunner``, which shares HSI data across processes via
+  shared memory instead of serializing copies to each worker:
 
   .. code-block:: python
 
-      from hyppo.runner import DaskProcessesRunner
+      from hyppo.runner import LocalProcessRunner
 
-      runner = DaskProcessesRunner(num_workers=4, memory_limit="4GB")
+      runner = LocalProcessRunner()
       results = fs.extract(hsi, runner)
+
+- Avoid ``DaskProcessesRunner`` for large images, as it serializes the
+  full HSI cube to each worker process
+- Delete intermediate results when no longer needed
 
 
 Configuration Issues
@@ -133,8 +138,7 @@ Circular dependency detected
 cannot be resolved.
 
 **Solution:** Review your extractor dependencies and restructure them to form
-a directed acyclic graph (DAG). See :doc:`architecture` for details on how
-dependency resolution works.
+a directed acyclic graph (DAG).
 
 
 Band wavelength warnings
@@ -155,58 +159,27 @@ covers the required spectral range:
 - SAVI: Red (~660nm) and NIR (~850nm)
 
 
-Runner Issues
--------------
-
-Dask workers failing silently
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-**Symptom:** ``None`` results in FeatureCollection, or missing extractors
-in output.
-
-**Solution:** Enable verbose logging to diagnose:
-
-.. code-block:: python
-
-    import logging
-    logging.basicConfig(level=logging.DEBUG)
-
-    runner = DaskProcessesRunner(num_workers=2)
-    results = fs.extract(hsi, runner)
-
-
-Port conflicts with Dask dashboard
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-**Symptom:** ``OSError: Address already in use`` when creating a Dask runner.
-
-**Cause:** Another Dask cluster or process is using the same port.
-
-**Solution:** Ensure previous Dask clusters are properly closed, or specify
-a different dashboard port in the cluster configuration.
-
-
 Performance Tips
 ----------------
 
 Choosing the right runner
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-================= ====================== ==========================
-Runner            Best for               Avoid when
-================= ====================== ==========================
-Sequential        Debugging, small data  Large datasets
-DaskThreads       I/O-bound extractors   CPU-bound extractors
-DaskProcesses     CPU-bound extractors   Very large shared data
-================= ====================== ==========================
+==================== ====================== ==========================
+Runner               Best for               Avoid when
+==================== ====================== ==========================
+Sequential           Debugging, small data  Large datasets
+LocalProcess         Large images (shared    Few extractors
+                     memory), CPU-bound
+DaskThreads          I/O-bound extractors   CPU-bound extractors
+DaskProcesses        CPU-bound extractors   Very large shared data
+==================== ====================== ==========================
 
 
 Reducing memory usage
 ~~~~~~~~~~~~~~~~~~~~~~
 
-- Use fewer PCA/ICA components than spectral bands
 - Process files sequentially rather than loading all into memory
-- Set ``memory_limit`` on Dask runners to prevent OOM crashes
 - Delete intermediate results when no longer needed:
 
   .. code-block:: python

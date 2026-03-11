@@ -14,7 +14,7 @@ class SAVIExtractor(Extractor):
     Soil-Adjusted Vegetation Index (SAVI) extractor for hyperspectral images.
 
     SAVI is a vegetation index designed to reduce the influence of soil
-    brightness in areas with sparse vegetation. It modifies the NDVI by
+    brightness in areas with sparse vegetation [1]_. It modifies the NDVI by
     introducing a soil brightness correction factor L:
 
         SAVI = ((NIR - Red) * (1 + L)) / (NIR + Red + L)

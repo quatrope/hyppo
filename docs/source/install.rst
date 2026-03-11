@@ -26,8 +26,7 @@ For development, install with the development dependencies:
 
     git clone https://github.com/quatrope/hyppo.git
     cd hyppo
-    pip install -e .
-    pip install -r requirements_dev.txt
+    pip install -e ".[dev]"
 
 Dependencies
 ------------

@@ -1,63 +1,107 @@
 # hyppo
+
 Hyper Spectral Feature Extractor
 
-## Command-Line Interface
+<!-- BODY -->
 
-Hyppo provides a command-line interface for extracting features from
-hyperspectral imaging (HSI) data.
+## Overview
 
-### Installation
+HYPPO is a modular feature extraction library for hyperspectral images (HSI). It provides a uniform, configurable interface for computing spectral and spatial features commonly used in hyperspectral image classification.
 
-After installing the package, the `hyppo` command becomes available:
+## Features
+
+- **17 feature extractors** covering spectral indices, dimensionality reduction, texture, morphological, wavelet, and moment-based methods
+- **Automatic dependency resolution** between extractors via directed acyclic graph (DAG)
+- **Multiple execution backends**: sequential, multi-threaded (Dask), multi-process (Dask), and local multiprocessing
+- **HDF5 I/O** for loading hyperspectral images and saving extracted features
+- **YAML/JSON configuration** for reproducible extraction pipelines
+
+## Installation
+
+Requires Python >= 3.11.
 
 ```bash
+git clone https://github.com/quatrope/hyppo.git
+cd hyppo
 pip install -e .
 ```
 
-### Usage
-
-All commands require a configuration file in YAML or JSON format:
+For development:
 
 ```bash
-hyppo -c config.yaml <command> [options]
+pip install -e ".[dev]"
 ```
 
-### Available Commands
+## Quick Start
 
-#### extract
-Extract features from HSI data:
+```python
+import hyppo
 
-```bash
-hyppo -c config.yaml extract input.h5
-hyppo -c config.yaml extract input.h5 -o output.h5
+# Load a hyperspectral image
+hsi = hyppo.io.load_h5_hsi("image.h5")
+
+# Define a feature space
+from hyppo.extractor import PCAExtractor, NDVIExtractor
+from hyppo.core import FeatureSpace
+
+fs = FeatureSpace.from_list([
+    PCAExtractor(n_components=10),
+    NDVIExtractor(),
+])
+
+# Extract features
+results = fs.extract(hsi)
+
+# Save results
+results.save("output.h5")
 ```
 
-#### info
-Display configuration information:
+## Using a Configuration File
 
-```bash
-hyppo -c config.yaml info
+Define your pipeline in YAML:
+
+```yaml
+pipeline:
+  pca:
+    extractor: PCAExtractor
+    params:
+      n_components: 10
+  ndvi:
+    extractor: NDVIExtractor
+
+runner:
+  type: dask-threads
+  params:
+    num_threads: 4
 ```
 
-### Runner Options
+Then load and run:
 
-Select different execution backends with the `-r/--runner` option:
-
-- `sequential`: Single-threaded execution (default)
-- `local`: Multi-process local execution
-- `dask-thread`: Dask threaded execution
-- `dask-process`: Dask process execution
-
-Example with parallel execution:
-
-```bash
-hyppo -c config.yaml -r local -w 8 extract input.h5
+```python
+config = hyppo.io.load_config_yaml("pipeline.yaml")
+results = config.feature_space.extract(hsi, config.runner)
 ```
 
-### Getting Help
+## Available Extractors
 
-```bash
-hyppo --help
-hyppo extract --help
-hyppo info --help
-```
+| Category                | Extractors                              |
+|-------------------------|-----------------------------------------|
+| Spectral indices        | NDVI, NDWI, SAVI                        |
+| Dimensionality reduction| PCA, ICA, MNF, Projection Pursuit       |
+| Texture                 | GLCM, LBP, Gabor                        |
+| Morphological           | Morphological Profiles (MP)              |
+| Wavelet                 | DWT1D, DWT2D, DWT3D                     |
+| Moment-based            | Geometric, Legendre, Zernike             |
+
+## Execution Backends
+
+| Runner               | Strategy                              |
+|----------------------|---------------------------------------|
+| `SequentialRunner`   | Single-threaded, topological order    |
+| `DaskThreadsRunner`  | Dask with thread-based parallelism    |
+| `DaskProcessesRunner`| Dask with process-based parallelism   |
+| `LocalProcessRunner` | multiprocessing with shared memory    |
+
+## License
+
+HYPPO is distributed under the BSD 3-Clause License.

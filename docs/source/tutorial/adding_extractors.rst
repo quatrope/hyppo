@@ -1,25 +1,23 @@
 Adding a New Extractor
 ======================
 
-This guide walks through the process of creating and registering a new
-feature extractor in HYPPO.
+This tutorial shows how to create a custom feature extractor for HYPPO.
 
 
-Step 1: Create the Extractor Module
-------------------------------------
+Creating the Extractor
+-----------------------
 
-Create a new file in ``hyppo/extractor/``. For example, to create a
-``MyFeatureExtractor``:
+Create a new class that inherits from ``Extractor`` and implements the
+``_extract()`` method:
 
 .. code-block:: python
 
-    # hyppo/extractor/myfeature.py
     """My custom feature extractor."""
 
     import numpy as np
 
     from hyppo.core import HSI
-    from .base import Extractor
+    from hyppo.extractor.base import Extractor
 
 
     class MyFeatureExtractor(Extractor):
@@ -54,8 +52,8 @@ Create a new file in ``hyppo/extractor/``. For example, to create a
     - Always return a dictionary with at least a ``"features"`` key.
 
 
-Step 2: Add Validation (Optional)
-----------------------------------
+Adding Validation
+------------------
 
 Override ``_validate()`` to check preconditions before extraction:
 
@@ -69,15 +67,15 @@ Override ``_validate()`` to check preconditions before extraction:
             raise ValueError("Expected 3D reflectance array")
 
 
-Step 3: Declare Dependencies (Optional)
------------------------------------------
+Declaring Dependencies
+-----------------------
 
 If your extractor depends on the output of another extractor, override
 ``get_input_dependencies()``:
 
 .. code-block:: python
 
-    from .pca import PCAExtractor
+    from hyppo.extractor.pca import PCAExtractor
 
     class MyDependentExtractor(Extractor):
 
@@ -94,7 +92,6 @@ If your extractor depends on the output of another extractor, override
             pca_result = inputs["pca_features"]
             pca_features = pca_result["features"]
 
-            # Use PCA features for further processing
             return {"features": pca_features * 2}
 
 For optional dependencies, set ``"required": False`` and provide a default
@@ -118,123 +115,28 @@ extractor:
         return None
 
 
-Step 4: Register the Extractor
--------------------------------
+Using Your Extractor
+---------------------
 
-Add your extractor to ``hyppo/extractor/__init__.py``:
-
-.. code-block:: python
-
-    from .myfeature import MyFeatureExtractor
-
-    # Add to __all__
-    __all__ = [
-        # ... existing entries ...
-        "MyFeatureExtractor",
-    ]
-
-    # Register with the registry
-    registry.register(MyFeatureExtractor)
-
-After registration, the extractor is available by class name in configuration
-files:
-
-.. code-block:: yaml
-
-    pipeline:
-      my_feature:
-        extractor: MyFeatureExtractor
-        params:
-          param1: 20
-
-
-Step 5: Add Documentation
---------------------------
-
-Create an API documentation page at ``docs/source/api/extractor/myfeature.rst``:
-
-.. code-block:: rst
-
-    ``hyppo.extractor.myfeature`` module
-    =====================================
-
-    .. automodule:: hyppo.extractor.myfeature
-       :members:
-       :undoc-members:
-       :show-inheritance:
-
-The ``automodule`` directive will pull docstrings directly from the code.
-No additional content is needed; keep docstrings in the source code.
-
-
-Step 6: Write Tests
---------------------
-
-Create tests in ``tests/extractor/test_myfeature.py``:
+Once created, you can use it directly in a feature space:
 
 .. code-block:: python
 
-    import numpy as np
-    import pytest
+    from hyppo.core import FeatureSpace
 
-    from hyppo.core import HSI
-    from hyppo.extractor import MyFeatureExtractor
+    fs = FeatureSpace.from_list([
+        MyFeatureExtractor(param1=20),
+    ])
 
+    hsi = hyppo.io.load_h5_hsi("image.h5")
+    results = fs.extract(hsi)
 
-    class TestMyFeatureExtractor:
-
-        def test_basic_extraction(self, sample_hsi):
-            extractor = MyFeatureExtractor()
-            result = extractor.extract(sample_hsi)
-
-            assert "features" in result
-            assert result["features"].ndim == 3
-
-        def test_custom_params(self, sample_hsi):
-            extractor = MyFeatureExtractor(param1=20)
-            result = extractor.extract(sample_hsi)
-            assert "features" in result
-
-        def test_invalid_param(self, sample_hsi):
-            extractor = MyFeatureExtractor(param1=-1)
-            with pytest.raises(ValueError, match="param1 must be positive"):
-                extractor.extract(sample_hsi)
-
-See ``tests/extractor/test_base.py`` for additional test patterns
-and ``tests/CLAUDE.md`` for testing conventions.
+To make it available by name in configuration files, see the
+:doc:`../contributing` guide for registration and packaging steps.
 
 
-Feature Naming
---------------
+Next Steps
+----------
 
-The ``feature_name()`` class method auto-generates a name from the class name
-by splitting on CamelCase boundaries:
-
-- ``MyFeatureExtractor`` → ``my_feature``
-- ``NDVIExtractor`` → ``ndvi``
-- ``DWT1DExtractor`` → ``d_w_t1_d`` (acronyms may need override)
-
-Override ``feature_name()`` if the auto-generated name is not suitable:
-
-.. code-block:: python
-
-    @classmethod
-    def feature_name(cls) -> str:
-        return "my_custom_name"
-
-
-Checklist
----------
-
-Before submitting a new extractor, verify:
-
-.. code-block:: text
-
-    [ ] Inherits from Extractor
-    [ ] Implements _extract() (not extract())
-    [ ] Returns dict with "features" key
-    [ ] Has NumPy-style docstring with Parameters, Returns, References
-    [ ] Registered in __init__.py
-    [ ] Has .rst documentation page
-    [ ] Has tests with >95% coverage
-    [ ] _validate() checks all user-facing parameters
+- See :doc:`advanced_usage` for parallel execution and complex dependencies
+- Read :doc:`../contributing` for how to register, document, and test your extractor

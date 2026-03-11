@@ -15,7 +15,7 @@ from .base import Extractor
 class NDVIExtractor(Extractor):
     """Normalized Difference Vegetation Index (NDVI) extractor.
 
-    NDVI is a vegetation index widely used to assess vegetation health,
+    NDVI is a vegetation index widely used to assess vegetation health [1]_,
     computed as:
 
         NDVI = (NIR - Red) / (NIR + Red)

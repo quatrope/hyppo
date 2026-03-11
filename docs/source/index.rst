@@ -40,7 +40,6 @@ Contents
     :caption: Reference
 
     api/index
-    architecture
 
 .. toctree::
     :maxdepth: 2

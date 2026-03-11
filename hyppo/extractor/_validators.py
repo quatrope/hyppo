@@ -54,14 +54,6 @@ def validate_sufficient_bands(data, n_components):
         )
 
 
-def validate_membership(value, valid_set, name):
-    """Validate that value is a member of valid_set."""
-    if value not in valid_set:
-        raise ValueError(
-            f"Invalid {name} '{value}'. " f"Valid {name}s: {valid_set}"
-        )
-
-
 def validate_all_in_set(values, valid_set, name):
     """Validate that all values are members of valid_set."""
     for v in values:

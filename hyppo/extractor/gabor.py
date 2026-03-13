@@ -87,16 +87,15 @@ class GaborExtractor(Extractor):
         frequencies=None,
     ):
         super().__init__()
-        self.n_scales      = n_scales
+        self.n_scales = n_scales
         self.n_orientations = n_orientations
-        self.use_opponent  = use_opponent
-        self.sigmas_sq     = sigmas_sq
-        self.frequencies   = frequencies
+        self.use_opponent = use_opponent
+        self.sigmas_sq = sigmas_sq
+        self.frequencies = frequencies
 
     @classmethod
     def feature_name(cls):
         return "gabor"
-
 
     def _resolve_sigmas_sq(self):
         """Return sigma_sq list, resolving defaults if needed."""
@@ -112,7 +111,7 @@ class GaborExtractor(Extractor):
         defaults = self._DEFAULT_SIGMAS_SQ
         if self.n_scales <= len(defaults):
             return defaults[: self.n_scales]
-        return defaults + [4.0 ** m for m in range(len(defaults), self.n_scales)]
+        return defaults + [4.0**m for m in range(len(defaults), self.n_scales)]
 
     def _resolve_frequencies(self):
         """Return frequency list, resolving defaults if needed."""
@@ -125,7 +124,7 @@ class GaborExtractor(Extractor):
             return list(self.frequencies)
 
         # Default: dyadic u_m = 0.5 / 2^m
-        return [0.5 / (2 ** m) for m in range(self.n_scales)]
+        return [0.5 / (2**m) for m in range(self.n_scales)]
 
     def _build_filter_bank(self):
         """
@@ -136,9 +135,9 @@ class GaborExtractor(Extractor):
         kernels : list of (n_scales * n_orientations) 2D arrays
         param_list : list of (sigma_sq, freq, theta) tuples, same order
         """
-        sigmas_sq   = self._resolve_sigmas_sq()
+        sigmas_sq = self._resolve_sigmas_sq()
         frequencies = self._resolve_frequencies()
-        thetas      = np.linspace(0, np.pi, self.n_orientations, endpoint=False)
+        thetas = np.linspace(0, np.pi, self.n_orientations, endpoint=False)
 
         kernels, param_list = [], []
         for sigma_sq, freq in zip(sigmas_sq, frequencies):
@@ -160,22 +159,23 @@ class GaborExtractor(Extractor):
         where x', y' are the rotated coordinates.
         """
         sigma = np.sqrt(sigma_sq)
-        half  = int(np.ceil(4 * sigma))   # covers >99% of Gaussian mass
-        size  = 2 * half + 1              # always odd
+        half = int(np.ceil(4 * sigma))  # covers >99% of Gaussian mass
+        size = 2 * half + 1  # always odd
 
         coords = np.arange(-half, half + 1)
-        y, x   = np.meshgrid(coords, coords)
+        y, x = np.meshgrid(coords, coords)
 
         x_rot = x * np.cos(theta) + y * np.sin(theta)
         y_rot = -x * np.sin(theta) + y * np.cos(theta)
 
         envelope = (1.0 / (2.0 * np.pi * sigma_sq)) * np.exp(
-            -(x_rot ** 2 + y_rot ** 2) / (2.0 * sigma_sq)
+            -(x_rot**2 + y_rot**2) / (2.0 * sigma_sq)
         )
         carrier = np.cos(2.0 * np.pi * freq * x_rot)
 
-        return envelope * carrier   # not normalised: preserves response magnitude
-
+        return (
+            envelope * carrier
+        )  # not normalised: preserves response magnitude
 
     def _extract(self, data: HSI, **inputs):
         """
@@ -204,10 +204,10 @@ class GaborExtractor(Extractor):
             "orientations" : int
         """
         reflectance = data.reflectance
-        H, W, B     = reflectance.shape
+        H, W, B = reflectance.shape
 
         kernels, _ = self._build_filter_bank()
-        n_filters  = len(kernels)           # n_scales * n_orientations
+        n_filters = len(kernels)  # n_scales * n_orientations
 
         # Unichrome: h^i_mn = I_i * f_mn  (Rajadell Eq. 5 / Shi Eq. 2)
         responses = np.empty((B, n_filters, H, W), dtype=np.float32)
@@ -220,10 +220,12 @@ class GaborExtractor(Extractor):
 
         # Stack: (H, W, B * n_filters)
         # Axis order: all filters for band 0, then band 1, ...
-        unichrome_maps = responses.transpose(2, 3, 0, 1).reshape(H, W, B * n_filters)
+        unichrome_maps = responses.transpose(2, 3, 0, 1).reshape(
+            H, W, B * n_filters
+        )
 
         features_list = [unichrome_maps]
-        n_opponent    = 0
+        n_opponent = 0
 
         # Opponent: d^ij_mn = h^i_mn - h^j_mn  (Rajadell Eq. 4)
         if self.use_opponent:
@@ -233,22 +235,21 @@ class GaborExtractor(Extractor):
                     for k in range(n_filters):
                         opponent_maps.append(responses[i, k] - responses[j, k])
             if opponent_maps:
-                opp_stack  = np.stack(opponent_maps, axis=-1)
+                opp_stack = np.stack(opponent_maps, axis=-1)
                 features_list.append(opp_stack)
                 n_opponent = opp_stack.shape[-1]
 
         features = np.concatenate(features_list, axis=-1)
 
         return {
-            "features"      : features,
-            "n_unichrome"   : B * n_filters,
-            "n_opponent"    : n_opponent,
-            "n_features"    : features.shape[-1],
-            "scales"        : self.n_scales,
-            "orientations"  : self.n_orientations,
+            "features": features,
+            "n_unichrome": B * n_filters,
+            "n_opponent": n_opponent,
+            "n_features": features.shape[-1],
+            "scales": self.n_scales,
+            "orientations": self.n_orientations,
             "original_shape": reflectance.shape,
         }
-
 
     def _validate(self, data: HSI, **inputs):
         validate_positive_int(self.n_scales, "n_scales")

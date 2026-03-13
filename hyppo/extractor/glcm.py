@@ -1,398 +1,283 @@
-"""Gray Level Co-occurrence Matrix (GLCM) texture feature extractor."""
+"""Fast Gray Level Co-occurrence Matrix (GLCM) extractor."""
 
 import numpy as np
-from skimage.feature import graycomatrix, graycoprops
-from skimage.util.shape import view_as_windows
+from scipy import ndimage
+from sklearn.decomposition import PCA
+from skimage.exposure import equalize_hist
 
 from hyppo.core import HSI
 from ._validators import (
-    validate_non_empty_list,
-    validate_optional_non_empty_list,
+    validate_positive_int,
     validate_window_sizes,
+    validate_non_empty_list,
+    validate_sufficient_bands,
 )
 from .base import Extractor
 
 
 class GLCMExtractor(Extractor):
-    """Gray Level Co-occurrence Matrix (GLCM) texture feature extractor.
 
-    # TODO! Check docstring
-
-    Computes texture features from hyperspectral images using GLCM analysis
-    at multiple scales and orientations. GLCM captures spatial relationships
-    between pixel intensities to characterize texture properties.
-
-    Parameters
-    ----------
-    bands : list[int] | None, default=None
-        Specific band indices to process. If None, processes all bands.
-    distances : list[int] | None, default=[1]
-        Pixel distances for GLCM computation. Default [1] analyzes
-        nearest neighbors.
-    angles : list[float] | None, default=[0, π/4, π/2, 3π/4]
-        Angles in radians for directional texture analysis.
-        Default analyzes 0°, 45°, 90°, and 135° orientations.
-    symmetric : bool, default=True
-        Whether to compute symmetric GLCM matrices.
-    properties : list[str] | None, default=['contrast', 'entropy',
-        'correlation', 'dissimilarity']
-        Texture properties to extract from GLCM.
-        Available: 'contrast', 'dissimilarity', 'homogeneity', 'energy',
-        'correlation', 'ASM', 'entropy'.
-    levels : int | None, default=None
-        Number of gray levels for quantization. If None, automatically
-        determined based on image dynamic range (typically 32-64 as
-        recommended in literature).
-    window_sizes : list[int], default=[7]
-        Window sizes for multiscale texture analysis. Must be odd integers ≥ 3.
-    orientation_mode : str, default='separate'
-        How to combine directional information:
-        - 'separate': Keep all orientations as separate features (recommended)
-        - 'look_direction': Use 0°, 90°, and average of 45°/135° (3 directions)
-        - 'average': Average all orientations into single value per property
-
-    Notes
-    -----
-    GLCM quantifies how frequently pairs of pixels with specific values occur
-    at a given spatial relationship. This captures texture patterns that are
-    crucial for hyperspectral image classification.
-
-    The extractor follows recommendations from hyperspectral GLCM literature:
-    - Gray levels G > 24, typically 32-64
-    - Multiple orientations for rotation invariance
-    - Nearest neighbor distance (δ=1) for fine texture detail
-    - Multiple window sizes for multiscale analysis
-
-    Examples
-    --------
-    >>> # Basic usage with defaults
-    >>> extractor = GLCMExtractor()
-    >>> features = extractor.extract(hsi)
-
-    >>> # Custom configuration for specific bands and scales
-    >>> extractor = GLCMExtractor(
-    ...     bands=[10, 20, 30],
-    ...     window_sizes=[5, 9, 13],
-    ...     properties=['contrast', 'correlation']
-    ... )
-    """
+    HARALICK_FEATURES = [
+        "asm",
+        "contrast",
+        "correlation",
+        "variance",
+        "idm",
+        "sum_avg",
+        "sum_var",
+        "sum_entropy",
+        "entropy",
+        "diff_var",
+        "diff_entropy",
+        "imc1",
+        "imc2",
+    ]
 
     def __init__(
         self,
-        bands=None,
         distances=None,
         angles=None,
-        symmetric=True,
-        properties=None,
-        levels=None,
-        window_sizes=[7],
-        orientation_mode="separate",
+        levels=16,
+        window_sizes=None,
+        features=None,
+        equalize=True,
+        spectral_reduction="pca",
+        n_components=1,
+        angle_pooling="mean",
     ):
-        """Initialize GLCM extractor with texture analysis parameters."""
+        """Initialize GLCM extractor and precompute index tables."""
         super().__init__()
 
-        self.bands = bands
-
-        # Paper recommends δ = 1 for nearest neighbor analysis
         self.distances = distances if distances is not None else [1]
-
-        # Paper uses 0°, 45°, 90°, 135° - all orientations separately
         self.angles = (
             angles
             if angles is not None
             else [0, np.pi / 4, np.pi / 2, 3 * np.pi / 4]
         )
 
-        self.symmetric = symmetric
-
-        # Auto-determine levels based on paper's findings
-        # (G > 24, typically 32-64)
         self.levels = levels
+        self.window_sizes = window_sizes if window_sizes is not None else [7]
+        self.features = features or self.HARALICK_FEATURES
 
-        # Paper's recommended statistics: Contrast (CON), Entropy (ENT),
-        # Correlation (COR)
-        # Plus Dissimilarity (DIS) as alternative to Contrast
-        self.properties = (
-            properties
-            if properties is not None
-            else ["contrast", "entropy", "correlation", "dissimilarity"]
+        self.equalize = equalize
+        self.spectral_reduction = spectral_reduction
+        self.n_components = n_components
+        self.angle_pooling = angle_pooling
+
+        # Precomputación de tablas de búsqueda (Look-up tables)
+        Ng = self.levels
+        self._i, self._j = np.meshgrid(
+            np.arange(Ng), np.arange(Ng), indexing="ij"
         )
 
-        # Larger windows for better texture characterization
-        self.window_sizes = window_sizes
+        k_sum = (self._i + self._j).ravel()
+        k_diff = np.abs(self._i - self._j).ravel()
 
-        # How to handle orientations based on paper's findings
-        self.orientation_mode = orientation_mode
+        self._ksum_oh = np.zeros((Ng * Ng, 2 * Ng), dtype=np.float32)
+        self._ksum_oh[np.arange(Ng * Ng), k_sum] = 1
 
-    def _auto_determine_levels(self, image):
-        """
-        Auto-determine quantization levels based on image characteristics.
+        self._kdiff_oh = np.zeros((Ng * Ng, Ng), dtype=np.float32)
+        self._kdiff_oh[np.arange(Ng * Ng), k_diff] = 1
 
-        Following paper's recommendation: G > 24, typically 32-64
-        """
-        if self.levels is not None:
-            return self.levels
+    @classmethod
+    def feature_name(cls):
+        """Return the feature name."""
+        return "glcm"
 
-        # Calculate image dynamic range
-        img_min, img_max = image.min(), image.max()
-        dynamic_range = img_max - img_min
+    def _spectral_reduce(self, cube):
+        """Reduce spectral dimension using PCA."""
+        if self.spectral_reduction is None:
+            return cube
 
-        # Determine levels based on dynamic range and paper recommendations
-        if dynamic_range <= 32:
-            return 32
-        elif dynamic_range <= 64:
-            return min(64, int(dynamic_range))
+        if self.spectral_reduction == "pca":
+            h, w, b = cube.shape
+            X = cube.reshape(-1, b)
+            pca = PCA(n_components=self.n_components)
+            Xr = pca.fit_transform(X)
+            return Xr.reshape(h, w, self.n_components)
+
+        raise ValueError("Invalid spectral reduction")
+
+    def _quantize(self, image):
+        """Quantize image to the specified number of gray levels."""
+        if self.equalize:
+            image = equalize_hist(image)
         else:
-            # For high dynamic range, use 64 levels as recommended
-            return 64
+            mn, mx = image.min(), image.max()
+            if mx > mn:
+                image = (image - mn) / (mx - mn)
 
-    def _normalize_to_levels(self, band, levels):
-        """Quantizes the band to the range [0, levels-1]."""
-        band_min, band_max = band.min(), band.max()
-        if band_max == band_min:
-            return np.zeros_like(band, dtype=np.uint8)
+        return np.floor(image * (self.levels - 1)).astype(np.uint8)
 
-        normalized = (band - band_min) / (band_max - band_min) * (levels - 1)
-        return normalized.astype(np.uint8)
+    def _build_glcm_maps(self, quant, dx, dy):
+        """Fast GLCM construction using uniform filters."""
+        h, w = quant.shape
+        Ng = self.levels
+        ws = self.window_sizes[0]
 
-    def _features_per_distance(self):
-        """Calculate number of features per distance based on mode."""
-        if self.orientation_mode == "separate":
-            # Use all orientations separately (paper's recommendation)
-            return len(self.angles) * len(self.properties)
-        elif self.orientation_mode == "look_direction":
-            # Use look direction approach: 0°, 90°, and average of 45°/135°
-            return 3 * len(self.properties)
-        else:
-            # Average all orientations
-            return len(self.properties)
+        q_shift = np.roll(quant, shift=(-dy, -dx), axis=(0, 1))
+        pair_index = quant.astype(np.int32) * Ng + q_shift.astype(np.int32)
 
-    def _compute_mode_separate(self, patch, distance, levels):
-        """Compute GLCM features in separate orientation mode."""
-        # Compute GLCM for each angle separately
-        glcm = graycomatrix(
-            patch,
-            distances=[distance],
-            angles=self.angles,
-            levels=levels,
-            symmetric=self.symmetric,
+        glcm = np.zeros((h, w, Ng * Ng), dtype=np.float32)
+        unique_pairs = np.flatnonzero(
+            np.bincount(pair_index.ravel(), minlength=Ng * Ng)
         )
+        mask = np.empty_like(pair_index, dtype=np.float32)
 
-        values = []
-        # Extract properties for each angle
-        for prop in self.properties:
-            try:
-                # All angles for this distance
-                vals = graycoprops(glcm, prop)[0, :]
-                values.extend(vals)
-            except ValueError:
-                values.extend([0.0] * len(self.angles))
-        return values
-
-    def _compute_mode_look_direction(self, patch, distance, levels):
-        """Compute GLCM features in look direction mode."""
-        # Paper's look direction approach:
-        # 0°, 90°, avg(45°,135°)
-        angles_look = [
-            0,
-            np.pi / 2,
-            np.pi / 4,
-            3 * np.pi / 4,
-        ]
-        glcm = graycomatrix(
-            patch,
-            distances=[distance],
-            angles=angles_look,
-            levels=levels,
-            symmetric=self.symmetric,
-        )
-
-        values = []
-        for prop in self.properties:
-            try:
-                vals = graycoprops(glcm, prop)[0, :]  # [0°, 90°, 45°, 135°]
-                # Use 0°, 90°, and average of 45°/135°
-                values.extend(
-                    [
-                        vals[0],
-                        vals[1],
-                        (vals[2] + vals[3]) / 2,
-                    ]
-                )
-            except ValueError:
-                values.extend([0.0] * 3)
-        return values
-
-    def _compute_mode_average(self, patch, distance, levels):
-        """Compute GLCM features in average orientation mode."""
-        # Average all orientations
-        glcm = graycomatrix(
-            patch,
-            distances=[distance],
-            angles=self.angles,
-            levels=levels,
-            symmetric=self.symmetric,
-        )
-
-        values = []
-        for prop in self.properties:
-            try:
-                vals = graycoprops(glcm, prop)[0, :]
-                avg_val = np.mean(vals)
-                values.append(avg_val)
-            except ValueError:
-                values.append(0.0)
-        return values
-
-    def _compute_patch_features(self, patch, levels, compute, n_per_dist):
-        """Compute GLCM features for a single patch."""
-        # Skip patches with insufficient variation
-        if patch.max() - patch.min() < 2:
-            return None
-
-        values = []
-        for distance in self.distances:
-            try:
-                vals = compute(patch, distance, levels)
-                values.extend(vals)
-            except ValueError:
-                values.extend([0.0] * n_per_dist)
-        return values
-
-    def _compute_glcm_features_optimized(self, patches, levels):
-        """Optimized GLCM computation based on paper's recommendations."""
-        N, height, width = patches.shape
-
-        n_features_per_dist = self._features_per_distance()
-        n_features = len(self.distances) * n_features_per_dist
-
-        features = np.zeros((N, n_features), dtype=np.float32)
-
-        compute = {
-            "separate": self._compute_mode_separate,
-            "look_direction": self._compute_mode_look_direction,
-            "average": self._compute_mode_average,
-        }[self.orientation_mode]
-
-        # Process in blocks to manage memory
-        block_size = 500
-
-        # TODO! Check for parallelization opportunities
-        # TODO! Improve code
-        for i in range(0, N, block_size):
-            batch = patches[i : i + block_size]
-            batch_size = batch.shape[0]
-
-            for j in range(batch_size):
-                result = self._compute_patch_features(
-                    batch[j], levels, compute, n_features_per_dist
-                )
-                if result is not None:
-                    features[i + j, :] = result
-
-        return features
-
-    def _extract_glcm_multiscale(self, image):
-        """Extract multiscale GLCM features following paper's methodology."""
-        image_height, image_width = image.shape
-        all_scales = []
-
-        # Determine quantization levels
-        levels = self._auto_determine_levels(image)
-
-        # Normalize image
-        image_normalized = self._normalize_to_levels(image, levels)
-
-        for window_size in self.window_sizes:
-            # Use larger windows as recommended by the paper
-            pad = window_size // 2
-
-            # Use reflection padding to maintain texture characteristics
-            # at borders
-            padded = np.pad(image_normalized, pad, mode="reflect")
-
-            # Extract windows
-            windows = view_as_windows(padded, (window_size, window_size))
-            patches = windows.reshape(-1, window_size, window_size)
-
-            # Compute GLCM features with optimized approach
-            glcm_features = self._compute_glcm_features_optimized(
-                patches, levels
+        for k in unique_pairs:
+            np.equal(pair_index, k, out=mask)
+            glcm[..., k] = ndimage.uniform_filter(
+                mask, size=(ws, ws), mode="reflect"
             )
 
-            # Reshape to spatial dimensions
-            glcm_features = glcm_features.reshape(
-                image_height, image_width, -1
-            )
-            all_scales.append(glcm_features)
+        glcm = glcm.reshape(h * w, Ng, Ng)
+        glcm /= glcm.sum(axis=(1, 2), keepdims=True) + 1e-12
 
-        # Concatenate all scales
-        all_features = np.concatenate(all_scales, axis=-1)
-        return all_features, levels
+        return glcm
+
+    def _extract_haralick_batch(self, P):
+        """Compute Haralick features for a batch of GLCMs."""
+        eps = 1e-12
+        Ng = self.levels
+        n = P.shape[0]
+
+        ii = self._i[np.newaxis].astype(np.float32)
+        jj = self._j[np.newaxis].astype(np.float32)
+
+        px = P.sum(axis=2)
+        py = P.sum(axis=1)
+
+        ux = (ii * P).sum(axis=(1, 2))
+        uy = (jj * P).sum(axis=(1, 2))
+
+        sx = np.sqrt(
+            ((ii - ux[:, None, None]) ** 2 * P).sum(axis=(1, 2)) + eps
+        )
+        sy = np.sqrt(
+            ((jj - uy[:, None, None]) ** 2 * P).sum(axis=(1, 2)) + eps
+        )
+
+        P_flat = P.reshape(n, Ng * Ng)
+        p_sum = P_flat @ self._ksum_oh
+        p_diff = P_flat @ self._kdiff_oh
+
+        res = {}
+        res["asm"] = (P**2).sum(axis=(1, 2))
+        res["contrast"] = ((ii - jj) ** 2 * P).sum(axis=(1, 2))
+
+        num = ((ii - ux[:, None, None]) * (jj - uy[:, None, None]) * P).sum(
+            axis=(1, 2)
+        )
+        res["correlation"] = num / (sx * sy + eps)
+
+        res["variance"] = ((ii - ux[:, None, None]) ** 2 * P).sum(axis=(1, 2))
+        res["idm"] = (P / (1 + (ii - jj) ** 2)).sum(axis=(1, 2))
+        res["entropy"] = -(P * np.log(P + eps)).sum(axis=(1, 2))
+
+        k = np.arange(2 * Ng, dtype=np.float32)
+        res["sum_avg"] = (k * p_sum).sum(axis=1)
+        sum_ent = -(p_sum * np.log(p_sum + eps)).sum(axis=1)
+
+        res["sum_entropy"] = sum_ent
+        res["sum_var"] = ((k - sum_ent[:, None]) ** 2 * p_sum).sum(axis=1)
+
+        res["diff_entropy"] = -(p_diff * np.log(p_diff + eps)).sum(axis=1)
+        res["diff_var"] = p_diff.var(axis=1)
+
+        HXY = res["entropy"]
+        HX = -(px * np.log(px + eps)).sum(axis=1)
+        HY = -(py * np.log(py + eps)).sum(axis=1)
+
+        res["imc1"] = (HXY - (HX + HY)) / (np.maximum(HX, HY) + eps)
+        res["imc2"] = np.sqrt(
+            np.maximum(0.0, 1.0 - np.exp(-2 * ((HX + HY) - HXY)))
+        )
+
+        return np.stack([res[name] for name in self.features], axis=1).astype(
+            np.float32
+        )
+
+    def _pool_angles(self, feats):
+        """Combine features across orientations."""
+        feats = np.array(feats)
+
+        if self.angle_pooling == "mean":
+            return feats.mean(axis=0)
+
+        if self.angle_pooling == "concat":
+            na, h, w, nf = feats.shape
+            return feats.transpose(1, 2, 0, 3).reshape(h, w, na * nf)
+
+        if self.angle_pooling == "mean+range":
+            mean = feats.mean(axis=0)
+            rng = feats.max(axis=0) - feats.min(axis=0)
+            return np.concatenate([mean, rng], axis=-1)
+
+        raise ValueError("Invalid pooling")
+
+    def _extract_from_band(self, band):
+        """Extract GLCM features from a single band."""
+        h, w = band.shape
+        quant = self._quantize(band)
+        feats_all = []
+
+        for d in self.distances:
+            for angle in self.angles:
+                dx = int(round(np.cos(angle) * d))
+                dy = int(round(np.sin(angle) * d))
+
+                glcm = self._build_glcm_maps(quant, dx, dy)
+                feats = self._extract_haralick_batch(glcm)
+                feats_all.append(feats.reshape(h, w, -1))
+
+        return self._pool_angles(feats_all)
 
     def _extract(self, data: HSI, **inputs):
-        reflectance = data.reflectance  # (H, W, B)
-        height, width, bands = reflectance.shape
+        """Extract GLCM features from HSI data."""
+        cube = self._spectral_reduce(data.reflectance)
+        h, w, bands = cube.shape
+        feats = []
 
-        # Determine which bands to process
-        bands_to_process = (
-            self.bands if self.bands is not None else list(range(bands))
-        )
+        for b in range(bands):
+            feats.append(self._extract_from_band(cube[:, :, b]))
 
-        # Extract GLCM features for each spectral band
-        all_features = []
-        used_levels = []
-
-        for band_idx in bands_to_process:
-            band_img = reflectance[..., band_idx]
-            feats, levels = self._extract_glcm_multiscale(band_img)
-            all_features.append(feats)
-            used_levels.append(levels)
-
-        # Concatenate features from all bands
-        features = np.concatenate(all_features, axis=-1)
-
-        # Calculate feature dimensions
-        if self.orientation_mode == "separate":
-            n_features_per_distance = len(self.angles) * len(self.properties)
-        elif self.orientation_mode == "look_direction":
-            n_features_per_distance = 3 * len(self.properties)
-        else:
-            n_features_per_distance = len(self.properties)
-
-        n_features_per_scale = len(self.distances) * n_features_per_distance
-        n_features_per_band = n_features_per_scale * len(self.window_sizes)
-        total_features = n_features_per_band * len(bands_to_process)
+        features = np.concatenate(feats, axis=-1)
 
         return {
             "features": features,
-            "bands_used": bands_to_process,
-            "distances": self.distances,
-            "angles": self.angles,
-            "properties": self.properties,
-            "levels_used": used_levels,
+            "n_components": bands,
             "window_sizes": self.window_sizes,
-            "orientation_mode": self.orientation_mode,
-            "n_features_per_scale": n_features_per_scale,
-            "n_features_per_band": n_features_per_band,
-            "total_features": total_features,
-            "original_shape": (height, width),
+            "distances": self.distances,
+            "levels": self.levels,
+            "angle_pooling": self.angle_pooling,
+            "n_features": features.shape[-1],
         }
 
     def _validate(self, data: HSI, **inputs):
-        validate_optional_non_empty_list(self.bands, "bands")
+
+        validate_positive_int(self.levels, "levels")
+
+        if self.levels < 2:
+            raise ValueError("levels must be >= 2")
+
+        validate_window_sizes(self.window_sizes)
+
+        for ws in self.window_sizes:
+            if ws % 2 == 0:
+                raise ValueError("window_sizes must be odd")
+
         validate_non_empty_list(self.distances, "distances")
         validate_non_empty_list(self.angles, "angles")
-        validate_window_sizes(self.window_sizes)
-        if self.levels is not None and self.levels <= 1:
-            raise ValueError(
-                "levels must be greater than 1 or None "
-                "for auto-determination."
-            )
-        validate_non_empty_list(self.properties, "properties")
-        valid_modes = ["separate", "look_direction", "average"]
-        if self.orientation_mode not in valid_modes:
-            raise ValueError(
-                "orientation_mode must be 'separate', "
-                "'look_direction', or 'average'."
-            )
+
+        if self.spectral_reduction not in {None, "pca"}:
+            raise ValueError("Invalid spectral_reduction")
+
+        if self.spectral_reduction == "pca":
+            validate_sufficient_bands(data, self.n_components)
+
+        if self.angle_pooling not in {"mean", "concat", "mean+range"}:
+            raise ValueError("Invalid angle_pooling")
+
+        invalid = set(self.features) - set(self.HARALICK_FEATURES)
+        if invalid:
+            raise ValueError(f"Invalid Haralick features: {invalid}")

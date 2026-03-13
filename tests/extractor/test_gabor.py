@@ -6,291 +6,179 @@ import pytest
 from hyppo.core import HSI
 from hyppo.extractor.gabor import GaborExtractor
 
-
 class TestGaborExtractor:
     """Test cases for GaborExtractor."""
 
     @pytest.fixture
-    def regression_hsi(self):
-        """Deterministic 5x5x3 HSI for regression tests."""
+    def mock_hsi(self):
+        """Small 10x10x3 HSI for general tests."""
         rng = np.random.RandomState(42)
-        reflectance = rng.rand(5, 5, 3).astype(np.float32)
+        reflectance = rng.rand(10, 10, 3).astype(np.float32)
         wavelengths = np.array([500.0, 600.0, 700.0])
         return HSI(reflectance=reflectance, wavelengths=wavelengths)
 
-    def test_regression_aggregate(self, regression_hsi):
-        """Regression test: aggregated Gabor output must not change."""
-        # Arrange
+    def test_feature_name(self):
+        """Test that feature name is correctly returned."""
+        assert GaborExtractor.feature_name() == "gabor"
+
+    def test_output_shape_unichrome(self, mock_hsi):
+        """Verify output shape for standard unichrome extraction.
+
+        With B=3 bands, M=2 scales, N=4 orientations:
+          n_features = B * M * N = 3 * 2 * 4 = 24
+        """
+        n_scales = 2
+        n_orientations = 4
         extractor = GaborExtractor(
-            frequencies=[0.1],
-            thetas=[0],
-            sigma=2.0,
-            aggregate_bands=True,
+            n_scales=n_scales,
+            n_orientations=n_orientations,
+            use_opponent=False,
         )
+        result = extractor.extract(mock_hsi)
+        features = result["features"]
 
-        # Act
-        result = extractor.extract(regression_hsi)
+        expected_features = 3 * n_scales * n_orientations  # 24
+        assert features.shape == (10, 10, expected_features)
+        assert result["n_unichrome"] == expected_features
+        assert result["n_opponent"] == 0
+        assert result["n_features"] == expected_features
 
-        # Assert: magnitude channel
-        expected_mag = np.array(
-            [
-                [0.03452614, 0.01580214, 0.01378948, 0.03779187, 0.06052897],
-                [0.01190707, 0.01840728, 0.01215288, 0.03013321, 0.03749559],
-                [0.03887709, 0.03123867, 0.00349533, 0.01892294, 0.03669482],
-                [0.03999638, 0.02957242, 0.0183285, 0.03695732, 0.0643043],
-                [0.04014437, 0.03036051, 0.03252354, 0.03821342, 0.05668537],
-            ],
-            dtype=np.float32,
-        )
-        np.testing.assert_allclose(
-            result["features"][:, :, 0], expected_mag, rtol=1e-5
-        )
+    def test_output_shape_with_opponent(self, mock_hsi):
+        """Verify output shape when opponent features are enabled.
 
-    def test_regression_non_aggregate(self, regression_hsi):
-        """Regression test: non-aggregated output must not change."""
-        # Arrange
-        extractor = GaborExtractor(
-            frequencies=[0.1],
-            thetas=[0],
-            sigma=2.0,
-            aggregate_bands=False,
-        )
+        With B=3 bands, M=2 scales, N=4 orientations:
+          n_unichrome = B * M * N          = 3 * 2 * 4 = 24
+          n_opponent  = (B*(B-1)/2) * M * N = 3 * 2 * 4 = 24
+          n_features  = 48
+        """
+        extractor = GaborExtractor(n_scales=2, n_orientations=4, use_opponent=True)
+        result = extractor.extract(mock_hsi)
 
-        # Act
-        result = extractor.extract(regression_hsi)
+        assert result["n_unichrome"] == 24
+        assert result["n_opponent"] == 24
+        assert result["n_features"] == 48
+        assert result["features"].shape == (10, 10, 48)
 
-        # Assert: first band magnitude
-        expected_band0_mag = np.array(
-            [
-                [0.07486316, 0.03604601, 0.01936384, 0.03977295, 0.0602481],
-                [0.0063432, 0.01912639, 0.00610931, 0.02293983, 0.01873096],
-                [0.04274749, 0.0487608, 0.00548443, 0.01778967, 0.04337907],
-                [0.02857731, 0.03567681, 0.01647201, 0.02737262, 0.05940717],
-                [0.01565858, 0.02815348, 0.00658716, 0.0070907, 0.0340844],
-            ],
-            dtype=np.float32,
-        )
-        np.testing.assert_allclose(
-            result["features"][:, :, 0], expected_band0_mag, rtol=1e-5
-        )
+    def test_kernel_size(self):
+        """Kernels must be odd-sized and match the expected size for given sigma.
 
-    def test_kernel_mean_centered_and_normalized(self):
-        """Test kernel is mean-centered and L1-normalized."""
-        # Arrange
-        extractor = GaborExtractor()
-        kernel = extractor._create_gabor_kernel(0.1, np.pi / 4, 3.0)
+        size = 2 * ceil(4 * sigma) + 1
 
-        # Assert
-        assert np.isclose(kernel.mean(), 0.0, atol=1e-7)
-        assert np.isclose(np.abs(kernel).sum(), 1.0, atol=1e-6)
-
-    def test_kernel_size_odd(self):
-        """Test kernel size is always odd and based on sigma."""
+        S0: sigma_sq=1.97 -> sigma~1.403 -> half=ceil(5.613)=6 -> size=13
+        S1: sigma_sq=7.89 -> sigma~2.809 -> half=ceil(11.24)=12 -> size=25
+        """
         extractor = GaborExtractor()
 
-        # sigma=3 → 4*3+1=13 (odd)
-        k1 = extractor._create_gabor_kernel(0.1, 0, 3.0)
-        assert k1.shape == (13, 13)
+        k0 = extractor._make_kernel(1.97, 0.5, 0)
+        assert k0.shape[0] % 2 == 1, "Kernel size must be odd"
+        assert k0.shape == (13, 13)
 
-        # sigma=2.25 → 4*2.25+1=10 (even) → 11
-        k2 = extractor._create_gabor_kernel(0.1, 0, 2.25)
-        assert k2.shape == (11, 11)
+        k1 = extractor._make_kernel(7.89, 0.25, 0)
+        assert k1.shape[0] % 2 == 1, "Kernel size must be odd"
+        assert k1.shape == (25, 25)
 
-    def test_magnitude_non_negative(self):
-        """Test magnitude response is always non-negative."""
-        # Arrange
-        rng = np.random.RandomState(0)
-        band = rng.rand(10, 10).astype(np.float32)
-        extractor = GaborExtractor()
+    def test_opponent_zero_for_identical_bands(self):
+        """Opponent features must be exactly zero when both bands are identical.
 
-        # Act
-        magnitude, _ = extractor._apply_gabor_filter(band, 0.1, 0)
+        d^ij_mn = h^i_mn - h^j_mn = 0 when I_i == I_j  (Rajadell Eq. 4)
+        """
+        band = np.random.RandomState(0).rand(10, 10).astype(np.float32)
+        reflectance = np.stack([band, band], axis=-1)
+        hsi = HSI(reflectance=reflectance, wavelengths=np.array([500.0, 600.0]))
 
-        # Assert
-        assert np.all(magnitude >= 0)
-
-    def test_phase_range(self):
-        """Test phase response is in [-pi, pi]."""
-        # Arrange
-        rng = np.random.RandomState(0)
-        band = rng.rand(10, 10).astype(np.float32)
-        extractor = GaborExtractor()
-
-        # Act
-        _, phase = extractor._apply_gabor_filter(band, 0.1, np.pi / 4)
-
-        # Assert
-        assert np.all(phase >= -np.pi)
-        assert np.all(phase <= np.pi)
-
-    def test_energy_equals_magnitude_squared_per_band(self):
-        """Test that energy feature equals magnitude squared per band."""
-        # Arrange
-        rng = np.random.RandomState(0)
-        band = rng.rand(8, 8).astype(np.float32)
-        extractor = GaborExtractor(frequencies=[0.1], thetas=[0])
-
-        # Act
-        features = extractor._extract_gabor_features_single_band(band)
-
-        # Assert: features[:,:,0]=magnitude, features[:,:,1]=magnitude^2
-        mag = features[:, :, 0]
-        energy = features[:, :, 1]
-        np.testing.assert_allclose(energy, mag**2)
-
-    def test_aggregate_bands_averages(self, regression_hsi):
-        """Test that aggregate=True computes mean across bands."""
-        # Arrange
-        extractor = GaborExtractor(
-            frequencies=[0.1],
-            thetas=[0],
-            sigma=2.0,
-            aggregate_bands=True,
-        )
-        ext_no_agg = GaborExtractor(
-            frequencies=[0.1],
-            thetas=[0],
-            sigma=2.0,
-            aggregate_bands=False,
-        )
-
-        # Act
-        agg = extractor.extract(regression_hsi)["features"]
-        no_agg = ext_no_agg.extract(regression_hsi)["features"]
-
-        # Assert: aggregated = mean of per-band features
-        n_bands = regression_hsi.reflectance.shape[2]
-        n_feat_per_band = 2  # 1 freq * 1 theta * 2
-        manual_mean = np.mean(
-            [
-                no_agg[:, :, i * n_feat_per_band : (i + 1) * n_feat_per_band]
-                for i in range(n_bands)
-            ],
-            axis=0,
-        )
-        np.testing.assert_allclose(agg, manual_mean, atol=1e-6)
-
-    def test_concatenate_band_features(self):
-        """Test _concatenate_band_features produces correct shape."""
-        # Arrange
-        extractor = GaborExtractor(frequencies=[0.1], thetas=[0])
-        band_feat1 = np.ones((5, 5, 2), dtype=np.float32)
-        band_feat2 = np.full((5, 5, 2), 2.0, dtype=np.float32)
-
-        # Act
-        result = extractor._concatenate_band_features(
-            [band_feat1, band_feat2], 5, 5
-        )
-
-        # Assert
-        assert result.shape == (5, 5, 4)
-        np.testing.assert_allclose(result[:, :, :2], 1.0)
-        np.testing.assert_allclose(result[:, :, 2:], 2.0)
-
-    def test_nan_in_masked_regions(self):
-        """Test that masked pixels are NaN."""
-        # Arrange
-        reflectance = np.random.RandomState(0).rand(5, 5, 3).astype(np.float32)
-        wavelengths = np.array([500.0, 600.0, 700.0])
-        mask = np.ones((5, 5), dtype=bool)
-        mask[0, 0] = False
-        mask[2, 3] = False
-        hsi = HSI(
-            reflectance=reflectance,
-            wavelengths=wavelengths,
-            mask=mask,
-        )
-        extractor = GaborExtractor(frequencies=[0.1], thetas=[0])
-
-        # Act
+        extractor = GaborExtractor(n_scales=1, n_orientations=1, use_opponent=True)
         result = extractor.extract(hsi)
 
-        # Assert
+        n_uni = result["n_unichrome"]
+        opponent_part = result["features"][:, :, n_uni:]
+        np.testing.assert_allclose(opponent_part, 0.0, atol=1e-6)
+
+    def test_validate_opponent_band_limit(self):
+        """Should raise ValueError if use_opponent=True and B > 10."""
+        ref_11 = np.random.rand(5, 5, 11).astype(np.float32)
+        hsi_11 = HSI(reflectance=ref_11, wavelengths=np.arange(11))
+
+        extractor = GaborExtractor(use_opponent=True)
+
+        with pytest.raises(ValueError, match="Apply band selection upstream"):
+            extractor.extract(hsi_11)
+
+    def test_custom_sigmas_and_frequencies(self, mock_hsi):
+        """Custom sigmas_sq and frequencies must be used in the filter bank."""
+        custom_sigmas = [2.0, 4.0]
+        custom_freqs = [0.1, 0.05]
+        extractor = GaborExtractor(
+            n_scales=2,
+            sigmas_sq=custom_sigmas,
+            frequencies=custom_freqs,
+        )
+        result = extractor.extract(mock_hsi)
+        assert result["scales"] == 2
+
+        kernels, params = extractor._build_filter_bank()
+
+        # Scale 0: params[0..3] all share sigma_sq=2.0, freq=0.1
+        assert params[0][0] == 2.0,  "S0 sigma_sq should be 2.0"
+        assert params[0][1] == 0.1,  "S0 freq should be 0.1"
+
+        # Scale 1: params[4..7] all share sigma_sq=4.0, freq=0.05
+        n_ori = extractor.n_orientations   # 4
+        assert params[n_ori][0] == 4.0,   "S1 sigma_sq should be 4.0"
+        assert params[n_ori][1] == 0.05,  "S1 freq should be 0.05"
+
+    def test_sigmas_length_mismatch_raises(self, mock_hsi):
+        """sigmas_sq length != n_scales must raise ValueError at extract time."""
+        extractor = GaborExtractor(n_scales=2, sigmas_sq=[1.0])  # wrong length
+        with pytest.raises(ValueError, match="sigmas_sq has"):
+            extractor.extract(mock_hsi)
+
+    def test_frequencies_length_mismatch_raises(self, mock_hsi):
+        """frequencies length != n_scales must raise ValueError at extract time."""
+        extractor = GaborExtractor(n_scales=2, frequencies=[0.5, 0.25, 0.1])  # wrong length
+        with pytest.raises(ValueError, match="frequencies has"):
+            extractor.extract(mock_hsi)
+
+    def test_feature_layout_order(self):
+        """Unichrome features are ordered: all filters for band 0, then band 1.
+
+        With n_scales=1, n_orientations=4:
+          idx 0-3: B0 filters (0°, 45°, 90°, 135°)
+          idx 4-7: B1 filters (0°, 45°, 90°, 135°)
+
+        Band 0 = horizontal grating -> filter 0° should respond strongly.
+        Band 1 = vertical grating   -> filter 90° should respond strongly.
+        The 0° response of B0 must exceed the 0° response of B1.
+        """
+        size = 50
+        y, x = np.mgrid[0:size, 0:size]
+        band_h = np.sin(2 * np.pi * 0.45 * y).astype(np.float32)  # horizontal
+        band_v = np.sin(2 * np.pi * 0.45 * x).astype(np.float32)  # vertical
+        reflectance = np.stack([band_h, band_v], axis=-1)
+        hsi = HSI(reflectance=reflectance, wavelengths=np.array([500.0, 600.0]))
+
+        extractor = GaborExtractor(
+            n_scales=1,
+            n_orientations=4,
+            sigmas_sq=[1.97],
+            frequencies=[0.45],
+        )
+        result = extractor.extract(hsi)
         features = result["features"]
-        assert np.all(np.isnan(features[0, 0, :]))
-        assert np.all(np.isnan(features[2, 3, :]))
-        assert not np.any(np.isnan(features[1, 1, :]))
 
-    def test_feature_count(self, regression_hsi):
-        """Test correct number of features for given params."""
-        # Arrange
-        freqs = [0.05, 0.1]
-        thetas = [0, np.pi / 2, np.pi / 4]
-        extractor = GaborExtractor(
-            frequencies=freqs,
-            thetas=thetas,
-            aggregate_bands=True,
+        # idx 0: B0 filtered at 0° (horizontal filter -> responds to band_h)
+        # idx 4: B1 filtered at 0° (horizontal filter -> responds weakly to band_v)
+        resp_b0_0deg = np.abs(features[:, :, 0]).mean()
+        resp_b1_0deg = np.abs(features[:, :, 4]).mean()
+        assert resp_b0_0deg > resp_b1_0deg, (
+            "B0 (horizontal grating) should produce stronger response "
+            "than B1 (vertical grating) when filtered at 0°"
         )
 
-        # Act
-        result = extractor.extract(regression_hsi)
-
-        # Assert: 2 freqs * 3 thetas * 2 (mag+energy) = 12
-        assert result["features"].shape[2] == 12
-
-    def test_feature_count_non_aggregate(self, regression_hsi):
-        """Test feature count without band aggregation."""
-        # Arrange
-        freqs = [0.1]
-        thetas = [0]
-        n_bands = regression_hsi.reflectance.shape[2]
-        extractor = GaborExtractor(
-            frequencies=freqs,
-            thetas=thetas,
-            aggregate_bands=False,
+        # Symmetrically: 90° filter responds more to B1 (vertical) than B0
+        # idx 2: B0 at 90°,  idx 6: B1 at 90°
+        resp_b0_90deg = np.abs(features[:, :, 2]).mean()
+        resp_b1_90deg = np.abs(features[:, :, 6]).mean()
+        assert resp_b1_90deg > resp_b0_90deg, (
+            "B1 (vertical grating) should produce stronger response "
+            "than B0 (horizontal grating) when filtered at 90°"
         )
-
-        # Act
-        result = extractor.extract(regression_hsi)
-
-        # Assert: n_bands * 1 freq * 1 theta * 2 = n_bands * 2
-        assert result["features"].shape[2] == n_bands * 2
-
-    def test_extract_basic_with_defaults(self, small_hsi):
-        """Test extraction with default parameters."""
-        # Arrange
-        extractor = GaborExtractor()
-
-        # Act
-        result = extractor.extract(small_hsi)
-
-        # Assert
-        features = result["features"]
-        assert features.shape[:2] == (small_hsi.height, small_hsi.width)
-        assert features.ndim == 3
-        # 3 freqs * 4 thetas * 2 = 24
-        assert features.shape[2] == 24
-
-    def test_extract_with_custom_parameters(self, small_hsi):
-        """Test extraction with custom frequencies and orientations."""
-        # Arrange
-        extractor = GaborExtractor(
-            frequencies=[0.1, 0.2],
-            thetas=[0, np.pi / 2],
-            sigma=2.0,
-        )
-
-        # Act
-        result = extractor.extract(small_hsi)
-
-        # Assert
-        assert result["features"].shape[:2] == (
-            small_hsi.height,
-            small_hsi.width,
-        )
-
-    @pytest.mark.parametrize("sigma", [2.0, 3.0, 5.0])
-    def test_different_sigma_values(self, small_hsi, sigma):
-        """Test extraction with different sigma values."""
-        # Arrange
-        extractor = GaborExtractor(sigma=sigma)
-
-        # Act
-        result = extractor.extract(small_hsi)
-
-        # Assert
-        assert result["features"].shape[0] == small_hsi.height
-
-    def test_feature_name(self):
-        """Test that feature name is correctly generated."""
-        assert GaborExtractor.feature_name() == "gabor"

@@ -15,8 +15,9 @@ class FeatureSpace:
         """
         Initialize FeatureSpace with feature extractor configurations.
 
-        Args:
-            extractor_configs: Dict of {name: (extractor, input_mapping)}
+        Parameters
+        ----------
+        extractor_configs : Dict of {name: (extractor, input_mapping)}
         """
         self.extractor_configs = extractor_configs
         self.extractors = {
@@ -28,9 +29,10 @@ class FeatureSpace:
         """
         Extract features with dependency resolution.
 
-        Args:
-            data: HSI object to extract features from
-            runner: Runner to execute extraction (defaults to ThreadsRunner)
+        Parameters
+        ----------
+        data : HSI object to extract features from
+        runner : Runner to execute extraction (defaults to ThreadsRunner)
         """
         if runner is None:
             runner = self._get_default_runner()
@@ -64,14 +66,17 @@ class FeatureSpace:
 
         Performs automatic dependency resolution.
 
-        Args:
-            extractors: List of extractor instances
+        Parameters
+        ----------
+        extractors : List of extractor instances
 
-        Returns:
-            Dict configuration with automatic dependency mappings
+        Returns
+        -------
+        Dict configuration with automatic dependency mappings
 
-        Raises:
-            ValueError: If duplicates or missing dependencies found
+        Raises
+        ------
+        ValueError : If duplicates or missing dependencies found
         """
         if not extractors:
             return cls({})
@@ -157,16 +162,19 @@ class FeatureSpace:
         Creates a Config object with the default runner and saves it
         to the specified path.
 
-        Args:
-            path: Output file path (.yaml, .yml, or .json extension)
+        Parameters
+        ----------
+        path : Output file path (.yaml, .yml, or .json extension)
 
-        Raises:
-            ValueError: If path doesn't have .yaml, .yml, or .json extension
+        Raises
+        ------
+        ValueError : If path doesn't have .yaml, .yml, or .json extension
 
-        Example:
-            >>> fs = FeatureSpace.from_list([NDVIExtractor(), SAVIExtractor()])
-            >>> fs.save_config("pipeline.yaml")
-            >>> fs.save_config("pipeline.json")
+        Examples
+        --------
+        >>> fs = FeatureSpace.from_list([NDVIExtractor(), SAVIExtractor()])
+        >>> fs.save_config("pipeline.yaml")
+        >>> fs.save_config("pipeline.json")
         """
         from hyppo import io
 

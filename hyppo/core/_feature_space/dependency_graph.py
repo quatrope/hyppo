@@ -24,10 +24,11 @@ class FeatureDependencyGraph:
         """
         Add extractor with input mapping to dependency graph.
 
-        Args:
-            name: Unique name for this extractor instance
-            extractor: The extractor instance
-            input_mapping: dict mapping {input_name: source_extractor_name}
+        Parameters
+        ----------
+        name : Unique name for this extractor instance
+        extractor : The extractor instance
+        input_mapping : dict mapping {input_name: source_extractor_name}
         """
         if input_mapping is None:
             input_mapping = {}
@@ -46,10 +47,11 @@ class FeatureDependencyGraph:
         """
         Validate the dependency graph for cycles and type compatibility.
 
-        Raises:
-            ValueError: If circular dependencies are detected
-            TypeError: If input type mismatches are found
-            ValueError: If required inputs are missing
+        Raises
+        ------
+        ValueError : If circular dependencies are detected
+        TypeError : If input type mismatches are found
+        ValueError : If required inputs are missing
         """
         # Check for cycles using NetworkX
         if not nx.is_directed_acyclic_graph(self.graph):
@@ -117,8 +119,9 @@ class FeatureDependencyGraph:
         """
         Get the execution order for the provided dependencies.
 
-        Returns:
-            list of extractor names in execution order
+        Returns
+        -------
+        list of extractor names in execution order
         """
         try:
             return list(nx.topological_sort(self.graph))
@@ -131,8 +134,9 @@ class FeatureDependencyGraph:
 
         Each layer has dependencies on the previous layer.
 
-        Returns:
-            List of layers with extractors that can run in parallel
+        Returns
+        -------
+        List of layers with extractors that can run in parallel
         """
         layers = []
         remaining_nodes = set(self.graph.nodes())

@@ -16,6 +16,7 @@ from .base import Extractor
 
 
 class GLCMExtractor(Extractor):
+    """Extract Gray-Level Co-occurrence Matrix texture features."""
 
     HARALICK_FEATURES = [
         "asm",

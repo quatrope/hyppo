@@ -32,10 +32,10 @@ class ExtractorRegistry:
         """
         Register an extractor class.
 
-        Args:
-            extractor_class: The extractor class to register
-            name: Optional custom name. If None, uses the class's
-                  feature_name()
+        Parameters
+        ----------
+        extractor_class : Type[Extractor]
+            The extractor class to register.
         """
         if not issubclass(extractor_class, Extractor):
             raise TypeError(
@@ -61,14 +61,20 @@ class ExtractorRegistry:
         """
         Get an extractor class by name.
 
-        Args:
-            name: The name of the extractor
+        Parameters
+        ----------
+        name : str
+            The name of the extractor.
 
-        Returns:
-            The extractor class
+        Returns
+        -------
+        Type[Extractor]
+            The extractor class.
 
-        Raises:
-            KeyError: If the extractor is not registered
+        Raises
+        ------
+        KeyError
+            If the extractor is not registered.
         """
         if name not in self._registry:
             raise KeyError(f"Extractor '{name}' not found in registry")
@@ -89,11 +95,15 @@ class ExtractorRegistry:
         """
         Unregister an extractor.
 
-        Args:
-            name: The name of the extractor to unregister
+        Parameters
+        ----------
+        name : str
+            The name of the extractor to unregister.
 
-        Raises:
-            KeyError: If the extractor is not registered
+        Raises
+        ------
+        KeyError
+            If the extractor is not registered.
         """
         if name not in self._registry:
             raise KeyError(f"Extractor '{name}' not found in registry")

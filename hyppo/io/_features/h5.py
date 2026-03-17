@@ -56,17 +56,24 @@ def save_feature_collection(
     Stores feature data arrays and metadata in a structured HDF5 format with
     separate groups for features and metadata.
 
-    Args:
-        collection: FeatureCollection to save
-        path: Output file path (must have .h5 extension)
+    Parameters
+    ----------
+    collection : FeatureCollection
+        FeatureCollection to save
+    path : Path or str
+        Output file path (must have .h5 extension)
 
-    Raises:
-        ValueError: If path doesn't have .h5 extension
-        ValueError: If collection is empty
+    Raises
+    ------
+    ValueError
+        If path doesn't have .h5 extension
+    ValueError
+        If collection is empty
 
-    Example:
-        >>> results = fs.extract(hsi)
-        >>> save_feature_collection(results, "output.h5")
+    Examples
+    --------
+    >>> results = fs.extract(hsi)
+    >>> save_feature_collection(results, "output.h5")
     """
     path = _validate_save_path(path)
 

@@ -16,11 +16,16 @@ class SequentialRunner(BaseRunner):
         """
         Resolve feature extraction sequentially.
 
-        Args:
-            data: HSI object to process
-            feature_space: FeatureSpace instance with feature graph
+        Parameters
+        ----------
+        data : HSI
+            HSI object to process
+        feature_space : FeatureSpace
+            FeatureSpace instance with feature graph
 
-        Returns:
+        Returns
+        -------
+        FeatureCollection
             FeatureCollection with extraction results
         """
         feature_graph = feature_space.feature_graph

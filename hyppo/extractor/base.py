@@ -24,12 +24,17 @@ class Extractor(ABC):
         """
         Extract features from the hyperspectral image.
 
-        Args:
-            data: HSI object containing the hyperspectral image
-            **inputs: Named input results from dependency extractors
+        Parameters
+        ----------
+        data : HSI
+            HSI object containing the hyperspectral image.
+        **inputs
+            Named input results from dependency extractors.
 
-        Returns:
-            Dictionary containing extracted features and metadata
+        Returns
+        -------
+        dict
+            Dictionary containing extracted features and metadata.
         """
 
     @classmethod

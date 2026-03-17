@@ -19,10 +19,14 @@ class BaseRunner(ABC):
         """
         Get default extractors for optional inputs.
 
-        Args:
-            extractor: The extractor to get defaults for
+        Parameters
+        ----------
+        extractor
+            The extractor to get defaults for
 
-        Returns:
+        Returns
+        -------
+        dict
             Dictionary mapping input names to default extractors
         """
         defaults = {}

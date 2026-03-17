@@ -16,11 +16,12 @@ class HSI:
         """
         Initialize HSI with reflectance data and wavelengths.
 
-        Args:
-            reflectance: 3D array (height, width, bands)
-            wavelengths: 1D array of wavelength values
-            mask: Optional 2D boolean mask
-            metadata: Optional metadata dictionary
+        Parameters
+        ----------
+        reflectance : 3D array (height, width, bands)
+        wavelengths : 1D array of wavelength values
+        mask : Optional 2D boolean mask
+        metadata : Optional metadata dictionary
         """
         self.reflectance = self._validate_reflectance(reflectance)
         self.wavelengths = self._validate_wavelengths(wavelengths)

@@ -95,6 +95,7 @@ class GaborExtractor(Extractor):
 
     @classmethod
     def feature_name(cls):
+        """Return the feature name for Gabor extraction."""
         return "gabor"
 
     def _resolve_sigmas_sq(self):

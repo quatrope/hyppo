@@ -16,15 +16,22 @@ def load_config_yaml(config_path: str | Path) -> Config:
     """
     Load YAML configuration and return Config.
 
-    Args:
-        config_path: Path to YAML configuration file
+    Parameters
+    ----------
+    config_path : str or Path
+        Path to YAML configuration file
 
-    Returns:
+    Returns
+    -------
+    Config
         Config object containing FeatureSpace and BaseRunner
 
-    Raises:
-        FileNotFoundError: If config file doesn't exist
-        ValueError: If YAML is invalid or configuration is malformed
+    Raises
+    ------
+    FileNotFoundError
+        If config file doesn't exist
+    ValueError
+        If YAML is invalid or configuration is malformed
     """
     config_path = Path(config_path)
 
@@ -48,15 +55,22 @@ def load_config_json(config_path: str | Path) -> Config:
     """
     Load JSON configuration and return Config.
 
-    Args:
-        config_path: Path to JSON configuration file
+    Parameters
+    ----------
+    config_path : str or Path
+        Path to JSON configuration file
 
-    Returns:
+    Returns
+    -------
+    Config
         Config object containing FeatureSpace and BaseRunner
 
-    Raises:
-        FileNotFoundError: If config file doesn't exist
-        ValueError: If JSON is invalid or configuration is malformed
+    Raises
+    ------
+    FileNotFoundError
+        If config file doesn't exist
+    ValueError
+        If JSON is invalid or configuration is malformed
     """
     config_path = Path(config_path)
 
@@ -73,14 +87,20 @@ def load_config_json_str(json_str: str) -> Config:
     """
     Load JSON string configuration and return Config.
 
-    Args:
-        json_str: JSON string containing configuration
+    Parameters
+    ----------
+    json_str : str
+        JSON string containing configuration
 
-    Returns:
+    Returns
+    -------
+    Config
         Config object containing FeatureSpace and BaseRunner
 
-    Raises:
-        ValueError: If JSON is invalid or configuration is malformed
+    Raises
+    ------
+    ValueError
+        If JSON is invalid or configuration is malformed
     """
     try:
         config_dict = json.loads(json_str)
@@ -159,14 +179,20 @@ def _build_feature_space(config_dict: Dict[str, Any]) -> FeatureSpace:
     """
     Build FeatureSpace from configuration dictionary.
 
-    Args:
-        config_dict: Dictionary containing pipeline configuration
+    Parameters
+    ----------
+    config_dict : dict
+        Dictionary containing pipeline configuration
 
-    Returns:
+    Returns
+    -------
+    FeatureSpace
         Configured FeatureSpace
 
-    Raises:
-        ValueError: If configuration is malformed
+    Raises
+    ------
+    ValueError
+        If configuration is malformed
     """
     pipeline = _validate_pipeline(config_dict)
 
@@ -207,14 +233,20 @@ def _build_runner(config_dict: Dict[str, Any]):
     """
     Build BaseRunner from configuration dictionary.
 
-    Args:
-        config_dict: Dictionary containing runner configuration
+    Parameters
+    ----------
+    config_dict : dict
+        Dictionary containing runner configuration
 
-    Returns:
+    Returns
+    -------
+    BaseRunner
         Configured BaseRunner instance
 
-    Raises:
-        ValueError: If runner configuration is malformed
+    Raises
+    ------
+    ValueError
+        If runner configuration is malformed
     """
     runner_config = config_dict.get("runner", {"type": "sequential"})
     runner_type, params = _validate_runner_config(runner_config)
@@ -231,14 +263,20 @@ def _build_config(config_dict: Dict[str, Any]) -> Config:
     """
     Build Config from configuration dictionary.
 
-    Args:
-        config_dict: Dictionary containing complete configuration
+    Parameters
+    ----------
+    config_dict : dict
+        Dictionary containing complete configuration
 
-    Returns:
+    Returns
+    -------
+    Config
         Config object with FeatureSpace and BaseRunner
 
-    Raises:
-        ValueError: If configuration is malformed
+    Raises
+    ------
+    ValueError
+        If configuration is malformed
     """
     feature_space = _build_feature_space(config_dict)
     runner = _build_runner(config_dict)

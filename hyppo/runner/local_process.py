@@ -23,12 +23,16 @@ class LocalProcessRunner(BaseRunner):
         """
         Create a LocalProcessRunner with specified number of worker processes.
 
-        Args:
-            num_workers: Number of worker processes
-                        (None = use all available cores)
+        Parameters
+        ----------
+        num_workers : int or None
+            Number of worker processes
+            (None = use all available cores)
 
-        Raises:
-            ValueError: If num_workers is less than 1
+        Raises
+        ------
+        ValueError
+            If num_workers is less than 1
         """
         super().__init__()
 
@@ -49,11 +53,16 @@ class LocalProcessRunner(BaseRunner):
         dependency constraints. Independent extractors are executed
         concurrently in the worker pool.
 
-        Args:
-            data: HSI object to process
-            feature_space: FeatureSpace instance with feature graph
+        Parameters
+        ----------
+        data : HSI
+            HSI object to process
+        feature_space : FeatureSpace
+            FeatureSpace instance with feature graph
 
-        Returns:
+        Returns
+        -------
+        FeatureCollection
             FeatureCollection with extraction results
         """
         feature_graph = feature_space.feature_graph
@@ -143,10 +152,14 @@ class LocalProcessRunner(BaseRunner):
         Extractors at the same level can be executed in parallel.
         Level 0 = no dependencies, Level 1 = depends on Level 0, etc.
 
-        Args:
-            feature_graph: Feature dependency graph
+        Parameters
+        ----------
+        feature_graph
+            Feature dependency graph
 
-        Returns:
+        Returns
+        -------
+        dict
             Dictionary mapping level number to list of extractor names
         """
         levels = {}
@@ -184,10 +197,14 @@ class LocalProcessRunner(BaseRunner):
         """
         Create shared memory blocks for HSI data arrays.
 
-        Args:
-            data: HSI object to share
+        Parameters
+        ----------
+        data : HSI
+            HSI object to share
 
-        Returns:
+        Returns
+        -------
+        dict
             Dictionary with shared memory metadata and shm references
         """
         # Create shared memory for reflectance array
@@ -246,8 +263,10 @@ class LocalProcessRunner(BaseRunner):
         """
         Cleanup shared memory blocks.
 
-        Args:
-            shm_metadata: Shared memory metadata dictionary
+        Parameters
+        ----------
+        shm_metadata : dict
+            Shared memory metadata dictionary
         """
         # Close and unlink shared memory from the stored references
         if "_shm_refs" in shm_metadata:
@@ -268,12 +287,18 @@ def _execute_extractor_with_shared_hsi(
     """
     Worker function to execute extractor with shared HSI data.
 
-    Args:
-        extractor: Extractor instance to execute
-        shm_metadata: Shared memory metadata for reconstructing HSI
-        input_kwargs: Input arguments from dependencies
+    Parameters
+    ----------
+    extractor
+        Extractor instance to execute
+    shm_metadata : dict
+        Shared memory metadata for reconstructing HSI
+    input_kwargs : dict
+        Input arguments from dependencies
 
-    Returns:
+    Returns
+    -------
+    dict
         Extraction results
     """
     # Reconstruct HSI from shared memory
@@ -295,10 +320,14 @@ def _reconstruct_hsi_from_shared(
     """
     Reconstruct HSI object from shared memory metadata.
 
-    Args:
-        shm_metadata: Dictionary with shared memory names, shapes, and dtypes
+    Parameters
+    ----------
+    shm_metadata : dict
+        Dictionary with shared memory names, shapes, and dtypes
 
-    Returns:
+    Returns
+    -------
+    tuple
         HSI object with arrays backed by shared memory
     """
     # Attach to existing shared memory blocks

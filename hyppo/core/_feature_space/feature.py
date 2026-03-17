@@ -7,12 +7,13 @@ class Feature(Bunch):
     """
     Dictionary for feature extraction results.
 
-    Examples:
-        >>> result = Feature({'mean': [1, 2, 3], 'std': [0.1, 0.2, 0.3]})
-        >>> result.mean
-        [1, 2, 3]
-        >>> result['mean']
-        [1, 2, 3]
+    Examples
+    --------
+    >>> result = Feature({'mean': [1, 2, 3], 'std': [0.1, 0.2, 0.3]})
+    >>> result.mean
+    [1, 2, 3]
+    >>> result['mean']
+    [1, 2, 3]
     """
 
     def __init__(self, data, extractor, inputs_used):
@@ -40,8 +41,9 @@ class Feature(Bunch):
         """
         Get summary information about this feature result.
 
-        Returns:
-            Dictionary with dimensions and extra_data keys
+        Returns
+        -------
+        Dictionary with dimensions and extra_data keys
         """
         data = self.get("data", {})
         features_shape = self._get_features_shape(data)
@@ -62,13 +64,14 @@ class FeatureCollection(Bunch):
 
     This class manages results from multiple feature extractors.
 
-    Examples:
-        >>> results = FeatureCollection()
-        >>> results['mean'] = Feature({'data': [1, 2, 3]})
-        >>> results.mean.data
-        [1, 2, 3]
-        >>> results['mean']['data']
-        [1, 2, 3]
+    Examples
+    --------
+    >>> results = FeatureCollection()
+    >>> results['mean'] = Feature({'data': [1, 2, 3]})
+    >>> results.mean.data
+    [1, 2, 3]
+    >>> results['mean']['data']
+    [1, 2, 3]
     """
 
     def __init__(self, data: dict[str, Feature]):
@@ -82,11 +85,13 @@ class FeatureCollection(Bunch):
         """
         Create a FeatureCollection from a dictionary of features.
 
-        Args:
-            features: Dictionary of features (extractor_name -> Feature)
+        Parameters
+        ----------
+        features : Dictionary of features (extractor_name -> Feature)
 
-        Returns:
-            FeatureCollection
+        Returns
+        -------
+        FeatureCollection
         """
         return cls(features)
 
@@ -141,11 +146,12 @@ class FeatureCollection(Bunch):
         """
         Get summary information for all feature results.
 
-        Returns:
-            DataFrame with columns:
-                - feature_name: Name of each feature
-                - dimensions: Shape of the 'features' array
-                - extra_data: Comma-separated list of extra data keys
+        Returns
+        -------
+        DataFrame with columns:
+            - feature_name: Name of each feature
+            - dimensions: Shape of the 'features' array
+            - extra_data: Comma-separated list of extra data keys
         """
         rows = []
         for feature_name, result in self.items():
@@ -160,12 +166,14 @@ class FeatureCollection(Bunch):
         """
         Save this FeatureCollection to HDF5 file.
 
-        Args:
-            path: Output file path (must have .h5 extension)
+        Parameters
+        ----------
+        path : Output file path (must have .h5 extension)
 
-        Example:
-            >>> results = fs.extract(hsi)
-            >>> results.save("output.h5")
+        Examples
+        --------
+        >>> results = fs.extract(hsi)
+        >>> results.save("output.h5")
         """
         from hyppo import io
 

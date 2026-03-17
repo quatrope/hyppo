@@ -24,8 +24,10 @@ class DaskRunner(BaseRunner):
         """
         Initialize DaskRunner with a Dask client.
 
-        Args:
-            client: Configured Dask Client instance
+        Parameters
+        ----------
+        client : Client
+            Configured Dask Client instance
         """
         super().__init__()
         self._client = client
@@ -36,11 +38,16 @@ class DaskRunner(BaseRunner):
 
         Uses distributed execution.
 
-        Args:
-            data: HSI object to process
-            feature_space: FeatureSpace instance with feature graph
+        Parameters
+        ----------
+        data : HSI
+            HSI object to process
+        feature_space : FeatureSpace
+            FeatureSpace instance with feature graph
 
-        Returns:
+        Returns
+        -------
+        FeatureCollection
             FeatureCollection with extraction results
         """
         feature_graph = feature_space.feature_graph
@@ -81,11 +88,16 @@ class DaskRunner(BaseRunner):
 
         Dependencies are expressed by referencing other task keys as arguments.
 
-        Args:
-            data: HSI object to process
-            feature_graph: Feature dependency graph
+        Parameters
+        ----------
+        data : HSI
+            HSI object to process
+        feature_graph
+            Feature dependency graph
 
-        Returns:
+        Returns
+        -------
+        dict
             Dictionary representing the Dask computation graph
         """
         graph = {}
@@ -127,15 +139,21 @@ def _execute_extractor_task(extractor, hsi_data, *args):
     This function receives resolved dependency results as positional arguments
     followed by metadata about input names and defaults.
 
-    Args:
-        extractor: The extractor instance to execute
-        hsi_data: HSI data object
-        *args: Variable arguments containing:
-               - dependency results (in order of input_mapping)
-               - input_names list
-               - defaults dict
+    Parameters
+    ----------
+    extractor
+        The extractor instance to execute
+    hsi_data : HSI
+        HSI data object
+    *args
+        Variable arguments containing:
+        - dependency results (in order of input_mapping)
+        - input_names list
+        - defaults dict
 
-    Returns:
+    Returns
+    -------
+    dict
         Extraction results from the extractor
     """
     assert len(args) >= 2
@@ -181,12 +199,16 @@ class DaskThreadsRunner(DaskRunner):
         """
         Create a thread-based Dask runner.
 
-        Args:
-            num_threads: Number of threads to use
-                        (None = use all available cores)
+        Parameters
+        ----------
+        num_threads : int or None
+            Number of threads to use
+            (None = use all available cores)
 
-        Raises:
-            ValueError: If num_threads is less than 1
+        Raises
+        ------
+        ValueError
+            If num_threads is less than 1
         """
         if num_threads is not None and num_threads < 1:
             raise ValueError(f"Invalid number of threads: {num_threads}")
@@ -219,14 +241,20 @@ class DaskProcessesRunner(DaskRunner):
         """
         Create a process-based Dask runner.
 
-        Args:
-            num_workers: Number of worker processes
-                        (None = use all available cores)
-            threads_per_worker: Number of threads per worker process
-            memory_limit: Memory limit per worker (e.g., "2GB", "auto")
+        Parameters
+        ----------
+        num_workers : int or None
+            Number of worker processes
+            (None = use all available cores)
+        threads_per_worker : int
+            Number of threads per worker process
+        memory_limit : str
+            Memory limit per worker (e.g., "2GB", "auto")
 
-        Raises:
-            ValueError: If num_workers or threads_per_worker is less than 1
+        Raises
+        ------
+        ValueError
+            If num_workers or threads_per_worker is less than 1
         """
         if num_workers is not None and num_workers < 1:
             raise ValueError(f"Invalid number of workers: {num_workers}")

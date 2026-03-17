@@ -22,12 +22,17 @@ def save_config_yaml(
     """
     Save Config or FeatureSpace to YAML file.
 
-    Args:
-        config: Config or FeatureSpace instance to save
-        path: Output file path (must have .yaml or .yml extension)
+    Parameters
+    ----------
+    config : Config or FeatureSpace
+        Config or FeatureSpace instance to save
+    path : Path or str
+        Output file path (must have .yaml or .yml extension)
 
-    Raises:
-        ValueError: If path doesn't have .yaml or .yml extension
+    Raises
+    ------
+    ValueError
+        If path doesn't have .yaml or .yml extension
     """
     if not isinstance(path, Path):
         path = Path(path)
@@ -49,12 +54,17 @@ def save_config_json(
     """
     Save Config or FeatureSpace to JSON file.
 
-    Args:
-        config: Config or FeatureSpace instance to save
-        path: Output file path (must have .json extension)
+    Parameters
+    ----------
+    config : Config or FeatureSpace
+        Config or FeatureSpace instance to save
+    path : Path or str
+        Output file path (must have .json extension)
 
-    Raises:
-        ValueError: If path doesn't have .json extension
+    Raises
+    ------
+    ValueError
+        If path doesn't have .json extension
     """
     if not isinstance(path, Path):
         path = Path(path)
@@ -72,10 +82,14 @@ def _build_config_dict(config: Config | "FeatureSpace") -> dict:
     """
     Build configuration dictionary from Config or FeatureSpace.
 
-    Args:
-        config: Config or FeatureSpace instance
+    Parameters
+    ----------
+    config : Config or FeatureSpace
+        Config or FeatureSpace instance
 
-    Returns:
+    Returns
+    -------
+    dict
         Configuration dictionary in format expected by loader
     """
     # Handle both Config and FeatureSpace
@@ -135,10 +149,14 @@ def _extract_params(extractor) -> dict:
     """
     Extract initialization parameters from an extractor instance.
 
-    Args:
-        extractor: Extractor instance
+    Parameters
+    ----------
+    extractor : Extractor
+        Extractor instance
 
-    Returns:
+    Returns
+    -------
+    dict
         Dictionary of parameter names and values
     """
     params = {}

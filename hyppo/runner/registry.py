@@ -32,13 +32,19 @@ class RunnerRegistry:
         """
         Register a runner class with a specific name.
 
-        Args:
-            name: The runner type name (e.g., 'sequential', 'dask-threads')
-            runner_class: The runner class to register
+        Parameters
+        ----------
+        name : str
+            The runner type name (e.g., 'sequential', 'dask-threads')
+        runner_class : type
+            The runner class to register
 
-        Raises:
-            TypeError: If runner_class doesn't inherit from BaseRunner
-            ValueError: If name is already registered with a different class
+        Raises
+        ------
+        TypeError
+            If runner_class doesn't inherit from BaseRunner
+        ValueError
+            If name is already registered with a different class
         """
         if not issubclass(runner_class, BaseRunner):
             raise TypeError(
@@ -61,15 +67,22 @@ class RunnerRegistry:
         """
         Get a runner instance by name.
 
-        Args:
-            name: The runner type name
-            params: Optional parameters to pass to runner constructor
+        Parameters
+        ----------
+        name : str
+            The runner type name
+        params : dict or None
+            Optional parameters to pass to runner constructor
 
-        Returns:
+        Returns
+        -------
+        BaseRunner
             An instantiated runner
 
-        Raises:
-            ValueError: If the runner is not registered
+        Raises
+        ------
+        ValueError
+            If the runner is not registered
         """
         if name not in self._registry:
             valid_runners = ", ".join(self.list_runners())
@@ -90,10 +103,14 @@ class RunnerRegistry:
         """
         Get the registered name for a runner class.
 
-        Args:
-            runner_class: The runner class
+        Parameters
+        ----------
+        runner_class : type
+            The runner class
 
-        Returns:
+        Returns
+        -------
+        str or None
             The registered name or None if not found
         """
         for name, cls in self._registry.items():
@@ -113,11 +130,15 @@ class RunnerRegistry:
         """
         Unregister a runner.
 
-        Args:
-            name: The runner type name to unregister
+        Parameters
+        ----------
+        name : str
+            The runner type name to unregister
 
-        Raises:
-            KeyError: If the runner is not registered
+        Raises
+        ------
+        KeyError
+            If the runner is not registered
         """
         if name not in self._registry:
             raise KeyError(f"Runner '{name}' not found in registry")

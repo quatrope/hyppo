@@ -2,6 +2,7 @@
 
 from typing import Iterable
 
+from dask.core import literal
 from dask.distributed import Client, LocalCluster
 
 from hyppo.core import Feature, FeatureCollection, HSI
@@ -120,11 +121,14 @@ class DaskRunner(BaseRunner):
                 # Dask resolves these automatically before calling
                 task_args.append(source_name)
 
-            # Add metadata about input names and defaults
-            task_args.append(list(input_mapping.keys()))  # input names
+            # Add metadata about input names and defaults.
+            # These must be wrapped as literal sub-tasks so Dask does not
+            # walk the list/dict and substitute any string element that
+            # happens to match another task key in the graph.
+            task_args.append((literal(list(input_mapping.keys())),))
             task_args.append(
-                self._get_defaults_for_extractor(extractor)
-            )  # defaults
+                (literal(self._get_defaults_for_extractor(extractor)),)
+            )
 
             # Create the task tuple for this extractor
             graph[extractor_name] = tuple(task_args)

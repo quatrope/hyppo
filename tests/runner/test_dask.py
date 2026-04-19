@@ -20,6 +20,36 @@ class SimpleTestExtractor(Extractor):
         return {"simple_value": 1.0}
 
 
+class ProducerExtractor(Extractor):
+    """Producer whose feature_name collides with a downstream input name."""
+
+    def _extract(self, data: HSI, **inputs) -> dict:
+        """Produce a payload consumed by ColludingConsumerExtractor."""
+        return {"payload": 42}
+
+
+class ColludingConsumerExtractor(Extractor):
+    """Consumer that names its input exactly like the producer's feature name.
+
+    This collision is what previously triggered a Dask runner crash: Dask
+    walked the ``input_names`` list passed to the task and, finding a string
+    equal to another graph key, recursively substituted it with that task's
+    result. The metadata list then contained a dict, which produced
+    ``TypeError: unhashable type: 'dict'`` when used as a mapping key.
+    """
+
+    @classmethod
+    def get_input_dependencies(cls) -> dict:
+        """Declare an input whose name matches the producer's feature name."""
+        return {
+            "producer": {"extractor": ProducerExtractor, "required": True}
+        }
+
+    def _extract(self, data: HSI, **inputs) -> dict:
+        """Return the consumed payload to assert it was routed correctly."""
+        return {"consumed": inputs["producer"]["payload"]}
+
+
 class DependentTestExtractor(Extractor):
     """Extractor with dependencies for testing."""
 
@@ -353,6 +383,41 @@ class TestDaskRunner:
         assert len(results) == 2
         assert results["optional_dependency"]["data"]["has_input"] is True
         assert "value" in results["optional_dependency"]["data"]
+
+        # Cleanup
+        runner._client.close()
+        runner._cluster.close()
+
+    def test_resolve_with_input_name_colliding_with_feature_name(
+        self, small_hsi
+    ):
+        """Dask must not recursively resolve ``input_names`` as graph keys.
+
+        Regression test: when an extractor declares an input whose name
+        matches another extractor's ``feature_name()``, Dask previously
+        walked the ``input_names`` metadata list and substituted the
+        matching string with the upstream task's result dict. That turned
+        the dict into a mapping key and raised ``TypeError: unhashable
+        type: 'dict'``. The metadata list must be treated as a literal.
+        """
+        # Arrange: producer's feature_name ("producer") equals the input
+        # name declared by ColludingConsumerExtractor.
+        runner = DaskThreadsRunner(num_threads=2)
+        fs = FeatureSpace.from_list(
+            [ProducerExtractor(), ColludingConsumerExtractor()]
+        )
+        assert "producer" in fs.feature_graph.extractors
+        consumer_mapping = fs.feature_graph.get_input_mapping_for(
+            "colluding_consumer"
+        )
+        assert consumer_mapping == {"producer": "producer"}
+
+        # Act: Execute extraction
+        results = runner.resolve(small_hsi, fs)
+
+        # Assert: Consumer received the producer's payload intact.
+        assert "colluding_consumer" in results
+        assert results["colluding_consumer"]["data"]["consumed"] == 42
 
         # Cleanup
         runner._client.close()

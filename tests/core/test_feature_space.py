@@ -73,7 +73,7 @@ class TestFeatureSpace:
         assert len(results) == 3
         assert "ndvi" in results
         assert "savi" in results
-        assert "l_b_p" in results
+        assert "lbp" in results
 
     def test_from_list_with_dependencies(self, sample_hsi):
         """Test creating FeatureSpace from list with dependencies."""

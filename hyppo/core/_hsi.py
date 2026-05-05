@@ -2,6 +2,8 @@
 
 import numpy as np
 
+from hyppo.core._hsi_plot import HSIPlotAccessor
+
 
 class HSI:
     """Represents a hyperspectral image with reflectance and metadata."""
@@ -121,6 +123,71 @@ class HSI:
     def get_band_indices(self) -> list:
         """Get list of band indices."""
         return list(range(self.n_bands))
+
+    def describe(self) -> dict:
+        """Get summary of HSI dimensions and metadata."""
+        return {
+            "height": int(self.height),
+            "width": int(self.width),
+            "bands": int(self.n_bands),
+            "wavelength_min_nm": float(self.wavelengths.min()),
+            "wavelength_max_nm": float(self.wavelengths.max()),
+            "valid_pixels": int(self.mask.sum()),
+            "total_pixels": int(self.mask.size),
+        }
+
+    def pseudo_rgb(
+        self,
+        r_nm: float = 650.0,
+        g_nm: float = 550.0,
+        b_nm: float = 450.0,
+    ) -> "HSI":
+        """Build new HSI with the 3 bands closest to RGB wavelengths."""
+        bands = [
+            int(np.argmin(np.abs(self.wavelengths - w)))
+            for w in (r_nm, g_nm, b_nm)
+        ]
+        return HSI(
+            reflectance=self.reflectance[:, :, bands],
+            wavelengths=self.wavelengths[bands],
+            mask=self.mask.copy(),
+            metadata=dict(self.metadata),
+        )
+
+    def crop(
+        self,
+        rows: slice | None = None,
+        cols: slice | None = None,
+    ) -> "HSI":
+        """Return crop defined by row and column slices."""
+        if rows is None and cols is None:
+            return self
+        row_sel = rows if rows is not None else slice(None)
+        col_sel = cols if cols is not None else slice(None)
+        return HSI(
+            reflectance=self.reflectance[row_sel, col_sel, :],
+            wavelengths=self.wavelengths,
+            mask=self.mask[row_sel, col_sel],
+            metadata=dict(self.metadata),
+        )
+
+    def crop_center(self, size: int | None = None) -> "HSI":
+        """Return centered square crop of given size, or self if not needed."""
+        if size is None or (size >= self.height and size >= self.width):
+            return self
+        h0 = (self.height - size) // 2
+        w0 = (self.width - size) // 2
+        return self.crop(
+            rows=slice(h0, h0 + size),
+            cols=slice(w0, w0 + size),
+        )
+
+    @property
+    def plot(self) -> "HSIPlotAccessor":
+        """Plotting accessor for this HSI."""
+        if not hasattr(self, "_plot"):
+            self._plot = HSIPlotAccessor(self)
+        return self._plot
 
     def __repr__(self) -> str:
         """Return string representation of HSI."""

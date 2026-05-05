@@ -1,0 +1,31 @@
+include LICENSE
+include README.md
+include pyproject.toml
+
+recursive-include hyppo *.py
+
+exclude tox.ini
+exclude requirements.txt
+exclude requirements_dev.txt
+exclude requirements_no_gil.txt
+exclude CLAUDE.md
+exclude INFORMATION.md
+exclude audit.md
+exclude coverage.xml
+exclude example.config.yaml
+exclude interpreters_test.py
+exclude NEON_subset.h5
+exclude hyppo.pdf
+exclude demo.ipynb
+exclude demo_free_threaded.ipynb
+exclude notebook_old.ipynb
+
+recursive-exclude tests *
+recursive-exclude docs *
+recursive-exclude demo *
+recursive-exclude benchmark *
+recursive-exclude _build *
+recursive-exclude _static *
+recursive-exclude _templates *
+recursive-exclude build *
+recursive-exclude __pycache__ *

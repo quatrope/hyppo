@@ -61,6 +61,11 @@ where = ["."]
 include = ["hyppo*"]
 namespaces = false
 
+[tool.check-manifest]
+ignore = [
+    "CODE_OF_CONDUCT.md",
+]
+
 [tool.black]
 line-length = 79
 

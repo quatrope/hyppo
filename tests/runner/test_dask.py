@@ -41,9 +41,7 @@ class ColludingConsumerExtractor(Extractor):
     @classmethod
     def get_input_dependencies(cls) -> dict:
         """Declare an input whose name matches the producer's feature name."""
-        return {
-            "producer": {"extractor": ProducerExtractor, "required": True}
-        }
+        return {"producer": {"extractor": ProducerExtractor, "required": True}}
 
     def _extract(self, data: HSI, **inputs) -> dict:
         """Return the consumed payload to assert it was routed correctly."""

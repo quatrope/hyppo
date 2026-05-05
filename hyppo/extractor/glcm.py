@@ -2,15 +2,15 @@
 
 import numpy as np
 from scipy import ndimage
-from sklearn.decomposition import PCA
 from skimage.exposure import equalize_hist
+from sklearn.decomposition import PCA
 
 from hyppo.core import HSI
 from ._validators import (
-    validate_positive_int,
-    validate_window_sizes,
     validate_non_empty_list,
+    validate_positive_int,
     validate_sufficient_bands,
+    validate_window_sizes,
 )
 from .base import Extractor
 

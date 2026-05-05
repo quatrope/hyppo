@@ -12,6 +12,7 @@ from ._validators import (
 from .base import Extractor
 from .pca import PCAExtractor
 
+
 class LBPExtractor(Extractor):
     """
     Local Binary Pattern (LBP) feature extractor for hyperspectral images.
@@ -158,7 +159,10 @@ class LBPExtractor(Extractor):
         n_channels = spectral_data.shape[2]
 
         features = np.concatenate(
-            [self._compute_lbp_multiscale(spectral_data[..., i]) for i in range(n_channels)],
+            [
+                self._compute_lbp_multiscale(spectral_data[..., i])
+                for i in range(n_channels)
+            ],
             axis=-1,
         )
         return {

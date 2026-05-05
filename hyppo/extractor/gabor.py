@@ -1,19 +1,20 @@
-"""Gabor filter feature extractor for pixel-wise hyperspectral image classification."""
+"""Gabor filter feature extractor for hyperspectral classification."""
 
 import numpy as np
 from scipy import ndimage
 
 from hyppo.core import HSI
-from .base import Extractor
 from ._validators import validate_positive_int
+from .base import Extractor
 
 
 class GaborExtractor(Extractor):
     """
-    Gabor filter feature extractor for pixel-wise hyperspectral classification.
+    Gabor filter feature extractor for hyperspectral classification.
 
     Applies a bank of Gabor filters (M scales x N orientations) over each
-    selected spectral band and returns a spatial feature map (H, W, n_features).
+    selected spectral band and returns a spatial feature map
+    (H, W, n_features).
     Each pixel is characterized by the filter responses at all scales and
     orientations, following Rajadell et al. (2013) Section II-B.
 
@@ -44,7 +45,7 @@ class GaborExtractor(Extractor):
             texture; spectral peak near 0.25 cycles/pixel (medium frequency).
 
         For AVIRIS-style land-cover images (20m/pixel, homogeneous regions),
-        consider larger values like [4, 16] to target lower spatial frequencies.
+        consider larger values like [4, 16] to target lower spatial freqs.
     frequencies : list of float or None, default=None
         Central spatial frequency (cycles/pixel) for each scale.
         If None, uses dyadic values: u_m = 0.5 / 2^m => [0.5, 0.25, 0.125, ...]
@@ -86,6 +87,7 @@ class GaborExtractor(Extractor):
         sigmas_sq=None,
         frequencies=None,
     ):
+        """Initialize Gabor extractor parameters."""
         super().__init__()
         self.n_scales = n_scales
         self.n_orientations = n_orientations
@@ -161,7 +163,7 @@ class GaborExtractor(Extractor):
         """
         sigma = np.sqrt(sigma_sq)
         half = int(np.ceil(4 * sigma))  # covers >99% of Gaussian mass
-        size = 2 * half + 1  # always odd
+        # kernel size = 2 * half + 1 (always odd)
 
         coords = np.arange(-half, half + 1)
         y, x = np.meshgrid(coords, coords)
@@ -263,9 +265,10 @@ class GaborExtractor(Extractor):
         if self.use_opponent:
             _, _, B = data.reflectance.shape
             if B > 10:
+                n_maps = B * (B - 1) // 2 * self.n_scales * self.n_orientations
                 raise ValueError(
                     f"use_opponent=True with {B} bands would generate "
-                    f"{B*(B-1)//2 * self.n_scales * self.n_orientations} opponent maps. "
-                    "Apply band selection upstream to reduce B <= 10 before "
-                    "using opponent features."
+                    f"{n_maps} opponent maps. Apply band selection "
+                    "upstream to reduce B <= 10 before using opponent "
+                    "features."
                 )

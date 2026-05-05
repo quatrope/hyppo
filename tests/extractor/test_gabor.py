@@ -6,6 +6,7 @@ import pytest
 from hyppo.core import HSI
 from hyppo.extractor.gabor import GaborExtractor
 
+
 class TestGaborExtractor:
     """Test cases for GaborExtractor."""
 
@@ -51,7 +52,9 @@ class TestGaborExtractor:
           n_opponent  = (B*(B-1)/2) * M * N = 3 * 2 * 4 = 24
           n_features  = 48
         """
-        extractor = GaborExtractor(n_scales=2, n_orientations=4, use_opponent=True)
+        extractor = GaborExtractor(
+            n_scales=2, n_orientations=4, use_opponent=True
+        )
         result = extractor.extract(mock_hsi)
 
         assert result["n_unichrome"] == 24
@@ -60,7 +63,7 @@ class TestGaborExtractor:
         assert result["features"].shape == (10, 10, 48)
 
     def test_kernel_size(self):
-        """Kernels must be odd-sized and match the expected size for given sigma.
+        """Kernels must be odd-sized and match expected size for given sigma.
 
         size = 2 * ceil(4 * sigma) + 1
 
@@ -78,15 +81,19 @@ class TestGaborExtractor:
         assert k1.shape == (25, 25)
 
     def test_opponent_zero_for_identical_bands(self):
-        """Opponent features must be exactly zero when both bands are identical.
+        """Opponent features must be exactly zero when bands are identical.
 
         d^ij_mn = h^i_mn - h^j_mn = 0 when I_i == I_j  (Rajadell Eq. 4)
         """
         band = np.random.RandomState(0).rand(10, 10).astype(np.float32)
         reflectance = np.stack([band, band], axis=-1)
-        hsi = HSI(reflectance=reflectance, wavelengths=np.array([500.0, 600.0]))
+        hsi = HSI(
+            reflectance=reflectance, wavelengths=np.array([500.0, 600.0])
+        )
 
-        extractor = GaborExtractor(n_scales=1, n_orientations=1, use_opponent=True)
+        extractor = GaborExtractor(
+            n_scales=1, n_orientations=1, use_opponent=True
+        )
         result = extractor.extract(hsi)
 
         n_uni = result["n_unichrome"]
@@ -118,23 +125,25 @@ class TestGaborExtractor:
         kernels, params = extractor._build_filter_bank()
 
         # Scale 0: params[0..3] all share sigma_sq=2.0, freq=0.1
-        assert params[0][0] == 2.0,  "S0 sigma_sq should be 2.0"
-        assert params[0][1] == 0.1,  "S0 freq should be 0.1"
+        assert params[0][0] == 2.0, "S0 sigma_sq should be 2.0"
+        assert params[0][1] == 0.1, "S0 freq should be 0.1"
 
         # Scale 1: params[4..7] all share sigma_sq=4.0, freq=0.05
-        n_ori = extractor.n_orientations   # 4
-        assert params[n_ori][0] == 4.0,   "S1 sigma_sq should be 4.0"
-        assert params[n_ori][1] == 0.05,  "S1 freq should be 0.05"
+        n_ori = extractor.n_orientations  # 4
+        assert params[n_ori][0] == 4.0, "S1 sigma_sq should be 4.0"
+        assert params[n_ori][1] == 0.05, "S1 freq should be 0.05"
 
     def test_sigmas_length_mismatch_raises(self, mock_hsi):
-        """sigmas_sq length != n_scales must raise ValueError at extract time."""
+        """Sigmas_sq length != n_scales must raise ValueError on extract."""
         extractor = GaborExtractor(n_scales=2, sigmas_sq=[1.0])  # wrong length
         with pytest.raises(ValueError, match="sigmas_sq has"):
             extractor.extract(mock_hsi)
 
     def test_frequencies_length_mismatch_raises(self, mock_hsi):
-        """frequencies length != n_scales must raise ValueError at extract time."""
-        extractor = GaborExtractor(n_scales=2, frequencies=[0.5, 0.25, 0.1])  # wrong length
+        """Frequencies length != n_scales must raise ValueError on extract."""
+        extractor = GaborExtractor(
+            n_scales=2, frequencies=[0.5, 0.25, 0.1]
+        )  # wrong length
         with pytest.raises(ValueError, match="frequencies has"):
             extractor.extract(mock_hsi)
 
@@ -154,7 +163,9 @@ class TestGaborExtractor:
         band_h = np.sin(2 * np.pi * 0.45 * y).astype(np.float32)  # horizontal
         band_v = np.sin(2 * np.pi * 0.45 * x).astype(np.float32)  # vertical
         reflectance = np.stack([band_h, band_v], axis=-1)
-        hsi = HSI(reflectance=reflectance, wavelengths=np.array([500.0, 600.0]))
+        hsi = HSI(
+            reflectance=reflectance, wavelengths=np.array([500.0, 600.0])
+        )
 
         extractor = GaborExtractor(
             n_scales=1,
@@ -166,7 +177,7 @@ class TestGaborExtractor:
         features = result["features"]
 
         # idx 0: B0 filtered at 0° (horizontal filter -> responds to band_h)
-        # idx 4: B1 filtered at 0° (horizontal filter -> responds weakly to band_v)
+        # idx 4: B1 filtered at 0° (horizontal filter -> weak vs band_v)
         resp_b0_0deg = np.abs(features[:, :, 0]).mean()
         resp_b1_0deg = np.abs(features[:, :, 4]).mean()
         assert resp_b0_0deg > resp_b1_0deg, (

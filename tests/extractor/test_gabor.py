@@ -139,6 +139,15 @@ class TestGaborExtractor:
         with pytest.raises(ValueError, match="sigmas_sq has"):
             extractor.extract(mock_hsi)
 
+    def test_default_sigmas_extends_for_more_scales(self):
+        """Default sigmas extend with dyadic 4^m beyond first two scales."""
+        extractor = GaborExtractor(n_scales=4)
+        sigmas = extractor._resolve_sigmas_sq()
+        assert len(sigmas) == 4
+        assert sigmas[:2] == [1.97, 7.89]
+        assert sigmas[2] == 4.0**2
+        assert sigmas[3] == 4.0**3
+
     def test_frequencies_length_mismatch_raises(self, mock_hsi):
         """Frequencies length != n_scales must raise ValueError on extract."""
         extractor = GaborExtractor(

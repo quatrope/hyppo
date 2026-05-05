@@ -124,6 +124,19 @@ class TestLBPExtractor:
         with pytest.raises(ValueError):
             LBPExtractor(method="invalid")
 
+    def test_radius_n_points_length_mismatch(self):
+        """Test mismatched radius and n_points lengths raise ValueError."""
+        with pytest.raises(
+            ValueError, match="radius and n_points must have same length"
+        ):
+            LBPExtractor(radius=[1, 2], n_points=[8])
+
+    def test_band_index_out_of_range(self, small_hsi):
+        """Test band_indices outside the input bands raise ValueError."""
+        extractor = LBPExtractor(spectral_mode="bands", band_indices=[99])
+        with pytest.raises(ValueError, match="band index 99 out of range"):
+            extractor.extract(small_hsi)
+
     @pytest.mark.parametrize("radius", [1, 2, 3, 5])
     def test_radius_values(self, small_hsi, radius):
         """Test radius values are stored as a list in result metadata."""

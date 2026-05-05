@@ -25,14 +25,6 @@ def validate_non_empty_list(value, name):
         raise ValueError(f"{name} must be a non-empty list or tuple.")
 
 
-def validate_optional_non_empty_list(value, name):
-    """Validate that value is None or a non-empty list."""
-    if value is not None and (not isinstance(value, list) or not value):
-        raise ValueError(
-            f"{name} must be None or a non-empty list of integers."
-        )
-
-
 def validate_window_sizes(window_sizes):
     """Validate that all window sizes are odd integers >= 3."""
     validate_non_empty_list(window_sizes, "window_sizes")
@@ -68,17 +60,3 @@ def validate_positive_int_list(values, name):
     for v in values:
         if not isinstance(v, int) or v <= 0:
             raise ValueError(f"All {name} must be positive integers.")
-
-
-def validate_band_indices(bands, n_bands):
-    """Resolve and validate band indices. None means all bands."""
-    if bands is None:
-        return list(range(n_bands))
-    max_idx = n_bands - 1
-    for band in bands:
-        if band < 0 or band > max_idx:
-            raise ValueError(
-                f"Band index {band} is out of range for input "
-                f"with {n_bands} bands."
-            )
-    return list(bands)

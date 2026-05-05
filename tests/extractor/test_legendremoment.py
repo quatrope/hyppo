@@ -369,3 +369,7 @@ class TestLegendreMomentExtractor:
         default = LegendreMomentExtractor.get_input_default("pca")
         assert isinstance(default, PCAExtractor)
         assert default.n_components == 3
+
+    def test_get_input_default_unknown_returns_none(self):
+        """Test that unknown input names return None."""
+        assert LegendreMomentExtractor.get_input_default("other") is None

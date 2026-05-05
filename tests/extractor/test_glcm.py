@@ -145,6 +145,39 @@ class TestGLCMExtractor:
         with pytest.raises(ValueError):
             extractor.extract(regression_hsi)
 
+    def test_quantization_no_equalize(self):
+        """Test quantization works when equalize=False with non-zero range."""
+        extractor = GLCMExtractor(levels=8, equalize=False)
+        img = np.linspace(0.0, 1.0, 100).reshape(10, 10)
+        q = extractor._quantize(img)
+        assert q.dtype == np.uint8
+        assert q.min() == 0
+        assert q.max() == 7
+
+    def test_invalid_levels_too_low(self, regression_hsi):
+        """Test levels=1 raises ValueError (must be >= 2)."""
+        extractor = GLCMExtractor(levels=1)
+        with pytest.raises(ValueError, match="levels must be >= 2"):
+            extractor.extract(regression_hsi)
+
+    def test_invalid_spectral_reduction(self, regression_hsi):
+        """Test unknown spectral_reduction raises ValueError."""
+        extractor = GLCMExtractor(spectral_reduction="bad")
+        with pytest.raises(ValueError, match="Invalid spectral_reduction"):
+            extractor.extract(regression_hsi)
+
+    def test_invalid_angle_pooling(self, regression_hsi):
+        """Test unknown angle_pooling raises ValueError."""
+        extractor = GLCMExtractor(angle_pooling="bad")
+        with pytest.raises(ValueError, match="Invalid angle_pooling"):
+            extractor.extract(regression_hsi)
+
+    def test_invalid_haralick_feature(self, regression_hsi):
+        """Test unknown Haralick feature in features list raises ValueError."""
+        extractor = GLCMExtractor(features=["contrast", "bogus"])
+        with pytest.raises(ValueError, match="Invalid Haralick features"):
+            extractor.extract(regression_hsi)
+
     def test_feature_name(self):
         """Test feature_name returns the canonical 'glcm' identifier."""
         assert GLCMExtractor.feature_name() == "glcm"

@@ -97,8 +97,6 @@ class GLCMExtractor(Extractor):
             Xr = pca.fit_transform(X)
             return Xr.reshape(h, w, self.n_components)
 
-        raise ValueError("Invalid spectral reduction")
-
     def _quantize(self, image):
         """Quantize image to the specified number of gray levels."""
         if self.equalize:
@@ -214,8 +212,6 @@ class GLCMExtractor(Extractor):
             rng = feats.max(axis=0) - feats.min(axis=0)
             return np.concatenate([mean, rng], axis=-1)
 
-        raise ValueError("Invalid pooling")
-
     def _extract_from_band(self, band):
         """Extract GLCM features from a single band."""
         h, w = band.shape
@@ -262,10 +258,6 @@ class GLCMExtractor(Extractor):
             raise ValueError("levels must be >= 2")
 
         validate_window_sizes(self.window_sizes)
-
-        for ws in self.window_sizes:
-            if ws % 2 == 0:
-                raise ValueError("window_sizes must be odd")
 
         validate_non_empty_list(self.distances, "distances")
         validate_non_empty_list(self.angles, "angles")

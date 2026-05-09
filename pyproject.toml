@@ -64,6 +64,7 @@ namespaces = false
 [tool.check-manifest]
 ignore = [
     "CODE_OF_CONDUCT.md",
+    "Makefile",
 ]
 
 [tool.black]

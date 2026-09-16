@@ -1,5 +1,7 @@
 # hyppo-hsi
 
+![logo](res/hyppo1.png)
+
 **Modular feature extractor for hyperspectral images**
 
 [![QuatroPe](https://img.shields.io/badge/QuatroPe-Applications-1c5896)](https://quatrope.github.io/)
